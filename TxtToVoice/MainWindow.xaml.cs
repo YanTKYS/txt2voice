@@ -65,7 +65,38 @@ namespace TxtToVoice
             // 初期化
             InitializeVoiceCombo();
             LoadDictionary();
-            SetStatus("準備完了。原稿を入力して「辞書を適用してプレビュー更新」を押してください。");
+
+            if (_speechService.IsAvailable)
+            {
+                SetStatus("準備完了。原稿を入力して「辞書を適用してプレビュー更新」を押してください。");
+            }
+            else
+            {
+                SetStatus("警告: 音声エンジンを初期化できませんでした。テキスト編集・辞書管理は利用できます。");
+                // 音声機能ボタンを無効化して、それ以外の機能は使えるようにする
+                DisableSpeechControls();
+                MessageBox.Show(
+                    "音声エンジン（Windows SAPI）を初期化できませんでした。\n\n" +
+                    $"詳細: {_speechService.InitializationError}\n\n" +
+                    "テキスト編集・辞書管理は引き続き利用できます。\n" +
+                    "音声機能を使うには、Windowsの「設定 → 時刻と言語 → 音声認識」から\n" +
+                    "日本語音声パッケージを追加してください。",
+                    "音声エンジン初期化エラー",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
+        }
+
+        private void DisableSpeechControls()
+        {
+            BtnPlay.IsEnabled    = false;
+            BtnPause.IsEnabled   = false;
+            BtnResume.IsEnabled  = false;
+            BtnStop.IsEnabled    = false;
+            BtnSaveWav.IsEnabled = false;
+            CmbVoice.IsEnabled   = false;
+            SldRate.IsEnabled    = false;
+            SldVolume.IsEnabled  = false;
         }
 
         // ----------------------------------------------------------------
