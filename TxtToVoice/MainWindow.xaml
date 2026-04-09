@@ -250,7 +250,7 @@
                     <RowDefinition Height="1.8*" MinHeight="160"/>
                 </Grid.RowDefinitions>
 
-                <!-- -------------------- プレビュー -------------------- -->
+                <!-- == プレビュー == -->
                 <Grid Grid.Row="0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -299,7 +299,7 @@
                               Background="#BCC5D0"
                               ShowsPreview="True"/>
 
-                <!-- -------------------- 辞書一覧 -------------------- -->
+                <!-- == 辞書一覧 == -->
                 <Grid Grid.Row="2">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -393,7 +393,7 @@
                               Background="#BCC5D0"
                               ShowsPreview="True"/>
 
-                <!-- -------------------- 再生操作 -------------------- -->
+                <!-- == 再生操作 == -->
                 <Grid Grid.Row="4">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
