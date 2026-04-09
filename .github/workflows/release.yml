@@ -1,10 +1,23 @@
 name: Release
 
-# v0.1.0 のような形式のタグを push したときに自動リリース
 on:
+  # タグ push による自動リリース
   push:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
+
+  # GitHub Actions UI からの手動実行
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "リリースタグ (例: v0.1.0) ※既存タグを指定してください"
+        required: true
+        type: string
+      prerelease:
+        description: "プレリリースとして公開する"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   # -------------------------------------------------------
@@ -15,8 +28,19 @@ jobs:
     runs-on: windows-latest
 
     steps:
+      - name: タグ名を決定
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "RELEASE_TAG=${{ inputs.tag }}" >> $GITHUB_ENV
+          else
+            echo "RELEASE_TAG=${{ github.ref_name }}" >> $GITHUB_ENV
+          fi
+
       - name: チェックアウト
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
 
       - name: .NET 8 SDK セットアップ
         uses: actions/setup-dotnet@v4
@@ -35,14 +59,25 @@ jobs:
   publish:
     name: Publish & Release (win-x64)
     runs-on: windows-latest
-    needs: build   # ← build ジョブが成功した場合のみ実行
+    needs: build   # build ジョブが成功した場合のみ実行
 
     permissions:
       contents: write   # GitHub Release の作成・アップロードに必要
 
     steps:
+      - name: タグ名を決定
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "RELEASE_TAG=${{ inputs.tag }}" >> $GITHUB_ENV
+          else
+            echo "RELEASE_TAG=${{ github.ref_name }}" >> $GITHUB_ENV
+          fi
+
       - name: チェックアウト
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
 
       - name: .NET 8 SDK セットアップ
         uses: actions/setup-dotnet@v4
@@ -74,7 +109,7 @@ jobs:
       - name: 配布 ZIP を作成
         shell: pwsh
         run: |
-          $tag     = "${{ github.ref_name }}"
+          $tag     = "${{ env.RELEASE_TAG }}"
           $zipName = "TxtToVoice-${tag}-win-x64.zip"
           Compress-Archive -Path "./publish/*" -DestinationPath $zipName
           Write-Host "=== 配布ファイル ==="
@@ -90,19 +125,26 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="${{ github.ref_name }}"
+          TAG="${{ env.RELEASE_TAG }}"
           ZIP="TxtToVoice-${TAG}-win-x64.zip"
           TITLE="声の広報 テキスト読み上げツール ${TAG}"
           NOTES_FILE="release-notes/${TAG}.md"
+
+          EXTRA_FLAGS=""
+          if [ "${{ inputs.prerelease }}" = "true" ]; then
+            EXTRA_FLAGS="--prerelease"
+          fi
 
           if [ -f "$NOTES_FILE" ]; then
             echo "リリースノートファイルを使用: $NOTES_FILE"
             gh release create "$TAG" "$ZIP" \
               --title "$TITLE" \
-              --notes-file "$NOTES_FILE"
+              --notes-file "$NOTES_FILE" \
+              $EXTRA_FLAGS
           else
             echo "リリースノートを自動生成します"
             gh release create "$TAG" "$ZIP" \
               --title "$TITLE" \
-              --generate-notes
+              --generate-notes \
+              $EXTRA_FLAGS
           fi
