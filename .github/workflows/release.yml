@@ -1,15 +1,41 @@
 name: Release
 
-# v1.0.0 のような形式のタグを push したときに自動リリース
+# v0.1.0 のような形式のタグを push したときに自動リリース
 on:
   push:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
+  # -------------------------------------------------------
+  # ジョブ 1: ビルド確認
+  # -------------------------------------------------------
+  build:
+    name: Build check
+    runs-on: windows-latest
+
+    steps:
+      - name: チェックアウト
+        uses: actions/checkout@v4
+
+      - name: .NET 8 SDK セットアップ
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: 依存パッケージ復元
+        run: dotnet restore TxtToVoice/TxtToVoice.csproj
+
+      - name: リリースビルド確認
+        run: dotnet build TxtToVoice/TxtToVoice.csproj -c Release --no-restore
+
+  # -------------------------------------------------------
+  # ジョブ 2: 発行・リリース（ビルド成功時のみ実行）
+  # -------------------------------------------------------
   publish:
     name: Publish & Release (win-x64)
     runs-on: windows-latest
+    needs: build   # ← build ジョブが成功した場合のみ実行
 
     permissions:
       contents: write   # GitHub Release の作成・アップロードに必要
@@ -48,20 +74,35 @@ jobs:
       - name: 配布 ZIP を作成
         shell: pwsh
         run: |
-          $zipName = "TxtToVoice-${{ github.ref_name }}-win-x64.zip"
+          $tag     = "${{ github.ref_name }}"
+          $zipName = "TxtToVoice-${tag}-win-x64.zip"
           Compress-Archive -Path "./publish/*" -DestinationPath $zipName
-          Write-Host "Created: $zipName"
-          Get-ChildItem $zipName | Select-Object Name, Length
+          Write-Host "=== 配布ファイル ==="
+          Get-ChildItem $zipName | Select-Object Name, @{N='Size(KB)';E={[math]::Round($_.Length/1KB,1)}}
 
       # -------------------------------------------------------
       # GitHub Release を作成してZIPを添付
+      # release-notes/<tag>.md があればそれを本文に使用、
+      # なければ --generate-notes で自動生成
       # -------------------------------------------------------
       - name: GitHub Release を作成
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${{ github.ref_name }}" \
-            "TxtToVoice-${{ github.ref_name }}-win-x64.zip" \
-            --title "声の広報 テキスト読み上げツール ${{ github.ref_name }}" \
-            --generate-notes
+          TAG="${{ github.ref_name }}"
+          ZIP="TxtToVoice-${TAG}-win-x64.zip"
+          TITLE="声の広報 テキスト読み上げツール ${TAG}"
+          NOTES_FILE="release-notes/${TAG}.md"
+
+          if [ -f "$NOTES_FILE" ]; then
+            echo "リリースノートファイルを使用: $NOTES_FILE"
+            gh release create "$TAG" "$ZIP" \
+              --title "$TITLE" \
+              --notes-file "$NOTES_FILE"
+          else
+            echo "リリースノートを自動生成します"
+            gh release create "$TAG" "$ZIP" \
+              --title "$TITLE" \
+              --generate-notes
+          fi
