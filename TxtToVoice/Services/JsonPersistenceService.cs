@@ -75,9 +75,18 @@ namespace TxtToVoice.Services
 
             // 一時ファイルに書いてからリネーム（書き込み中断による破損を防ぐ）
             string tmp = _filePath + ".tmp";
-            string json = JsonSerializer.Serialize(entries, SerializerOptions);
-            File.WriteAllText(tmp, json, Encoding.UTF8);
-            File.Move(tmp, _filePath, overwrite: true);
+            try
+            {
+                string json = JsonSerializer.Serialize(entries, SerializerOptions);
+                File.WriteAllText(tmp, json, Encoding.UTF8);
+                File.Move(tmp, _filePath, overwrite: true);
+            }
+            catch
+            {
+                // Move 失敗などで tmp が残った場合は削除して例外を伝播
+                try { File.Delete(tmp); } catch { /* 無視 */ }
+                throw;
+            }
 
             Logger.Info($"辞書保存完了: {entries.Count}件 → {_filePath}");
         }

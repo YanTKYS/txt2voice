@@ -221,9 +221,16 @@ namespace TxtToVoice.Services
                 catch { /* 無視 */ }
             }
 
-            wavSynth.SetOutputToWaveFile(outputPath);
-            wavSynth.Speak(text);
-            wavSynth.SetOutputToDefaultAudioDevice();
+            try
+            {
+                wavSynth.SetOutputToWaveFile(outputPath);
+                wavSynth.Speak(text);
+            }
+            finally
+            {
+                // Speak が途中で失敗してもデフォルト出力に戻す
+                try { wavSynth.SetOutputToDefaultAudioDevice(); } catch { /* 無視 */ }
+            }
 
             Logger.Info($"WAV 保存完了: {outputPath}");
         }

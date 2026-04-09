@@ -220,23 +220,16 @@ namespace TxtToVoice
 
         private static string ReadTextFileWithFallback(string path)
         {
-            // BOM 付き UTF-8 はそのまま読める
+            // BOM 付き UTF-8 はそのまま読める（BOM なし UTF-8 はバイト列が不正なら例外）
             try
             {
                 return File.ReadAllText(path, new System.Text.UTF8Encoding(false, throwOnInvalidBytes: true));
             }
             catch (DecoderFallbackException) { }
+            // IOException / UnauthorizedAccessException はここで伝播させる
 
-            // Shift_JIS を試みる
-            try
-            {
-                return File.ReadAllText(path, System.Text.Encoding.GetEncoding("shift_jis"));
-            }
-            catch
-            {
-                // 最後は UTF-8（エラーを無視）
-                return File.ReadAllText(path, System.Text.Encoding.UTF8);
-            }
+            // Shift_JIS を試みる（置換文字方式のため例外は出ないが I/O エラーは伝播）
+            return File.ReadAllText(path, System.Text.Encoding.GetEncoding("shift_jis"));
         }
 
         private void BtnClearText_Click(object sender, RoutedEventArgs e)
@@ -292,6 +285,8 @@ namespace TxtToVoice
 
         private void PreviewMode_Changed(object sender, RoutedEventArgs e)
         {
+            // RadioButton が「チェックされた」ときのみ処理（Unchecked イベントは無視）
+            if (sender is System.Windows.Controls.RadioButton rb && rb.IsChecked != true) return;
             _annotatedPreview = RbPreviewAnnotated.IsChecked == true;
             if (!string.IsNullOrEmpty(TxtInput.Text))
                 ApplyAndPreview();
@@ -392,10 +387,13 @@ namespace TxtToVoice
 
         private void UpdatePlaybackButtons()
         {
-            BtnPlay.IsEnabled   = !_isSpeaking;
-            BtnPause.IsEnabled  =  _isSpeaking && !_isPaused;
-            BtnResume.IsEnabled =  _isSpeaking &&  _isPaused;
-            BtnStop.IsEnabled   =  _isSpeaking;
+            // 音声エンジン不在時は DisableSpeechControls() で無効化済みのため何もしない
+            if (!_speechService.IsAvailable) return;
+
+            BtnPlay.IsEnabled    = !_isSpeaking;
+            BtnPause.IsEnabled   =  _isSpeaking && !_isPaused;
+            BtnResume.IsEnabled  =  _isSpeaking &&  _isPaused;
+            BtnStop.IsEnabled    =  _isSpeaking;
             BtnSaveWav.IsEnabled = !_isSpeaking;
         }
 

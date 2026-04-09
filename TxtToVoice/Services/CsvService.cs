@@ -146,25 +146,27 @@ namespace TxtToVoice.Services
         /// <summary>ファイル先頭バイトからエンコードを推測する。</summary>
         private static Encoding DetectEncoding(string filePath)
         {
-            byte[] bom = new byte[3];
-            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-            int read = fs.Read(bom, 0, 3);
+            // BOM チェック（ストリームを独立して開いてすぐ閉じる）
+            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            {
+                byte[] bom = new byte[3];
+                if (fs.Read(bom, 0, 3) >= 3
+                    && bom[0] == 0xEF && bom[1] == 0xBB && bom[2] == 0xBF)
+                    return Encoding.UTF8; // BOM 付き UTF-8
+            }
 
-            if (read >= 3 && bom[0] == 0xEF && bom[1] == 0xBB && bom[2] == 0xBF)
-                return Encoding.UTF8; // BOM 付き UTF-8
-
-            // BOM なしの場合は UTF-8 を試みて、失敗したら Shift_JIS
+            // BOM なし: UTF-8 として厳格に読めるか試みる
             try
             {
-                fs.Seek(0, SeekOrigin.Begin);
-                using var sr = new StreamReader(fs, new UTF8Encoding(false, throwOnInvalidBytes: true));
-                sr.ReadToEnd();
+                File.ReadAllText(filePath, new UTF8Encoding(false, throwOnInvalidBytes: true));
                 return new UTF8Encoding(false);
             }
-            catch
+            catch (DecoderFallbackException)
             {
+                // UTF-8 として不正なバイト列 → Shift_JIS とみなす
                 return Encoding.GetEncoding("shift_jis");
             }
+            // IOException 等は呼び出し元へ伝播させる
         }
     }
 }
