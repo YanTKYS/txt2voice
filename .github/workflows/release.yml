@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "リリースタグ (例: v0.1.0) ※既存タグを指定してください"
+        description: "リリースタグ (例: v0.1.0)"
         required: true
         type: string
       prerelease:
@@ -18,6 +18,12 @@ on:
         required: false
         type: boolean
         default: false
+
+# 同一タグで複数のジョブが並走しないよう制御
+# （workflow_dispatch が作成したタグが push.tags を再トリガーした場合でも二重実行しない）
+concurrency:
+  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
   # -------------------------------------------------------
@@ -28,19 +34,10 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: タグ名を決定
-        shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "RELEASE_TAG=${{ inputs.tag }}" >> $GITHUB_ENV
-          else
-            echo "RELEASE_TAG=${{ github.ref_name }}" >> $GITHUB_ENV
-          fi
-
+      # workflow_dispatch: 選択したブランチの最新コミットを checkout
+      # push.tags      : タグのコミットを checkout（デフォルト動作）
       - name: チェックアウト
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
 
       - name: .NET 8 SDK セットアップ
         uses: actions/setup-dotnet@v4
@@ -59,10 +56,10 @@ jobs:
   publish:
     name: Publish & Release (win-x64)
     runs-on: windows-latest
-    needs: build   # build ジョブが成功した場合のみ実行
+    needs: build
 
     permissions:
-      contents: write   # GitHub Release の作成・アップロードに必要
+      contents: write
 
     steps:
       - name: タグ名を決定
@@ -76,8 +73,6 @@ jobs:
 
       - name: チェックアウト
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
 
       - name: .NET 8 SDK セットアップ
         uses: actions/setup-dotnet@v4
@@ -117,8 +112,12 @@ jobs:
 
       # -------------------------------------------------------
       # GitHub Release を作成してZIPを添付
-      # release-notes/<tag>.md があればそれを本文に使用、
-      # なければ --generate-notes で自動生成
+      #
+      # 既にリリースが存在する場合はスキップ:
+      #   workflow_dispatch が gh release create でタグを作成すると
+      #   push.tags が再トリガーされる場合があるが、このチェックで無害化する。
+      #
+      # release-notes/<tag>.md があれば本文に使用、なければ自動生成。
       # -------------------------------------------------------
       - name: GitHub Release を作成
         shell: bash
@@ -129,6 +128,12 @@ jobs:
           ZIP="TxtToVoice-${TAG}-win-x64.zip"
           TITLE="声の広報 テキスト読み上げツール ${TAG}"
           NOTES_FILE="release-notes/${TAG}.md"
+
+          # 既にリリースが存在する場合はスキップ
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "リリース $TAG は既に存在します。スキップします。"
+            exit 0
+          fi
 
           EXTRA_FLAGS=""
           if [ "${{ inputs.prerelease }}" = "true" ]; then
