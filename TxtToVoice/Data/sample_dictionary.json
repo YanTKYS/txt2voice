@@ -1,0 +1,464 @@
+[
+  {
+    "display": "市長",
+    "reading": "しちょう",
+    "remarks": "「いちちょう」等の誤読防止",
+    "priority": 80
+  },
+  {
+    "display": "副市長",
+    "reading": "ふくしちょう",
+    "remarks": "役職名",
+    "priority": 80
+  },
+  {
+    "display": "町長",
+    "reading": "ちょうちょう",
+    "remarks": "役職名",
+    "priority": 80
+  },
+  {
+    "display": "村長",
+    "reading": "そんちょう",
+    "remarks": "役職名",
+    "priority": 80
+  },
+  {
+    "display": "区長",
+    "reading": "くちょう",
+    "remarks": "役職名",
+    "priority": 80
+  },
+  {
+    "display": "教育長",
+    "reading": "きょういくちょう",
+    "remarks": "役職名",
+    "priority": 80
+  },
+  {
+    "display": "市役所",
+    "reading": "しやくしょ",
+    "remarks": "自治体施設名",
+    "priority": 90
+  },
+  {
+    "display": "町役場",
+    "reading": "まちやくば",
+    "remarks": "自治体施設名",
+    "priority": 90
+  },
+  {
+    "display": "村役場",
+    "reading": "むらやくば",
+    "remarks": "自治体施設名",
+    "priority": 90
+  },
+  {
+    "display": "区役所",
+    "reading": "くやくしょ",
+    "remarks": "自治体施設名",
+    "priority": 90
+  },
+  {
+    "display": "市民課",
+    "reading": "しみんか",
+    "remarks": "部署名",
+    "priority": 70
+  },
+  {
+    "display": "税務課",
+    "reading": "ぜいむか",
+    "remarks": "部署名",
+    "priority": 70
+  },
+  {
+    "display": "福祉課",
+    "reading": "ふくしか",
+    "remarks": "部署名",
+    "priority": 70
+  },
+  {
+    "display": "健康増進課",
+    "reading": "けんこうぞうしんか",
+    "remarks": "部署名",
+    "priority": 70
+  },
+  {
+    "display": "子育て支援課",
+    "reading": "こそだてしえんか",
+    "remarks": "部署名",
+    "priority": 70
+  },
+  {
+    "display": "都市計画課",
+    "reading": "としけいかくか",
+    "remarks": "部署名",
+    "priority": 70
+  },
+  {
+    "display": "農業委員会",
+    "reading": "のうぎょういいんかい",
+    "remarks": "組織名",
+    "priority": 75
+  },
+  {
+    "display": "教育委員会",
+    "reading": "きょういくいいんかい",
+    "remarks": "組織名",
+    "priority": 75
+  },
+  {
+    "display": "選挙管理委員会",
+    "reading": "せんきょかんりいいんかい",
+    "remarks": "組織名",
+    "priority": 75
+  },
+  {
+    "display": "監査委員",
+    "reading": "かんさいいん",
+    "remarks": "役職・組織名",
+    "priority": 70
+  },
+  {
+    "display": "国民健康保険",
+    "reading": "こくみんけんこうほけん",
+    "remarks": "制度名",
+    "priority": 85
+  },
+  {
+    "display": "後期高齢者医療",
+    "reading": "こうきこうれいしゃいりょう",
+    "remarks": "制度名",
+    "priority": 85
+  },
+  {
+    "display": "介護保険",
+    "reading": "かいごほけん",
+    "remarks": "制度名",
+    "priority": 80
+  },
+  {
+    "display": "後期高齢者",
+    "reading": "こうきこうれいしゃ",
+    "remarks": "制度用語",
+    "priority": 80
+  },
+  {
+    "display": "前期高齢者",
+    "reading": "ぜんきこうれいしゃ",
+    "remarks": "制度用語",
+    "priority": 80
+  },
+  {
+    "display": "児童手当",
+    "reading": "じどうてあて",
+    "remarks": "制度名",
+    "priority": 80
+  },
+  {
+    "display": "児童扶養手当",
+    "reading": "じどうふようてあて",
+    "remarks": "制度名",
+    "priority": 85
+  },
+  {
+    "display": "特別児童扶養手当",
+    "reading": "とくべつじどうふようてあて",
+    "remarks": "制度名",
+    "priority": 88
+  },
+  {
+    "display": "生活保護",
+    "reading": "せいかつほご",
+    "remarks": "制度名",
+    "priority": 80
+  },
+  {
+    "display": "障害福祉サービス",
+    "reading": "しょうがいふくしさーびす",
+    "remarks": "制度名",
+    "priority": 80
+  },
+  {
+    "display": "固定資産税",
+    "reading": "こていしさんぜい",
+    "remarks": "税名",
+    "priority": 80
+  },
+  {
+    "display": "都市計画税",
+    "reading": "としけいかくぜい",
+    "remarks": "税名",
+    "priority": 80
+  },
+  {
+    "display": "住民税",
+    "reading": "じゅうみんぜい",
+    "remarks": "税名",
+    "priority": 80
+  },
+  {
+    "display": "軽自動車税",
+    "reading": "けいじどうしゃぜい",
+    "remarks": "税名",
+    "priority": 80
+  },
+  {
+    "display": "保険料",
+    "reading": "ほけんりょう",
+    "remarks": "頻出語",
+    "priority": 60
+  },
+  {
+    "display": "保険証",
+    "reading": "ほけんしょう",
+    "remarks": "頻出語",
+    "priority": 60
+  },
+  {
+    "display": "健康診断",
+    "reading": "けんこうしんだん",
+    "remarks": "頻出語",
+    "priority": 60
+  },
+  {
+    "display": "特定健診",
+    "reading": "とくていけんしん",
+    "remarks": "制度名",
+    "priority": 75
+  },
+  {
+    "display": "各種申請",
+    "reading": "かくしゅしんせい",
+    "remarks": "頻出語",
+    "priority": 60
+  },
+  {
+    "display": "申請書",
+    "reading": "しんせいしょ",
+    "remarks": "頻出語",
+    "priority": 60
+  },
+  {
+    "display": "届出",
+    "reading": "とどけで",
+    "remarks": "頻出語（「とどけでる」への誤読防止）",
+    "priority": 60
+  },
+  {
+    "display": "転入届",
+    "reading": "てんにゅうとどけ",
+    "remarks": "頻出語",
+    "priority": 65
+  },
+  {
+    "display": "転出届",
+    "reading": "てんしゅつとどけ",
+    "remarks": "頻出語",
+    "priority": 65
+  },
+  {
+    "display": "転居届",
+    "reading": "てんきょとどけ",
+    "remarks": "頻出語",
+    "priority": 65
+  },
+  {
+    "display": "住民票",
+    "reading": "じゅうみんひょう",
+    "remarks": "頻出語",
+    "priority": 65
+  },
+  {
+    "display": "印鑑登録",
+    "reading": "いんかんとうろく",
+    "remarks": "頻出語",
+    "priority": 65
+  },
+  {
+    "display": "マイナンバーカード",
+    "reading": "まいなんばーかーど",
+    "remarks": "制度用語",
+    "priority": 80
+  },
+  {
+    "display": "マイナンバー",
+    "reading": "まいなんばー",
+    "remarks": "制度用語",
+    "priority": 75
+  },
+  {
+    "display": "個人番号",
+    "reading": "こじんばんごう",
+    "remarks": "マイナンバーの正式名称",
+    "priority": 70
+  },
+  {
+    "display": "特別定額給付金",
+    "reading": "とくべつていがくきゅうふきん",
+    "remarks": "給付制度名",
+    "priority": 85
+  },
+  {
+    "display": "物価高騰",
+    "reading": "ぶっかこうとう",
+    "remarks": "頻出語",
+    "priority": 60
+  },
+  {
+    "display": "ごみ収集",
+    "reading": "ごみしゅうしゅう",
+    "remarks": "生活情報",
+    "priority": 60
+  },
+  {
+    "display": "可燃ごみ",
+    "reading": "かねんごみ",
+    "remarks": "生活情報",
+    "priority": 65
+  },
+  {
+    "display": "不燃ごみ",
+    "reading": "ふねんごみ",
+    "remarks": "生活情報",
+    "priority": 65
+  },
+  {
+    "display": "資源ごみ",
+    "reading": "しげんごみ",
+    "remarks": "生活情報",
+    "priority": 65
+  },
+  {
+    "display": "粗大ごみ",
+    "reading": "そだいごみ",
+    "remarks": "生活情報",
+    "priority": 65
+  },
+  {
+    "display": "上下水道",
+    "reading": "じょうげすいどう",
+    "remarks": "インフラ",
+    "priority": 60
+  },
+  {
+    "display": "公民館",
+    "reading": "こうみんかん",
+    "remarks": "施設名",
+    "priority": 65
+  },
+  {
+    "display": "体育館",
+    "reading": "たいいくかん",
+    "remarks": "施設名",
+    "priority": 60
+  },
+  {
+    "display": "図書館",
+    "reading": "としょかん",
+    "remarks": "施設名",
+    "priority": 65
+  },
+  {
+    "display": "文化センター",
+    "reading": "ぶんかせんたー",
+    "remarks": "施設名",
+    "priority": 65
+  },
+  {
+    "display": "保健センター",
+    "reading": "ほけんせんたー",
+    "remarks": "施設名",
+    "priority": 65
+  },
+  {
+    "display": "福祉センター",
+    "reading": "ふくしせんたー",
+    "remarks": "施設名",
+    "priority": 65
+  },
+  {
+    "display": "地域包括支援センター",
+    "reading": "ちいきほうかつしえんせんたー",
+    "remarks": "施設名",
+    "priority": 85
+  },
+  {
+    "display": "コミュニティバス",
+    "reading": "こみゅにてぃばす",
+    "remarks": "交通",
+    "priority": 60
+  },
+  {
+    "display": "防災行政無線",
+    "reading": "ぼうさいぎょうせいむせん",
+    "remarks": "防災用語",
+    "priority": 80
+  },
+  {
+    "display": "避難指示",
+    "reading": "ひなんしじ",
+    "remarks": "防災用語",
+    "priority": 90
+  },
+  {
+    "display": "避難勧告",
+    "reading": "ひなんかんこく",
+    "remarks": "防災用語（旧制度名）",
+    "priority": 85
+  },
+  {
+    "display": "避難場所",
+    "reading": "ひなんばしょ",
+    "remarks": "防災用語",
+    "priority": 80
+  },
+  {
+    "display": "避難所",
+    "reading": "ひなんじょ",
+    "remarks": "防災用語",
+    "priority": 80
+  },
+  {
+    "display": "土砂災害",
+    "reading": "どしゃさいがい",
+    "remarks": "防災用語",
+    "priority": 85
+  },
+  {
+    "display": "警戒レベル",
+    "reading": "けいかいれべる",
+    "remarks": "防災用語",
+    "priority": 80
+  },
+  {
+    "display": "令和",
+    "reading": "れいわ",
+    "remarks": "元号",
+    "priority": 90
+  },
+  {
+    "display": "平成",
+    "reading": "へいせい",
+    "remarks": "元号",
+    "priority": 85
+  },
+  {
+    "display": "感染症",
+    "reading": "かんせんしょう",
+    "remarks": "医療用語",
+    "priority": 70
+  },
+  {
+    "display": "予防接種",
+    "reading": "よぼうせっしゅ",
+    "remarks": "医療用語",
+    "priority": 70
+  },
+  {
+    "display": "ワクチン",
+    "reading": "わくちん",
+    "remarks": "医療用語",
+    "priority": 70
+  }
+]

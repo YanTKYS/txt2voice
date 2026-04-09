@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>TxtToVoice</RootNamespace>
+    <AssemblyName>TxtToVoice</AssemblyName>
+    <Company>声の広報 制作支援</Company>
+    <Product>テキスト読み上げツール</Product>
+    <Version>1.0.0</Version>
+    <ApplicationIcon></ApplicationIcon>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- System.Speech は .NET 8 では NuGet パッケージが必要 -->
+    <PackageReference Include="System.Speech" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- サンプル辞書を出力ディレクトリにコピー -->
+    <Content Include="Data\sample_dictionary.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

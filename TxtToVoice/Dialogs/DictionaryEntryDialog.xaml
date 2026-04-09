@@ -1,0 +1,89 @@
+<Window x:Class="TxtToVoice.Dialogs.DictionaryEntryDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="辞書エントリ編集"
+        Height="320" Width="440"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False">
+
+    <Window.Resources>
+        <Style TargetType="Label">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="0,0,4,0"/>
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Height" Value="28"/>
+        </Style>
+        <Style x:Key="DialogButton" TargetType="Button">
+            <Setter Property="Width" Value="90"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Margin" Value="6,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="20,16,20,16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="80"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- 表記 -->
+        <Label Grid.Row="0" Grid.Column="0" Content="表記：" HorizontalAlignment="Right"/>
+        <TextBox Grid.Row="0" Grid.Column="1" x:Name="TxtDisplay"
+                 ToolTip="読み間違えが起きやすい元の表記（例：市長）"/>
+
+        <!-- 読み -->
+        <Label Grid.Row="2" Grid.Column="0" Content="読み：" HorizontalAlignment="Right"/>
+        <TextBox Grid.Row="2" Grid.Column="1" x:Name="TxtReading"
+                 ToolTip="読み仮名または読み上げ用テキスト（例：しちょう）"/>
+
+        <!-- 備考 -->
+        <Label Grid.Row="4" Grid.Column="0" Content="備考：" HorizontalAlignment="Right"/>
+        <TextBox Grid.Row="4" Grid.Column="1" x:Name="TxtRemarks"
+                 ToolTip="この登録の説明・理由など（任意）"/>
+
+        <!-- 優先順位 -->
+        <Label Grid.Row="6" Grid.Column="0" Content="優先順位：" HorizontalAlignment="Right"/>
+        <Grid Grid.Row="6" Grid.Column="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="70"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBox Grid.Column="0" x:Name="TxtPriority" Text="50"
+                     ToolTip="1〜100（大きいほど優先）。通常は 50 で構いません。"/>
+            <TextBlock Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0"
+                       Text="（1〜100、大きいほど優先）" FontSize="11" Foreground="#666"/>
+        </Grid>
+
+        <!-- ボタン -->
+        <StackPanel Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="2"
+                    Orientation="Horizontal" HorizontalAlignment="Right"
+                    Margin="0,8,0,0">
+            <Button x:Name="BtnOk" Content="OK" IsDefault="True"
+                    Style="{StaticResource DialogButton}"
+                    Background="#2C5F8A" Foreground="White" BorderThickness="0"
+                    Click="BtnOk_Click"/>
+            <Button x:Name="BtnCancel" Content="キャンセル" IsCancel="True"
+                    Style="{StaticResource DialogButton}"
+                    Click="BtnCancel_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>
