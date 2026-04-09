@@ -1,0 +1,35 @@
+## .NET / Visual Studio
+bin/
+obj/
+publish/
+*.user
+*.suo
+.vs/
+*.vspscc
+*.vssscc
+TestResults/
+
+## NuGet パッケージ（restore で再取得できるため除外）
+*.nupkg
+*.snupkg
+packages/
+!**/packages/repositories.config
+
+## ビルド成果物
+*.exe
+*.dll
+*.pdb
+
+## OS 固有ファイル
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## ログ・一時ファイル
+*.log
+*.tmp
+*.bak
+
+## JetBrains Rider
+.idea/
+*.sln.iml

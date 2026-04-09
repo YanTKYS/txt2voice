@@ -1,0 +1,39 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - "claude/**"
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build (Windows / .NET 8)
+    runs-on: windows-latest
+
+    steps:
+      - name: チェックアウト
+        uses: actions/checkout@v4
+
+      - name: .NET 8 SDK セットアップ
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: 依存パッケージ復元
+        run: dotnet restore TxtToVoice/TxtToVoice.csproj
+
+      - name: リリースビルド
+        run: dotnet build TxtToVoice/TxtToVoice.csproj -c Release --no-restore
+
+      # ビルド成果物（フレームワーク依存 EXE）を確認用にアップロード
+      - name: ビルド成果物をアップロード
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ github.sha }}
+          path: TxtToVoice/bin/Release/net8.0-windows/
+          retention-days: 7

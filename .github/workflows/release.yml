@@ -1,0 +1,67 @@
+name: Release
+
+# v1.0.0 のような形式のタグを push したときに自動リリース
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  publish:
+    name: Publish & Release (win-x64)
+    runs-on: windows-latest
+
+    permissions:
+      contents: write   # GitHub Release の作成・アップロードに必要
+
+    steps:
+      - name: チェックアウト
+        uses: actions/checkout@v4
+
+      - name: .NET 8 SDK セットアップ
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      # -------------------------------------------------------
+      # PublishSingleFile=true で 1 つの EXE にまとめる
+      # self-contained=true で .NET ランタイムを同梱（配布先に .NET 不要）
+      # -------------------------------------------------------
+      - name: シングル EXE を発行
+        shell: pwsh
+        run: |
+          dotnet publish TxtToVoice/TxtToVoice.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true `
+            -p:DebugType=none `
+            -p:DebugSymbols=false `
+            -o ./publish
+
+      # -------------------------------------------------------
+      # 配布 ZIP を作成
+      # 内容: TxtToVoice.exe + Data/sample_dictionary.json
+      # -------------------------------------------------------
+      - name: 配布 ZIP を作成
+        shell: pwsh
+        run: |
+          $zipName = "TxtToVoice-${{ github.ref_name }}-win-x64.zip"
+          Compress-Archive -Path "./publish/*" -DestinationPath $zipName
+          Write-Host "Created: $zipName"
+          Get-ChildItem $zipName | Select-Object Name, Length
+
+      # -------------------------------------------------------
+      # GitHub Release を作成してZIPを添付
+      # -------------------------------------------------------
+      - name: GitHub Release を作成
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            "TxtToVoice-${{ github.ref_name }}-win-x64.zip" \
+            --title "声の広報 テキスト読み上げツール ${{ github.ref_name }}" \
+            --generate-notes
