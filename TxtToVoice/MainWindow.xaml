@@ -228,12 +228,16 @@
                          IsInactiveSelectionHighlightEnabled="True"
                          ToolTip="読み上げる原稿をここに入力または貼り付けてください。&#10;テキストを選択して読み上げ開始すると、選択範囲のみ読み上げます。"/>
 
-                <!-- フッター: 文字数 + プレビュー更新ボタン -->
+                <!-- フッター: 文字数 + 想定読み上げ時間 + プレビュー更新ボタン -->
                 <Border Grid.Row="2" Background="#E4E8EE" Padding="8,5">
                     <DockPanel>
                         <TextBlock x:Name="TxtCharCount"
                                    Text="0 文字"
                                    FontSize="11" Foreground="#555"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock x:Name="TxtEstTime"
+                                   Text=""
+                                   FontSize="11" Foreground="#777"
                                    VerticalAlignment="Center"/>
                         <Button Content="辞書を適用してプレビュー更新 (Ctrl+P)"
                                 Style="{StaticResource BtnSuccess}"

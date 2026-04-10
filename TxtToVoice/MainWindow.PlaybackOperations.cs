@@ -41,6 +41,7 @@ namespace TxtToVoice
             // 前回セッションのテキストを復元
             if (!string.IsNullOrEmpty(s.LastInputText))
                 TxtInput.Text = s.LastInputText;
+            UpdateEstimatedTime();
             Logger.Info($"設定を読み込みました: Rate={s.Rate}, Volume={s.Volume}, Voice={s.VoiceName}, Ssml={s.SsmlPauseEnabled}");
         }
 
@@ -117,7 +118,7 @@ namespace TxtToVoice
         private void StopSpeech()
         {
             _speechService.Stop();
-            // SpeakCompleted イベントで状態リセット・ハイライトクリアが行われる
+            // SpeakCompleted イベントで状態リセットが行われる
         }
 
         // ----------------------------------------------------------------
@@ -130,7 +131,6 @@ namespace TxtToVoice
             _isPaused   = false;
             UpdatePlaybackButtons();
             SetStatus("読み上げ中...");
-            TxtInput.Focus(); // ハイライト表示のためフォーカスを当てる
         }
 
         private void OnSpeakCompleted(object? sender, EventArgs e)
@@ -140,7 +140,6 @@ namespace TxtToVoice
             _positionMap = null;
             UpdatePlaybackButtons();
             SetStatus("読み上げ完了。");
-            TxtInput.Select(0, 0); // ハイライトをクリア
         }
 
         private void OnSpeakError(object? sender, string message)
@@ -149,7 +148,6 @@ namespace TxtToVoice
             _isPaused    = false;
             _positionMap = null;
             UpdatePlaybackButtons();
-            TxtInput.Select(0, 0); // ハイライトをクリア
             MessageBox.Show(
                 $"読み上げ中にエラーが発生しました。\n\n{message}",
                 "読み上げエラー",
@@ -158,20 +156,17 @@ namespace TxtToVoice
             SetStatus($"エラー: {message}");
         }
 
-        /// <summary>読み上げ進捗ハイライト（UI スレッドで呼ばれる）</summary>
+        /// <summary>読み上げ進捗（UI スレッドで呼ばれる）。ステータスバーに現在の読み上げ位置を表示する。</summary>
         private void OnSpeakProgress(object? sender, SpeakProgressInfo e)
         {
             if (_positionMap is null) return;
             var (origStart, origLen) = _positionMap.MapToOriginal(e.CharacterPosition);
             if (origStart < 0) return;
 
-            int absStart = origStart + _speechOriginOffset;
-            int absLen   = Math.Max(origLen, 1);
-            // テキスト境界を超えないようにクランプ
-            absLen = Math.Min(absLen, TxtInput.Text.Length - absStart);
-            if (absLen <= 0) return;
-
-            TxtInput.Select(absStart, absLen);
+            int absEnd = Math.Min(
+                origStart + _speechOriginOffset + Math.Max(origLen, 1),
+                TxtInput.Text.Length);
+            SetStatus($"読み上げ中... ({absEnd} / {TxtInput.Text.Length} 文字)");
         }
 
         private void UpdatePlaybackButtons()
@@ -218,6 +213,37 @@ namespace TxtToVoice
             TxtRateVal.Text = rate.ToString("+0;-0;0");
             _speechService.SetRate(rate);
             SaveCurrentSettings();
+            UpdateEstimatedTime();
+        }
+
+        // ----------------------------------------------------------------
+        // 想定読み上げ時間
+        // ----------------------------------------------------------------
+
+        /// <summary>
+        /// 文字数とスライダー速度から読み上げ想定時間を計算して TxtEstTime に表示する。
+        /// rate=0 のとき約 5 文字/秒（300 文字/分）を基準とし、
+        /// rate に応じて 2^(rate/6) 倍のスケールで変化させる。
+        /// </summary>
+        internal void UpdateEstimatedTime()
+        {
+            int charCount = TxtInput.Text.Length;
+            if (charCount == 0)
+            {
+                TxtEstTime.Text = string.Empty;
+                return;
+            }
+
+            double cps     = 5.0 * Math.Pow(2.0, SldRate.Value / 6.0);
+            int    seconds = (int)Math.Ceiling(charCount / cps);
+
+            string timeStr = seconds < 60
+                ? $"{seconds} 秒"
+                : seconds % 60 == 0
+                    ? $"{seconds / 60} 分"
+                    : $"{seconds / 60} 分 {seconds % 60} 秒";
+
+            TxtEstTime.Text = $"  /  読み上げ 約 {timeStr}";
         }
 
         private void SldVolume_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)

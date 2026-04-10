@@ -111,6 +111,7 @@ namespace TxtToVoice
         private void TxtInput_TextChanged(object sender, TextChangedEventArgs e)
         {
             TxtCharCount.Text = $"{TxtInput.Text.Length:N0} 文字";
+            UpdateEstimatedTime();
         }
     }
 }
