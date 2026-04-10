@@ -222,6 +222,7 @@
                 <TextBox Grid.Row="1" x:Name="TxtInput"
                          Style="{StaticResource ManuscriptBox}"
                          TextChanged="TxtInput_TextChanged"
+                         IsInactiveSelectionHighlightEnabled="True"
                          ToolTip="読み上げる原稿をここに入力または貼り付けてください。&#10;テキストを選択して読み上げ開始すると、選択範囲のみ読み上げます。"/>
 
                 <!-- フッター: 文字数 + プレビュー更新ボタン -->

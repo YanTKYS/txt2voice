@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Speech.Synthesis;
 using System.Threading;
+using System.Threading.Tasks;
 using NAudio.MediaFoundation;
 using NAudio.Wave;
 
@@ -15,6 +16,9 @@ namespace TxtToVoice.Services
         Mp3,
         Mp4   // AAC コーデック + MP4 コンテナ
     }
+
+    /// <summary>読み上げ進捗イベントのデータ（単語位置）</summary>
+    public sealed record SpeakProgressInfo(int CharacterPosition, int CharacterCount);
 
     /// <summary>
     /// System.Speech.Synthesis.SpeechSynthesizer のラッパー。
@@ -40,6 +44,9 @@ namespace TxtToVoice.Services
 
         /// <summary>読み上げ完了・中断時に発火（UI スレッドで呼ばれる）</summary>
         public event EventHandler? SpeakCompleted;
+
+        /// <summary>単語読み上げ進捗イベント（UI スレッドで呼ばれる）</summary>
+        public event EventHandler<SpeakProgressInfo>? SpeakProgress;
 
         /// <summary>エラー発生時に発火（UI スレッドで呼ばれる）。引数はエラーメッセージ</summary>
         public event EventHandler<string>? SpeakError;
@@ -75,6 +82,8 @@ namespace TxtToVoice.Services
             synth.SetOutputToDefaultAudioDevice();
             synth.SpeakStarted   += (s, e) => RaiseOnUiThread(() => SpeakStarted?.Invoke(this, EventArgs.Empty));
             synth.SpeakCompleted += (s, e) => RaiseOnUiThread(() => SpeakCompleted?.Invoke(this, EventArgs.Empty));
+            synth.SpeakProgress  += (s, e) => RaiseOnUiThread(
+                () => SpeakProgress?.Invoke(this, new SpeakProgressInfo(e.CharacterPosition, e.CharacterCount)));
             return synth;
         }
 
@@ -203,6 +212,14 @@ namespace TxtToVoice.Services
         // ----------------------------------------------------------------
         // 音声ファイル保存
         // ----------------------------------------------------------------
+
+        /// <summary>
+        /// テキストを音声ファイルとして非同期で保存する。
+        /// UI スレッドをブロックしない。
+        /// </summary>
+        public Task SaveToFileAsync(string text, string outputPath, AudioFormat format,
+            CancellationToken ct = default)
+            => Task.Run(() => { ct.ThrowIfCancellationRequested(); SaveToFile(text, outputPath, format); }, ct);
 
         /// <summary>
         /// テキストを音声ファイルとして保存する（同期処理）。

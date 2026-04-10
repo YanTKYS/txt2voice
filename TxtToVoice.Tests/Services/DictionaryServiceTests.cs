@@ -228,5 +228,61 @@ namespace TxtToVoice.Tests.Services
             _svc.Load();
             Assert.Empty(_svc.Entries);
         }
+
+        // ================================================================
+        // ApplyDictionaryForSpeech — SpeechPositionMap
+        // ================================================================
+
+        [Fact]
+        public void ApplyDictionaryForSpeech_置換なしの場合は1対1マッピング()
+        {
+            var (speechText, map) = _svc.ApplyDictionaryForSpeech("こんにちは");
+
+            Assert.Equal("こんにちは", speechText);
+            // 任意の位置が同じ位置にマップされること
+            var (origStart, origLen) = map.MapToOriginal(0);
+            Assert.Equal(0, origStart);
+            Assert.True(origLen > 0);
+        }
+
+        [Fact]
+        public void ApplyDictionaryForSpeech_置換箇所が元テキストのスパンにマップされる()
+        {
+            Add("市役所", "しやくしょ");  // 3文字 → 5文字
+
+            var (speechText, map) = _svc.ApplyDictionaryForSpeech("市役所へ");
+
+            Assert.Equal("しやくしょへ", speechText);
+
+            // speechText[0] ("し") → origText[0..3) ("市役所")
+            var (origStart, origLen) = map.MapToOriginal(0);
+            Assert.Equal(0, origStart);
+            Assert.Equal(3, origLen);
+
+            // speechText[5] ("へ") → origText[3..4) ("へ")
+            var (origStart2, origLen2) = map.MapToOriginal(5);
+            Assert.Equal(3, origStart2);
+            Assert.Equal(1, origLen2);
+        }
+
+        [Fact]
+        public void ApplyDictionaryForSpeech_範囲外の位置はマイナス1を返す()
+        {
+            var (_, map) = _svc.ApplyDictionaryForSpeech("あ");
+            var (start, _) = map.MapToOriginal(999);
+            Assert.Equal(-1, start);
+        }
+
+        [Fact]
+        public void ApplyDictionaryForSpeech_SpeechTextはApplyDictionaryと同じ結果()
+        {
+            Add("市役所", "しやくしょ");
+            Add("令和",   "れいわ");
+
+            string text = "令和7年に市役所が移転";
+            var (speechText, _) = _svc.ApplyDictionaryForSpeech(text);
+
+            Assert.Equal(_svc.ApplyDictionary(text), speechText);
+        }
     }
 }

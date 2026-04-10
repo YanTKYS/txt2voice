@@ -1,14 +1,54 @@
 using System;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
+using TxtToVoice.Models;
 using TxtToVoice.Services;
 
 namespace TxtToVoice
 {
     public partial class MainWindow
     {
+        // ----------------------------------------------------------------
+        // フィールド（再生・保存専用）
+        // ----------------------------------------------------------------
+
+        private SpeechPositionMap? _positionMap;
+        private int _speechOriginOffset;
+
+        // ----------------------------------------------------------------
+        // 設定の読み込み・保存
+        // ----------------------------------------------------------------
+
+        /// <summary>設定ファイルからスライダー値・音声名を復元する。InitializeVoiceCombo の後に呼ぶこと。</summary>
+        internal void LoadSettings()
+        {
+            var s = _settingsService.Load();
+            // スライダー設定（ValueChanged → SetRate/SetVolume が呼ばれる）
+            SldRate.Value   = Math.Clamp(s.Rate,   -10, 10);
+            SldVolume.Value = Math.Clamp(s.Volume,   0, 100);
+            // 音声選択
+            if (!string.IsNullOrEmpty(s.VoiceName))
+            {
+                int idx = CmbVoice.Items.IndexOf(s.VoiceName);
+                if (idx >= 0) CmbVoice.SelectedIndex = idx;
+            }
+            Logger.Info($"設定を読み込みました: Rate={s.Rate}, Volume={s.Volume}, Voice={s.VoiceName}");
+        }
+
+        private void SaveCurrentSettings()
+        {
+            _settingsService.Save(new AppSettings
+            {
+                Rate      = (int)SldRate.Value,
+                Volume    = (int)SldVolume.Value,
+                VoiceName = _speechService.CurrentVoiceName
+            });
+        }
+
         // ----------------------------------------------------------------
         // 再生操作ボタン
         // ----------------------------------------------------------------
@@ -22,6 +62,7 @@ namespace TxtToVoice
         {
             bool hasSelection = TxtInput.SelectionLength > 0;
             string rawText = hasSelection ? TxtInput.SelectedText : TxtInput.Text;
+            _speechOriginOffset = hasSelection ? TxtInput.SelectionStart : 0;
 
             if (string.IsNullOrWhiteSpace(rawText))
             {
@@ -30,7 +71,8 @@ namespace TxtToVoice
                 return;
             }
 
-            string speechText = _dictService.ApplyDictionary(rawText);
+            var (speechText, map) = _dictService.ApplyDictionaryForSpeech(rawText);
+            _positionMap = map;
             _speechService.SpeakAsync(speechText);
         }
 
@@ -59,7 +101,7 @@ namespace TxtToVoice
         private void StopSpeech()
         {
             _speechService.Stop();
-            // SpeakCompleted イベントで状態リセットが行われる
+            // SpeakCompleted イベントで状態リセット・ハイライトクリアが行われる
         }
 
         // ----------------------------------------------------------------
@@ -72,27 +114,48 @@ namespace TxtToVoice
             _isPaused   = false;
             UpdatePlaybackButtons();
             SetStatus("読み上げ中...");
+            TxtInput.Focus(); // ハイライト表示のためフォーカスを当てる
         }
 
         private void OnSpeakCompleted(object? sender, EventArgs e)
         {
-            _isSpeaking = false;
-            _isPaused   = false;
+            _isSpeaking  = false;
+            _isPaused    = false;
+            _positionMap = null;
             UpdatePlaybackButtons();
             SetStatus("読み上げ完了。");
+            TxtInput.Select(0, 0); // ハイライトをクリア
         }
 
         private void OnSpeakError(object? sender, string message)
         {
-            _isSpeaking = false;
-            _isPaused   = false;
+            _isSpeaking  = false;
+            _isPaused    = false;
+            _positionMap = null;
             UpdatePlaybackButtons();
+            TxtInput.Select(0, 0); // ハイライトをクリア
             MessageBox.Show(
                 $"読み上げ中にエラーが発生しました。\n\n{message}",
                 "読み上げエラー",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
             SetStatus($"エラー: {message}");
+        }
+
+        /// <summary>読み上げ進捗ハイライト（UI スレッドで呼ばれる）</summary>
+        private void OnSpeakProgress(object? sender, SpeakProgressInfo e)
+        {
+            if (_positionMap is null) return;
+            var (origStart, origLen) = _positionMap.MapToOriginal(e.CharacterPosition);
+            if (origStart < 0) return;
+
+            int absStart = origStart + _speechOriginOffset;
+            int absLen   = Math.Max(origLen, 1);
+            // テキスト境界を超えないようにクランプ
+            absLen = Math.Min(absLen, TxtInput.Text.Length - absStart);
+            if (absLen <= 0) return;
+
+            TxtInput.Select(absStart, absLen);
         }
 
         private void UpdatePlaybackButtons()
@@ -126,7 +189,10 @@ namespace TxtToVoice
         {
             if (_speechService is null) return;
             if (CmbVoice.SelectedItem is string voiceName)
+            {
                 _speechService.SetVoice(voiceName);
+                SaveCurrentSettings();
+            }
         }
 
         private void SldRate_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -135,6 +201,7 @@ namespace TxtToVoice
             int rate = (int)SldRate.Value;
             TxtRateVal.Text = rate.ToString("+0;-0;0");
             _speechService.SetRate(rate);
+            SaveCurrentSettings();
         }
 
         private void SldVolume_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -143,15 +210,16 @@ namespace TxtToVoice
             int vol = (int)SldVolume.Value;
             TxtVolumeVal.Text = vol.ToString();
             _speechService.SetVolume(vol);
+            SaveCurrentSettings();
         }
 
         // ----------------------------------------------------------------
-        // 音声保存（WAV / MP3 / MP4）
+        // 音声保存（WAV / MP3 / MP4）— 非同期
         // ----------------------------------------------------------------
 
         private void BtnSaveWav_Click(object sender, RoutedEventArgs e) => SaveAudio();
 
-        private void SaveAudio()
+        private async void SaveAudio()
         {
             string rawText = TxtInput.Text;
             if (string.IsNullOrWhiteSpace(rawText))
@@ -185,7 +253,7 @@ namespace TxtToVoice
 
             try
             {
-                _speechService.SaveToFile(speechText, dlg.FileName, format);
+                await _speechService.SaveToFileAsync(speechText, dlg.FileName, format);
                 SetStatus($"音声保存完了: {Path.GetFileName(dlg.FileName)}");
                 MessageBox.Show(
                     $"音声ファイルを保存しました。\n\n{dlg.FileName}",

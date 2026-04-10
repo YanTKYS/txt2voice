@@ -24,8 +24,9 @@ namespace TxtToVoice
         // フィールド（全 partial ファイルから参照可能）
         // ----------------------------------------------------------------
 
-        private readonly SpeechService     _speechService;
-        private readonly DictionaryService _dictService;
+        private readonly SpeechService       _speechService;
+        private readonly DictionaryService  _dictService;
+        private readonly AppSettingsService _settingsService = new();
         private readonly ObservableCollection<DictionaryEntry> _entries = new();
 
         private static readonly string DictionaryPath = Path.Combine(
@@ -56,9 +57,11 @@ namespace TxtToVoice
 
             _speechService.SpeakStarted   += OnSpeakStarted;
             _speechService.SpeakCompleted += OnSpeakCompleted;
+            _speechService.SpeakProgress  += OnSpeakProgress;
             _speechService.SpeakError     += OnSpeakError;
 
             InitializeVoiceCombo();
+            LoadSettings();   // スライダー値・音声を復元（InitializeVoiceCombo の後）
             LoadDictionary();
 
             if (_speechService.IsAvailable)
