@@ -37,7 +37,7 @@ TxtToVoice/
 
 ---
 
-### 2. ドラッグ&ドロップでファイルを開く（未実装）
+### 2. ドラッグ&ドロップでファイルを開く ✅
 
 **課題**  
 テキストファイルをウィンドウにドロップして開けない。現場でのファイル操作が多い職員には不便。
@@ -45,27 +45,6 @@ TxtToVoice/
 **実装方針**
 
 XAML の `Window` 要素に `AllowDrop="True"` を追加し、`Drop` イベントを処理する。
-
-```xml
-<Window ... AllowDrop="True" Drop="Window_Drop" DragOver="Window_DragOver">
-```
-
-```csharp
-// MainWindow.FileOperations.cs に追加
-private void Window_DragOver(object sender, DragEventArgs e)
-{
-    e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop)
-        ? DragDropEffects.Copy
-        : DragDropEffects.None;
-    e.Handled = true;
-}
-
-private void Window_Drop(object sender, DragEventArgs e)
-{
-    if (e.Data.GetData(DataFormats.FileDrop) is string[] files && files.Length > 0)
-        LoadTextFile(files[0]);
-}
-```
 
 ---
 
@@ -111,7 +90,7 @@ public async Task SaveToFileAsync(string text, string outputPath, AudioFormat fo
 
 ---
 
-### 5. 入力テキストのセッション復元
+### 5. 入力テキストのセッション復元 ✅
 
 **課題**  
 アプリ終了前の入力内容が消えるため、再起動のたびに原稿を貼り直す必要がある。
@@ -124,7 +103,7 @@ public async Task SaveToFileAsync(string text, string outputPath, AudioFormat fo
 
 ---
 
-### 6. 辞書エントリの試し読みボタン
+### 6. 辞書エントリの試し読みボタン ✅
 
 **課題**  
 辞書編集ダイアログで「読み」を登録しても、実際の発音を確認するには
@@ -151,10 +130,11 @@ public async Task SaveToFileAsync(string text, string outputPath, AudioFormat fo
 
 ---
 
-### 8. SSML ポーズ自動挿入
+### 8. SSML ポーズ自動挿入 ✅
 
 `docs/speech-quality-improvement.md` を参照。
 句読点（。！？、）や改行に `<break>` タグを自動挿入して自然な読み上げに近づける。
+再生操作パネルの「句読点・改行に自動ポーズを挿入する（SSML モード）」チェックボックスで On/Off 切替可能。
 
 ---
 
@@ -177,6 +157,7 @@ USB メモリや共有フォルダから実行したい場合、
 |---|---|
 | v0.1.4 | MainWindow 分割・単体テスト・メニュー修正 |
 | v0.1.5 | 設定の永続化・読み上げ位置ハイライト・音声保存の非同期化 |
+| v0.1.6 | ドラッグ&ドロップ・セッション復元・辞書試し読みボタン・SSML ポーズ挿入 On/Off |
 
 ## 技術的負債（解消済み → v0.1.4）
 

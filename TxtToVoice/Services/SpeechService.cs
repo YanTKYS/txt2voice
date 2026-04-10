@@ -182,6 +182,33 @@ namespace TxtToVoice.Services
             }
         }
 
+        /// <summary>SSML テキストを非同期で読み上げる。</summary>
+        public void SpeakSsmlAsync(string ssml)
+        {
+            if (_synth == null)
+            {
+                RaiseOnUiThread(() => SpeakError?.Invoke(this, "音声エンジンが利用できません。\n" + InitializationError));
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(ssml))
+            {
+                RaiseOnUiThread(() => SpeakError?.Invoke(this, "読み上げるテキストがありません。"));
+                return;
+            }
+            try
+            {
+                _synth.SpeakAsyncCancelAll();
+                _synth.SetOutputToDefaultAudioDevice();
+                _synth.SpeakSsmlAsync(ssml);
+                Logger.Info("SSML読み上げ開始");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"SSML読み上げエラー: {ex.Message}");
+                RaiseOnUiThread(() => SpeakError?.Invoke(this, $"読み上げ中にエラーが発生しました。\n{ex.Message}"));
+            }
+        }
+
         /// <summary>読み上げを一時停止する。</summary>
         public void Pause()
         {
@@ -217,22 +244,26 @@ namespace TxtToVoice.Services
         /// テキストを音声ファイルとして非同期で保存する。
         /// UI スレッドをブロックしない。
         /// </summary>
-        public Task SaveToFileAsync(string text, string outputPath, AudioFormat format,
-            CancellationToken ct = default)
-            => Task.Run(() => { ct.ThrowIfCancellationRequested(); SaveToFile(text, outputPath, format); }, ct);
+        /// <summary>テキストまたは SSML を音声ファイルとして非同期で保存する。</summary>
+        public Task SaveToFileAsync(string content, string outputPath, AudioFormat format,
+            bool isSsml = false, CancellationToken ct = default)
+            => Task.Run(
+                () => { ct.ThrowIfCancellationRequested(); SaveToFile(content, outputPath, format, isSsml); },
+                ct);
 
         /// <summary>
-        /// テキストを音声ファイルとして保存する（同期処理）。
+        /// テキストまたは SSML を音声ファイルとして保存する（同期処理）。
         /// 現在の音声・速度・音量設定を引き継ぐ。
         /// </summary>
-        /// <param name="text">読み上げテキスト</param>
+        /// <param name="content">読み上げテキストまたは SSML 文字列</param>
         /// <param name="outputPath">出力ファイルパス</param>
         /// <param name="format">出力フォーマット（WAV / MP3 / MP4）</param>
-        public void SaveToFile(string text, string outputPath, AudioFormat format)
+        /// <param name="isSsml">true のとき content を SSML として扱う</param>
+        public void SaveToFile(string content, string outputPath, AudioFormat format, bool isSsml = false)
         {
             if (_synth == null)
                 throw new InvalidOperationException("音声エンジンが利用できません。\n" + InitializationError);
-            if (string.IsNullOrWhiteSpace(text))
+            if (string.IsNullOrWhiteSpace(content))
                 throw new ArgumentException("読み上げるテキストがありません。");
 
             string? dir = Path.GetDirectoryName(outputPath);
@@ -240,19 +271,20 @@ namespace TxtToVoice.Services
                 Directory.CreateDirectory(dir);
 
             if (format == AudioFormat.Wav)
-                SaveWavDirect(text, outputPath);
+                SaveWavDirect(content, outputPath, isSsml);
             else
-                SaveEncoded(text, outputPath, format);
+                SaveEncoded(content, outputPath, format, isSsml);
         }
 
         /// <summary>WAV を直接ファイルに書き出す。</summary>
-        private void SaveWavDirect(string text, string outputPath)
+        private void SaveWavDirect(string content, string outputPath, bool isSsml)
         {
             using var wavSynth = BuildSynthClone();
             try
             {
                 wavSynth.SetOutputToWaveFile(outputPath);
-                wavSynth.Speak(text);
+                if (isSsml) wavSynth.SpeakSsml(content);
+                else        wavSynth.Speak(content);
             }
             finally
             {
@@ -262,7 +294,7 @@ namespace TxtToVoice.Services
         }
 
         /// <summary>WAV をメモリ経由で MP3 / MP4(AAC) にエンコードして保存する。</summary>
-        private void SaveEncoded(string text, string outputPath, AudioFormat format)
+        private void SaveEncoded(string content, string outputPath, AudioFormat format, bool isSsml)
         {
             // 1. WAV をメモリストリームに生成
             using var ms = new MemoryStream();
@@ -270,7 +302,8 @@ namespace TxtToVoice.Services
             try
             {
                 wavSynth.SetOutputToWaveStream(ms);
-                wavSynth.Speak(text);
+                if (isSsml) wavSynth.SpeakSsml(content);
+                else        wavSynth.Speak(content);
             }
             finally
             {
@@ -284,13 +317,11 @@ namespace TxtToVoice.Services
 
             if (format == AudioFormat.Mp3)
             {
-                // 128 kbps MP3
                 MediaFoundationEncoder.EncodeToMp3(reader, outputPath, desiredBitRate: 128_000);
                 Logger.Info($"MP3 保存完了: {outputPath}");
             }
             else
             {
-                // 128 kbps AAC in MP4 コンテナ
                 MediaFoundationEncoder.EncodeToAac(reader, outputPath, desiredBitRate: 128_000);
                 Logger.Info($"MP4(AAC) 保存完了: {outputPath}");
             }

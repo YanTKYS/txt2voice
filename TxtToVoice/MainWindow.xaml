@@ -6,7 +6,10 @@
         MinHeight="640" MinWidth="960"
         WindowStartupLocation="CenterScreen"
         Background="#F0F2F5"
-        Closing="Window_Closing">
+        Closing="Window_Closing"
+        AllowDrop="True"
+        DragOver="Window_DragOver"
+        Drop="Window_Drop">
 
     <Window.Resources>
 
@@ -423,6 +426,8 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="6"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="4"/>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="6"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
@@ -481,8 +486,15 @@
                             </DockPanel>
                         </Grid>
 
+                        <!-- SSML ポーズ挿入 -->
+                        <CheckBox Grid.Row="4" x:Name="ChkSsml"
+                                  Content="句読点・改行に自動ポーズを挿入する（SSML モード）"
+                                  FontSize="12" VerticalContentAlignment="Center"
+                                  Checked="ChkSsml_Changed" Unchecked="ChkSsml_Changed"
+                                  ToolTip="有効にすると句読点（。！？、）や改行の後に自然な間が入ります。&#10;※ SSML モード中は読み上げ位置ハイライトが無効になります。"/>
+
                         <!-- 再生ボタン群 -->
-                        <WrapPanel Grid.Row="4" Orientation="Horizontal">
+                        <WrapPanel Grid.Row="6" Orientation="Horizontal">
                             <Button x:Name="BtnPlay"
                                     Content="▶ 読み上げ開始"
                                     Style="{StaticResource BtnSuccess}"
@@ -519,7 +531,7 @@
                         </WrapPanel>
 
                         <!-- ショートカットキー案内 -->
-                        <Border Grid.Row="6"
+                        <Border Grid.Row="8"
                                 Background="#E8EEF4"
                                 CornerRadius="3"
                                 Padding="8,5">

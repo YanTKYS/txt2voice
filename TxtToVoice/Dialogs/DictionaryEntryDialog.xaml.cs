@@ -1,3 +1,4 @@
+using System;
 using System.Windows;
 using TxtToVoice.Models;
 
@@ -8,12 +9,16 @@ namespace TxtToVoice.Dialogs
     /// </summary>
     public partial class DictionaryEntryDialog : Window
     {
+        private readonly Action<string>? _speakAction;
+
         /// <summary>OKボタン押下後に結果エントリを保持する。</summary>
         public DictionaryEntry? Result { get; private set; }
 
-        public DictionaryEntryDialog(DictionaryEntry? existing = null)
+        public DictionaryEntryDialog(DictionaryEntry? existing = null, Action<string>? speakAction = null)
         {
             InitializeComponent();
+            _speakAction = speakAction;
+            BtnSpeak.IsEnabled = speakAction != null;
 
             if (existing != null)
             {
@@ -29,6 +34,18 @@ namespace TxtToVoice.Dialogs
             }
 
             Loaded += (_, _) => TxtDisplay.Focus();
+        }
+
+        private void BtnSpeak_Click(object sender, RoutedEventArgs e)
+        {
+            string text = TxtReading.Text.Trim();
+            if (string.IsNullOrEmpty(text))
+            {
+                MessageBox.Show("「読み」を入力してから試し読みを行ってください。",
+                    "試し読み", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            _speakAction?.Invoke(text);
         }
 
         private void BtnOk_Click(object sender, RoutedEventArgs e)

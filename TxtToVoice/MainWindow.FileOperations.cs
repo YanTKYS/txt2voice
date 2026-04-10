@@ -18,6 +18,36 @@ namespace TxtToVoice
         private void BtnOpenFile_Click(object sender, RoutedEventArgs e)  => OpenFile();
         private void MenuExit_Click(object sender, RoutedEventArgs e)     => Close();
 
+        private void Window_DragOver(object sender, DragEventArgs e)
+        {
+            e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop)
+                ? DragDropEffects.Copy
+                : DragDropEffects.None;
+            e.Handled = true;
+        }
+
+        private void Window_Drop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetData(DataFormats.FileDrop) is not string[] files || files.Length == 0)
+                return;
+
+            try
+            {
+                TxtInput.Text = ReadTextFileWithFallback(files[0]);
+                SetStatus($"ファイルを読み込みました: {Path.GetFileName(files[0])}");
+                Logger.Info($"ドラッグ&ドロップでファイル読み込み: {files[0]}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"ファイルの読み込みに失敗しました。\n\n{ex.Message}",
+                    "読み込みエラー",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+                Logger.Error($"D&Dファイル読み込みエラー: {files[0]} / {ex.Message}");
+            }
+        }
+
         private void OpenFile()
         {
             var dlg = new OpenFileDialog

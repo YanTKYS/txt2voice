@@ -179,8 +179,20 @@ namespace TxtToVoice
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            string voiceName = _speechService.CurrentVoiceName;
             _speechService.Stop();
             _speechService.Dispose();
+
+            string lastText = TxtInput.Text;
+            _settingsService.Save(new AppSettings
+            {
+                Rate             = (int)SldRate.Value,
+                Volume           = (int)SldVolume.Value,
+                VoiceName        = voiceName,
+                SsmlPauseEnabled = ChkSsml.IsChecked == true,
+                LastInputText    = lastText.Length <= 10_000 ? lastText : string.Empty
+            });
+
             Logger.Info("アプリケーション終了");
         }
     }

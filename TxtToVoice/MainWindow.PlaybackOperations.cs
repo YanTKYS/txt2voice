@@ -23,7 +23,7 @@ namespace TxtToVoice
         // 設定の読み込み・保存
         // ----------------------------------------------------------------
 
-        /// <summary>設定ファイルからスライダー値・音声名を復元する。InitializeVoiceCombo の後に呼ぶこと。</summary>
+        /// <summary>設定ファイルからスライダー値・音声名・SSML・前回テキストを復元する。InitializeVoiceCombo の後に呼ぶこと。</summary>
         internal void LoadSettings()
         {
             var s = _settingsService.Load();
@@ -36,16 +36,22 @@ namespace TxtToVoice
                 int idx = CmbVoice.Items.IndexOf(s.VoiceName);
                 if (idx >= 0) CmbVoice.SelectedIndex = idx;
             }
-            Logger.Info($"設定を読み込みました: Rate={s.Rate}, Volume={s.Volume}, Voice={s.VoiceName}");
+            // SSML モード
+            ChkSsml.IsChecked = s.SsmlPauseEnabled;
+            // 前回セッションのテキストを復元
+            if (!string.IsNullOrEmpty(s.LastInputText))
+                TxtInput.Text = s.LastInputText;
+            Logger.Info($"設定を読み込みました: Rate={s.Rate}, Volume={s.Volume}, Voice={s.VoiceName}, Ssml={s.SsmlPauseEnabled}");
         }
 
         private void SaveCurrentSettings()
         {
             _settingsService.Save(new AppSettings
             {
-                Rate      = (int)SldRate.Value,
-                Volume    = (int)SldVolume.Value,
-                VoiceName = _speechService.CurrentVoiceName
+                Rate             = (int)SldRate.Value,
+                Volume           = (int)SldVolume.Value,
+                VoiceName        = _speechService.CurrentVoiceName,
+                SsmlPauseEnabled = ChkSsml.IsChecked == true
             });
         }
 
@@ -71,9 +77,19 @@ namespace TxtToVoice
                 return;
             }
 
+            bool useSsml = ChkSsml.IsChecked == true;
             var (speechText, map) = _dictService.ApplyDictionaryForSpeech(rawText);
-            _positionMap = map;
-            _speechService.SpeakAsync(speechText);
+
+            if (useSsml)
+            {
+                _positionMap = null; // SSML モード時はハイライト無効
+                _speechService.SpeakSsmlAsync(SsmlBuilder.Build(speechText));
+            }
+            else
+            {
+                _positionMap = map;
+                _speechService.SpeakAsync(speechText);
+            }
         }
 
         private void PauseSpeech()
@@ -213,6 +229,11 @@ namespace TxtToVoice
             SaveCurrentSettings();
         }
 
+        private void ChkSsml_Changed(object sender, RoutedEventArgs e)
+        {
+            SaveCurrentSettings();
+        }
+
         // ----------------------------------------------------------------
         // 音声保存（WAV / MP3 / MP4）— 非同期
         // ----------------------------------------------------------------
@@ -229,7 +250,9 @@ namespace TxtToVoice
                 return;
             }
 
+            bool useSsml = ChkSsml.IsChecked == true;
             string speechText = _dictService.ApplyDictionary(rawText);
+            string content = useSsml ? SsmlBuilder.Build(speechText) : speechText;
 
             var dlg = new SaveFileDialog
             {
@@ -253,7 +276,7 @@ namespace TxtToVoice
 
             try
             {
-                await _speechService.SaveToFileAsync(speechText, dlg.FileName, format);
+                await _speechService.SaveToFileAsync(content, dlg.FileName, format, isSsml: useSsml);
                 SetStatus($"音声保存完了: {Path.GetFileName(dlg.FileName)}");
                 MessageBox.Show(
                     $"音声ファイルを保存しました。\n\n{dlg.FileName}",
