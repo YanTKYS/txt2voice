@@ -1,8 +1,9 @@
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace TxtToVoice.Models
 {
-    /// <summary>アプリケーション設定（読み上げ速度・音量・選択音声・SSML・セッションテキスト）</summary>
+    /// <summary>アプリケーション設定（読み上げ速度・音量・選択音声・SSML・セッションテキスト・最近使ったファイル）</summary>
     public class AppSettings
     {
         [JsonPropertyName("rate")]
@@ -21,5 +22,9 @@ namespace TxtToVoice.Models
         /// <summary>前回セッションの入力テキスト（10,000文字以内のみ保存）</summary>
         [JsonPropertyName("lastInputText")]
         public string LastInputText { get; set; } = string.Empty;
+
+        /// <summary>最近使ったファイルのパス一覧（最大 5 件、新しい順）</summary>
+        [JsonPropertyName("recentFiles")]
+        public List<string> RecentFiles { get; set; } = new();
     }
 }

@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using TxtToVoice.Models;
 using TxtToVoice.Services;
@@ -39,6 +41,7 @@ namespace TxtToVoice
         private bool _isSpeaking      = false;
         private bool _isPaused        = false;
         private bool _annotatedPreview = true;
+        private readonly List<string> _recentFiles = new();
 
         // ----------------------------------------------------------------
         // コンストラクタ
@@ -164,6 +167,64 @@ namespace TxtToVoice
         }
 
         // ----------------------------------------------------------------
+        // 最近使ったファイルメニュー
+        // ----------------------------------------------------------------
+
+        /// <summary>_recentFiles の内容を「最近使ったファイル」サブメニューに反映する。</summary>
+        internal void UpdateRecentFilesMenu()
+        {
+            MenuRecentFiles.Items.Clear();
+
+            if (_recentFiles.Count == 0)
+            {
+                MenuRecentFiles.Items.Add(new MenuItem { Header = "（なし）", IsEnabled = false });
+                return;
+            }
+
+            for (int i = 0; i < _recentFiles.Count; i++)
+            {
+                string path = _recentFiles[i];
+                var item = new MenuItem
+                {
+                    Header  = $"_{i + 1}  {Path.GetFileName(path)}",
+                    ToolTip = path
+                };
+                item.Click += (_, _) => OpenRecentFile(path);
+                MenuRecentFiles.Items.Add(item);
+            }
+
+            MenuRecentFiles.Items.Add(new Separator());
+            var clearItem = new MenuItem { Header = "リストをクリア(_C)" };
+            clearItem.Click += (_, _) =>
+            {
+                _recentFiles.Clear();
+                SaveCurrentSettings();
+                UpdateRecentFilesMenu();
+            };
+            MenuRecentFiles.Items.Add(clearItem);
+        }
+
+        private void OpenRecentFile(string path)
+        {
+            try
+            {
+                LoadFileIntoInput(path);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"ファイルを開けませんでした。\n移動・削除された可能性があります。\n\n{path}\n\n{ex.Message}",
+                    "読み込みエラー",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                Logger.Error($"最近使ったファイルの読み込みエラー: {path} / {ex.Message}");
+                _recentFiles.Remove(path);
+                SaveCurrentSettings();
+                UpdateRecentFilesMenu();
+            }
+        }
+
+        // ----------------------------------------------------------------
         // 共通ユーティリティ
         // ----------------------------------------------------------------
 
@@ -190,7 +251,8 @@ namespace TxtToVoice
                 Volume           = (int)SldVolume.Value,
                 VoiceName        = voiceName,
                 SsmlPauseEnabled = ChkSsml.IsChecked == true,
-                LastInputText    = lastText.Length <= 10_000 ? lastText : string.Empty
+                LastInputText    = lastText.Length <= 10_000 ? lastText : string.Empty,
+                RecentFiles      = _recentFiles
             });
 
             Logger.Info("アプリケーション終了");

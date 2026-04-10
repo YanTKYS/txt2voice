@@ -118,7 +118,7 @@ public async Task SaveToFileAsync(string text, string outputPath, AudioFormat fo
 
 ## 優先度：低
 
-### 7. 最近使ったファイル（Recent Files）
+### 7. 最近使ったファイル（Recent Files） ✅
 
 **課題**  
 毎回ファイルダイアログを開く必要がある。同じファイルを繰り返し使う職員には非効率。
@@ -158,6 +158,7 @@ USB メモリや共有フォルダから実行したい場合、
 | v0.1.4 | MainWindow 分割・単体テスト・メニュー修正 |
 | v0.1.5 | 設定の永続化・読み上げ位置ハイライト・音声保存の非同期化 |
 | v0.1.6 | ドラッグ&ドロップ・セッション復元・辞書試し読みボタン・SSML ポーズ挿入 On/Off |
+| v0.1.7 | 最近使ったファイル（Recent Files） |
 
 ## 技術的負債（解消済み → v0.1.4）
 

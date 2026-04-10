@@ -33,8 +33,7 @@ namespace TxtToVoice
 
             try
             {
-                TxtInput.Text = ReadTextFileWithFallback(files[0]);
-                SetStatus($"ファイルを読み込みました: {Path.GetFileName(files[0])}");
+                LoadFileIntoInput(files[0]);
                 Logger.Info($"ドラッグ&ドロップでファイル読み込み: {files[0]}");
             }
             catch (Exception ex)
@@ -60,8 +59,7 @@ namespace TxtToVoice
 
             try
             {
-                TxtInput.Text = ReadTextFileWithFallback(dlg.FileName);
-                SetStatus($"ファイルを読み込みました: {Path.GetFileName(dlg.FileName)}");
+                LoadFileIntoInput(dlg.FileName);
                 Logger.Info($"ファイル読み込み: {dlg.FileName}");
             }
             catch (Exception ex)
@@ -73,6 +71,26 @@ namespace TxtToVoice
                     MessageBoxImage.Error);
                 Logger.Error($"ファイル読み込みエラー: {dlg.FileName} / {ex.Message}");
             }
+        }
+
+        /// <summary>指定パスのテキストを TxtInput に読み込み、最近使ったファイルに追加する。</summary>
+        private void LoadFileIntoInput(string path)
+        {
+            TxtInput.Text = ReadTextFileWithFallback(path);
+            SetStatus($"ファイルを読み込みました: {Path.GetFileName(path)}");
+            AddRecentFile(path);
+        }
+
+        private const int MaxRecentFiles = 5;
+
+        private void AddRecentFile(string path)
+        {
+            _recentFiles.Remove(path);
+            _recentFiles.Insert(0, path);
+            if (_recentFiles.Count > MaxRecentFiles)
+                _recentFiles.RemoveRange(MaxRecentFiles, _recentFiles.Count - MaxRecentFiles);
+            SaveCurrentSettings();
+            UpdateRecentFilesMenu();
         }
 
         /// <summary>BOM → UTF-8 → Shift_JIS の順で自動判別して読み込む。</summary>

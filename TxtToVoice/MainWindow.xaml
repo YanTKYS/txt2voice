@@ -163,6 +163,10 @@
                           x:Name="MenuOpenFile" Click="MenuOpenFile_Click"
                           InputGestureText="Ctrl+O"/>
                 <Separator/>
+                <MenuItem Header="最近使ったファイル(_R)" x:Name="MenuRecentFiles">
+                    <MenuItem Header="（なし）" IsEnabled="False"/>
+                </MenuItem>
+                <Separator/>
                 <MenuItem Header="終了(_X)" Click="MenuExit_Click"/>
             </MenuItem>
 

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,6 +42,10 @@ namespace TxtToVoice
             // 前回セッションのテキストを復元
             if (!string.IsNullOrEmpty(s.LastInputText))
                 TxtInput.Text = s.LastInputText;
+            // 最近使ったファイル
+            _recentFiles.Clear();
+            _recentFiles.AddRange(s.RecentFiles);
+            UpdateRecentFilesMenu();
             UpdateEstimatedTime();
             Logger.Info($"設定を読み込みました: Rate={s.Rate}, Volume={s.Volume}, Voice={s.VoiceName}, Ssml={s.SsmlPauseEnabled}");
         }
@@ -52,7 +57,8 @@ namespace TxtToVoice
                 Rate             = (int)SldRate.Value,
                 Volume           = (int)SldVolume.Value,
                 VoiceName        = _speechService.CurrentVoiceName,
-                SsmlPauseEnabled = ChkSsml.IsChecked == true
+                SsmlPauseEnabled = ChkSsml.IsChecked == true,
+                RecentFiles      = _recentFiles
             });
         }
 
