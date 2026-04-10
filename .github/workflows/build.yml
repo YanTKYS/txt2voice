@@ -12,7 +12,7 @@ on:
 
 jobs:
   build:
-    name: Build (Windows / .NET 8)
+    name: Build & Test (Windows / .NET 8)
     runs-on: windows-latest
 
     steps:
@@ -29,6 +29,12 @@ jobs:
 
       - name: リリースビルド
         run: dotnet build TxtToVoice/TxtToVoice.csproj -c Release --no-restore
+
+      - name: テストプロジェクト復元
+        run: dotnet restore TxtToVoice.Tests/TxtToVoice.Tests.csproj
+
+      - name: 単体テスト実行
+        run: dotnet test TxtToVoice.Tests/TxtToVoice.Tests.csproj -c Release --no-restore --logger "console;verbosity=normal"
 
       # ビルド成果物（フレームワーク依存 EXE）を確認用にアップロード
       - name: ビルド成果物をアップロード
