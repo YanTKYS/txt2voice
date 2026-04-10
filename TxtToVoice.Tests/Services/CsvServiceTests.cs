@@ -16,6 +16,12 @@ namespace TxtToVoice.Tests.Services
     {
         private readonly List<string> _tempFiles = new();
 
+        public CsvServiceTests()
+        {
+            // .NET Core/5+ では Shift_JIS 等のコードページエンコードを使う前に登録が必要
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        }
+
         public void Dispose()
         {
             foreach (var f in _tempFiles)

@@ -17,6 +17,12 @@ namespace TxtToVoice.Services
     {
         private static readonly Encoding CsvEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
 
+        static CsvService()
+        {
+            // .NET Core/5+ では Shift_JIS 等のコードページエンコードを使う前に登録が必要
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        }
+
         // ----------------------------------------------------------------
         // インポート
         // ----------------------------------------------------------------
