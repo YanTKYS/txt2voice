@@ -1,4 +1,5 @@
 using System.Windows;
+using NAudio.MediaFoundation;
 using TxtToVoice.Services;
 
 namespace TxtToVoice
@@ -8,6 +9,18 @@ namespace TxtToVoice
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+
+            // NAudio が使用する Windows Media Foundation を初期化
+            // MP3 / MP4(AAC) エンコードに必要。失敗しても WAV 保存・再生は使用可能
+            try
+            {
+                MediaFoundationApi.Startup();
+                Logger.Info("Media Foundation 初期化成功");
+            }
+            catch (System.Exception ex)
+            {
+                Logger.Warn($"Media Foundation 初期化失敗（MP3/MP4保存は使用不可）: {ex.Message}");
+            }
 
             // ハンドルされない例外をログに記録
             DispatcherUnhandledException += (s, ex) =>
@@ -32,6 +45,12 @@ namespace TxtToVoice
                     MessageBoxImage.Error);
                 ex.Handled = true;
             };
+        }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            try { MediaFoundationApi.Shutdown(); } catch { /* 無視 */ }
+            base.OnExit(e);
         }
     }
 }

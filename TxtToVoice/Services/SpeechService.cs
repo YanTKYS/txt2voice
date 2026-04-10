@@ -3,12 +3,22 @@ using System.Collections.Generic;
 using System.IO;
 using System.Speech.Synthesis;
 using System.Threading;
+using NAudio.MediaFoundation;
+using NAudio.Wave;
 
 namespace TxtToVoice.Services
 {
+    /// <summary>音声保存フォーマット</summary>
+    public enum AudioFormat
+    {
+        Wav,
+        Mp3,
+        Mp4   // AAC コーデック + MP4 コンテナ
+    }
+
     /// <summary>
     /// System.Speech.Synthesis.SpeechSynthesizer のラッパー。
-    /// 読み上げの開始・一時停止・再開・停止・WAV保存を提供する。
+    /// 読み上げの開始・一時停止・再開・停止・音声ファイル保存（WAV/MP3/MP4）を提供する。
     ///
     /// 音声エンジンが利用できない環境でも IsAvailable=false として
     /// アプリが起動できるよう fault-tolerant に設計している。
@@ -53,7 +63,6 @@ namespace TxtToVoice.Services
             }
             catch (Exception ex)
             {
-                // SAPI 未インストール・COM エラー等
                 IsAvailable = false;
                 InitializationError = ex.InnerException?.Message ?? ex.Message;
                 Logger.Error($"SpeechSynthesizer 初期化失敗: [{ex.GetType().Name}] {InitializationError}");
@@ -192,14 +201,17 @@ namespace TxtToVoice.Services
         }
 
         // ----------------------------------------------------------------
-        // WAV 保存
+        // 音声ファイル保存
         // ----------------------------------------------------------------
 
         /// <summary>
-        /// テキストを WAV ファイルとして保存する（同期処理）。
+        /// テキストを音声ファイルとして保存する（同期処理）。
         /// 現在の音声・速度・音量設定を引き継ぐ。
         /// </summary>
-        public void SaveToWav(string text, string outputPath)
+        /// <param name="text">読み上げテキスト</param>
+        /// <param name="outputPath">出力ファイルパス</param>
+        /// <param name="format">出力フォーマット（WAV / MP3 / MP4）</param>
+        public void SaveToFile(string text, string outputPath, AudioFormat format)
         {
             if (_synth == null)
                 throw new InvalidOperationException("音声エンジンが利用できません。\n" + InitializationError);
@@ -210,17 +222,16 @@ namespace TxtToVoice.Services
             if (!string.IsNullOrEmpty(dir))
                 Directory.CreateDirectory(dir);
 
-            using var wavSynth = new SpeechSynthesizer();
-            wavSynth.Rate   = _synth.Rate;
-            wavSynth.Volume = _synth.Volume;
+            if (format == AudioFormat.Wav)
+                SaveWavDirect(text, outputPath);
+            else
+                SaveEncoded(text, outputPath, format);
+        }
 
-            string currentVoice = CurrentVoiceName;
-            if (!string.IsNullOrEmpty(currentVoice))
-            {
-                try { wavSynth.SelectVoice(currentVoice); }
-                catch { /* 無視 */ }
-            }
-
+        /// <summary>WAV を直接ファイルに書き出す。</summary>
+        private void SaveWavDirect(string text, string outputPath)
+        {
+            using var wavSynth = BuildSynthClone();
             try
             {
                 wavSynth.SetOutputToWaveFile(outputPath);
@@ -228,11 +239,58 @@ namespace TxtToVoice.Services
             }
             finally
             {
-                // Speak が途中で失敗してもデフォルト出力に戻す
+                try { wavSynth.SetOutputToDefaultAudioDevice(); } catch { /* 無視 */ }
+            }
+            Logger.Info($"WAV 保存完了: {outputPath}");
+        }
+
+        /// <summary>WAV をメモリ経由で MP3 / MP4(AAC) にエンコードして保存する。</summary>
+        private void SaveEncoded(string text, string outputPath, AudioFormat format)
+        {
+            // 1. WAV をメモリストリームに生成
+            using var ms = new MemoryStream();
+            using var wavSynth = BuildSynthClone();
+            try
+            {
+                wavSynth.SetOutputToWaveStream(ms);
+                wavSynth.Speak(text);
+            }
+            finally
+            {
                 try { wavSynth.SetOutputToDefaultAudioDevice(); } catch { /* 無視 */ }
             }
 
-            Logger.Info($"WAV 保存完了: {outputPath}");
+            ms.Seek(0, SeekOrigin.Begin);
+
+            // 2. NAudio で目的フォーマットにエンコード
+            using var reader = new WaveFileReader(ms);
+
+            if (format == AudioFormat.Mp3)
+            {
+                // 128 kbps MP3
+                MediaFoundationEncoder.EncodeToMp3(reader, outputPath, desiredBitRate: 128_000);
+                Logger.Info($"MP3 保存完了: {outputPath}");
+            }
+            else
+            {
+                // 128 kbps AAC in MP4 コンテナ
+                MediaFoundationEncoder.EncodeToAac(reader, outputPath, desiredBitRate: 128_000);
+                Logger.Info($"MP4(AAC) 保存完了: {outputPath}");
+            }
+        }
+
+        /// <summary>現在の synth の設定（音声・速度・音量）を複製した SpeechSynthesizer を返す。</summary>
+        private SpeechSynthesizer BuildSynthClone()
+        {
+            var s = new SpeechSynthesizer();
+            s.Rate   = _synth!.Rate;
+            s.Volume = _synth.Volume;
+            string voice = CurrentVoiceName;
+            if (!string.IsNullOrEmpty(voice))
+            {
+                try { s.SelectVoice(voice); } catch { /* 無視 */ }
+            }
+            return s;
         }
 
         // ----------------------------------------------------------------

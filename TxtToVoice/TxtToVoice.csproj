@@ -18,6 +18,8 @@
   <ItemGroup>
     <!-- System.Speech は .NET 8 では NuGet パッケージが必要 -->
     <PackageReference Include="System.Speech" Version="8.0.0" />
+    <!-- MP3 / MP4(AAC) エンコード（Windows Media Foundation 経由） -->
+    <PackageReference Include="NAudio" Version="2.2.1" />
   </ItemGroup>
 
   <ItemGroup>

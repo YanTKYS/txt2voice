@@ -167,7 +167,7 @@ namespace TxtToVoice
                 {
                     case Key.O: OpenFile();           e.Handled = true; break;
                     case Key.P: ApplyAndPreview();    e.Handled = true; break;
-                    case Key.S: SaveWav();            e.Handled = true; break;
+                    case Key.S: SaveAudio();          e.Handled = true; break;
                 }
                 return;
             }
@@ -428,18 +428,18 @@ namespace TxtToVoice
         }
 
         // ----------------------------------------------------------------
-        // WAV 保存
+        // 音声保存（WAV / MP3 / MP4）
         // ----------------------------------------------------------------
 
-        private void BtnSaveWav_Click(object sender, RoutedEventArgs e) => SaveWav();
+        private void BtnSaveWav_Click(object sender, RoutedEventArgs e) => SaveAudio();
 
-        private void SaveWav()
+        private void SaveAudio()
         {
             string rawText = TxtInput.Text;
             if (string.IsNullOrWhiteSpace(rawText))
             {
                 MessageBox.Show("保存するテキストがありません。",
-                    "WAV 保存", MessageBoxButton.OK, MessageBoxImage.Information);
+                    "音声保存", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -447,35 +447,44 @@ namespace TxtToVoice
 
             var dlg = new SaveFileDialog
             {
-                Title      = "WAV ファイルとして保存",
-                Filter     = "WAV ファイル (*.wav)|*.wav",
-                DefaultExt = "wav",
-                FileName   = $"kouhou_{DateTime.Now:yyyyMMdd_HHmmss}.wav"
+                Title      = "音声ファイルとして保存",
+                Filter     = "MP3ファイル (*.mp3)|*.mp3|WAVファイル (*.wav)|*.wav|MP4ファイル (*.mp4)|*.mp4",
+                DefaultExt = "mp3",
+                FilterIndex = 1,
+                FileName   = $"kouhou_{DateTime.Now:yyyyMMdd_HHmmss}"
             };
             if (dlg.ShowDialog() != true) return;
 
-            SetStatus("WAV 保存中...");
+            // 拡張子からフォーマットを決定
+            AudioFormat format = Path.GetExtension(dlg.FileName).ToLowerInvariant() switch
+            {
+                ".mp3" => AudioFormat.Mp3,
+                ".mp4" => AudioFormat.Mp4,
+                _      => AudioFormat.Wav
+            };
+
+            SetStatus("音声保存中...");
             BtnSaveWav.IsEnabled = false;
 
             try
             {
-                _speechService.SaveToWav(speechText, dlg.FileName);
-                SetStatus($"WAV 保存完了: {Path.GetFileName(dlg.FileName)}");
+                _speechService.SaveToFile(speechText, dlg.FileName, format);
+                SetStatus($"音声保存完了: {Path.GetFileName(dlg.FileName)}");
                 MessageBox.Show(
-                    $"WAV ファイルを保存しました。\n\n{dlg.FileName}",
+                    $"音声ファイルを保存しました。\n\n{dlg.FileName}",
                     "保存完了",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                Logger.Error($"WAV 保存エラー: {ex.Message}");
+                Logger.Error($"音声保存エラー: {ex.Message}");
                 MessageBox.Show(
-                    $"WAV ファイルの保存に失敗しました。\n\n{ex.Message}",
+                    $"音声ファイルの保存に失敗しました。\n\n{ex.Message}",
                     "保存エラー",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
-                SetStatus("WAV 保存に失敗しました。");
+                SetStatus("音声保存に失敗しました。");
             }
             finally
             {
@@ -666,7 +675,7 @@ namespace TxtToVoice
                 "【ショートカットキー一覧】\n\n" +
                 "Ctrl+O  : テキストファイルを開く\n" +
                 "Ctrl+P  : 辞書を適用してプレビュー更新\n" +
-                "Ctrl+S  : WAV ファイルとして保存\n\n" +
+                "Ctrl+S  : 音声ファイルとして保存（WAV/MP3/MP4）\n\n" +
                 "F5      : 読み上げ開始（選択中は選択範囲のみ）\n" +
                 "F6      : 一時停止\n" +
                 "F7      : 再開\n" +

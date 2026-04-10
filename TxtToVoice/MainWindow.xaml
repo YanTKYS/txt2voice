@@ -500,10 +500,10 @@
                                     ToolTip="読み上げを停止します (F8)"
                                     FontSize="13" Padding="14,6" Height="34"/>
                             <Button x:Name="BtnSaveWav"
-                                    Content="WAV 保存"
+                                    Content="音声保存"
                                     Style="{StaticResource BtnPrimary}"
                                     Click="BtnSaveWav_Click"
-                                    ToolTip="辞書補正後のテキストを WAV ファイルとして保存します (Ctrl+S)"
+                                    ToolTip="辞書補正後のテキストを音声ファイルとして保存します (Ctrl+S)&#10;WAV / MP3 / MP4(AAC) を選択できます"
                                     FontSize="13" Padding="14,6" Height="34"/>
                         </WrapPanel>
 
@@ -517,7 +517,7 @@
                                 <Run FontWeight="Bold">ショートカット：</Run>
                                 <Run>F5=開始　F6=一時停止　F7=再開　F8=停止</Run>
                                 <LineBreak/>
-                                <Run>Ctrl+O=ファイルを開く　Ctrl+P=プレビュー更新　Ctrl+S=WAV保存</Run>
+                                <Run>Ctrl+O=ファイルを開く　Ctrl+P=プレビュー更新　Ctrl+S=音声保存</Run>
                                 <LineBreak/>
                                 <Run>辞書一覧：Ins=追加　F2=編集　Del=削除</Run>
                                 <LineBreak/>
