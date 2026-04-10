@@ -19,6 +19,7 @@ namespace TxtToVoice
 
         private SpeechPositionMap? _positionMap;
         private int _speechOriginOffset;
+        private DateTime _lastProgressLog = DateTime.MinValue;
 
         // ----------------------------------------------------------------
         // 設定の読み込み・保存
@@ -162,7 +163,10 @@ namespace TxtToVoice
             SetStatus($"エラー: {message}");
         }
 
-        /// <summary>読み上げ進捗（UI スレッドで呼ばれる）。ステータスバーに現在の読み上げ位置を表示する。</summary>
+        /// <summary>
+        /// 読み上げ進捗（UI スレッドで呼ばれる）。
+        /// ステータスバーは毎回更新し、Logger への書き込みは 1 秒ごとに間引く。
+        /// </summary>
         private void OnSpeakProgress(object? sender, SpeakProgressInfo e)
         {
             if (_positionMap is null) return;
@@ -172,7 +176,18 @@ namespace TxtToVoice
             int absEnd = Math.Min(
                 origStart + _speechOriginOffset + Math.Max(origLen, 1),
                 TxtInput.Text.Length);
-            SetStatus($"読み上げ中... ({absEnd} / {TxtInput.Text.Length} 文字)");
+            int total = TxtInput.Text.Length;
+
+            // UI 更新は毎回（SetStatus は使わず直接書いてログを抑制）
+            TxtStatus.Text = $"読み上げ中... ({absEnd} / {total} 文字)";
+
+            // Logger への書き込みは 1 秒ごとに間引く
+            var now = DateTime.Now;
+            if ((now - _lastProgressLog).TotalSeconds >= 1.0)
+            {
+                Logger.Info($"[進捗] {absEnd} / {total} 文字");
+                _lastProgressLog = now;
+            }
         }
 
         private void UpdatePlaybackButtons()

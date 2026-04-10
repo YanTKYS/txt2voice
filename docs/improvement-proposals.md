@@ -116,7 +116,7 @@ RFC 4180 §2.6 の「引用符内に改行を含むフィールド」に非対�
 
 ---
 
-### 11. バージョン情報の一元化
+### 11. バージョン情報の一元化 ✅
 
 **課題**  
 - リリースノートは `v0.1.x` だが `TxtToVoice.csproj` は `1.0.0` 固定
@@ -125,9 +125,9 @@ RFC 4180 §2.6 の「引用符内に改行を含むフィールド」に非対�
 
 **実装方針**
 
-1. `TxtToVoice.csproj` で `<AssemblyInformationalVersion>` をリリース時に更新
-2. About ダイアログで `Assembly.GetEntryAssembly()!.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion` を表示
-3. CI の release ワークフローで `csproj` バージョンを自動書き換える（`sed` or MSBuild property）
+1. `TxtToVoice.csproj` の `<Version>` をリリース時に更新
+2. About ダイアログで `AssemblyInformationalVersionAttribute` からバージョンを取得して表示
+3. CI の release ワークフローで `csproj` バージョンを自動書き換える（将来対応）
 
 ---
 
@@ -184,7 +184,7 @@ SSML モード中はマッピング不可のため常に OFF。
 
 ---
 
-### 12. ログ出力量の制御
+### 12. ログ出力量の制御 ✅
 
 **課題**  
 `SetStatus()` が `Logger.Info()` を毎回呼び出すため、読み上げ進捗更新時（単語単位）に
@@ -234,7 +234,7 @@ private void OnSpeakProgress(object? sender, SpeakProgressInfo e)
 
 ---
 
-### 14. テスト範囲拡張（回帰防止）
+### 14. テスト範囲拡張（回帰防止） ✅（CsvService / AppSettings / Performance）
 
 **課題**  
 現状テストは `DictionaryService` / `SsmlBuilder` 中心で、以下の回帰検知が弱い。
@@ -290,7 +290,7 @@ USB メモリや共有フォルダから実行したい場合、
 
 ---
 
-### 15. 大規模辞書向けパフォーマンス改善
+### 15. 大規模辞書向けパフォーマンス改善 ✅（ベースラインテスト追加）
 
 **課題**  
 現状の置換処理は全エントリを走査 + `IndexOf` 反復のため、
@@ -304,7 +304,7 @@ USB メモリや共有フォルダから実行したい場合、
 
 ---
 
-### 16. README の機能説明更新
+### 16. README の機能説明更新 ✅
 
 **課題**  
 README の操作説明が「WAV 保存」中心で書かれており、v0.1.3 以降に追加された
@@ -326,6 +326,7 @@ MP3/MP4 保存・D&D ファイル読み込み・最近使ったファイル・SS
 | v0.1.5 | 設定の永続化・読み上げ位置ハイライト・音声保存の非同期化 |
 | v0.1.6 | ドラッグ&ドロップ・セッション復元・辞書試し読みボタン・SSML ポーズ挿入 On/Off |
 | v0.1.7 | 最近使ったファイル（Recent Files） |
+| v0.1.8 | バージョン表示・ログ間引き・テスト拡充（CSV/AppSettings/Performance）・README 更新 |
 
 ## 技術的負債（解消済み → v0.1.4）
 

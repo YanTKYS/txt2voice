@@ -9,12 +9,13 @@ namespace TxtToVoice.Services
 {
     /// <summary>
     /// アプリケーション設定の読み書きを担当するサービス。
-    /// 保存先: %LOCALAPPDATA%\TxtToVoice\settings.json
+    /// デフォルト保存先: %LOCALAPPDATA%\TxtToVoice\settings.json
+    /// テスト時はコンストラクタで任意パスを指定できる。
     /// 失敗時は例外をスローせずログに記録し、デフォルト値を返す。
     /// </summary>
     public class AppSettingsService
     {
-        private static readonly string SettingsPath = Path.Combine(
+        private static readonly string DefaultSettingsPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "TxtToVoice", "settings.json");
 
@@ -24,12 +25,20 @@ namespace TxtToVoice.Services
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
         };
 
+        private readonly string _settingsPath;
+
+        /// <param name="customPath">テスト用パス。null のとき %LOCALAPPDATA%\TxtToVoice\settings.json を使う。</param>
+        public AppSettingsService(string? customPath = null)
+        {
+            _settingsPath = customPath ?? DefaultSettingsPath;
+        }
+
         public AppSettings Load()
         {
-            if (!File.Exists(SettingsPath)) return new AppSettings();
+            if (!File.Exists(_settingsPath)) return new AppSettings();
             try
             {
-                string json = File.ReadAllText(SettingsPath, Encoding.UTF8);
+                string json = File.ReadAllText(_settingsPath, Encoding.UTF8);
                 return JsonSerializer.Deserialize<AppSettings>(json, Options) ?? new AppSettings();
             }
             catch (Exception ex)
@@ -41,15 +50,15 @@ namespace TxtToVoice.Services
 
         public void Save(AppSettings settings)
         {
-            string? dir = Path.GetDirectoryName(SettingsPath);
+            string? dir = Path.GetDirectoryName(_settingsPath);
             if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
 
-            string tmp = SettingsPath + ".tmp";
+            string tmp = _settingsPath + ".tmp";
             try
             {
                 string json = JsonSerializer.Serialize(settings, Options);
                 File.WriteAllText(tmp, json, Encoding.UTF8);
-                File.Move(tmp, SettingsPath, overwrite: true);
+                File.Move(tmp, _settingsPath, overwrite: true);
             }
             catch (Exception ex)
             {

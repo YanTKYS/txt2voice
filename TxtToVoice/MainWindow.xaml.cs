@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -155,8 +156,11 @@ namespace TxtToVoice
 
         private void MenuAbout_Click(object sender, RoutedEventArgs e)
         {
+            string version = Assembly.GetEntryAssembly()
+                ?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                ?.InformationalVersion ?? "不明";
             MessageBox.Show(
-                "声の広報 テキスト読み上げツール\n\n" +
+                $"声の広報 テキスト読み上げツール  v{version}\n\n" +
                 "自治体職員向けの読み上げ補助ツールです。\n" +
                 "Windows の音声合成エンジン（SAPI）を使用します。\n\n" +
                 "辞書ファイル: " + DictionaryPath + "\n" +
