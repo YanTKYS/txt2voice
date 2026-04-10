@@ -403,12 +403,16 @@ namespace TxtToVoice
 
         private void CmbVoice_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            // InitializeComponent() 完了前に発火する場合があるため null チェック
+            if (_speechService is null) return;
             if (CmbVoice.SelectedItem is string voiceName)
                 _speechService.SetVoice(voiceName);
         }
 
         private void SldRate_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
+            // XAML ロード中（Value="0" 設定時）に発火する場合があるため null チェック
+            if (_speechService is null) return;
             int rate = (int)SldRate.Value;
             TxtRateVal.Text = rate.ToString("+0;-0;0");
             _speechService.SetRate(rate);
@@ -416,6 +420,8 @@ namespace TxtToVoice
 
         private void SldVolume_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
+            // XAML ロード中（Value="100" 設定時）に発火するため null チェック必須
+            if (_speechService is null) return;
             int vol = (int)SldVolume.Value;
             TxtVolumeVal.Text = vol.ToString();
             _speechService.SetVolume(vol);
