@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using Microsoft.Win32;
 using TxtToVoice.Models;
 using TxtToVoice.Services;
@@ -20,6 +21,10 @@ namespace TxtToVoice
         private SpeechPositionMap? _positionMap;
         private int _speechOriginOffset;
         private DateTime _lastProgressLog = DateTime.MinValue;
+
+        // 蛍光イエロー — システム選択色（青）と明確に区別できる「蛍光ペン」色
+        private static readonly SolidColorBrush HighlightBrush =
+            new(Color.FromRgb(0xFF, 0xEB, 0x3B));   // Material Yellow 500
 
         // ----------------------------------------------------------------
         // 設定の読み込み・保存
@@ -40,6 +45,8 @@ namespace TxtToVoice
             }
             // SSML モード
             ChkSsml.IsChecked = s.SsmlPauseEnabled;
+            // 読み上げ位置ハイライト
+            ChkHighlight.IsChecked = s.ShowReadingHighlight;
             // 機微データ保存ポリシー
             _saveLastInputText       = s.SaveLastInputText;
             _saveRecentFiles          = s.SaveRecentFiles;
@@ -65,8 +72,9 @@ namespace TxtToVoice
                 Rate             = (int)SldRate.Value,
                 Volume           = (int)SldVolume.Value,
                 VoiceName        = _speechService.CurrentVoiceName,
-                SsmlPauseEnabled = ChkSsml.IsChecked == true,
-                RecentFiles      = _saveRecentFiles ? _recentFiles : new List<string>(),
+                SsmlPauseEnabled     = ChkSsml.IsChecked == true,
+                ShowReadingHighlight = ChkHighlight.IsChecked == true,
+                RecentFiles          = _saveRecentFiles ? _recentFiles : new List<string>(),
                 // ポリシー設定は常に保存
                 SaveLastInputText        = _saveLastInputText,
                 SaveRecentFiles          = _saveRecentFiles,
@@ -157,6 +165,7 @@ namespace TxtToVoice
             _isPaused    = false;
             _positionMap = null;
             UpdatePlaybackButtons();
+            ClearReadingHighlight();
             SetStatus("読み上げ完了。");
         }
 
@@ -166,6 +175,7 @@ namespace TxtToVoice
             _isPaused    = false;
             _positionMap = null;
             UpdatePlaybackButtons();
+            ClearReadingHighlight();
             MessageBox.Show(
                 $"読み上げ中にエラーが発生しました。\n\n{message}",
                 "読み上げエラー",
@@ -177,6 +187,7 @@ namespace TxtToVoice
         /// <summary>
         /// 読み上げ進捗（UI スレッドで呼ばれる）。
         /// ステータスバーは毎回更新し、Logger への書き込みは 1 秒ごとに間引く。
+        /// ハイライト ON 時は蛍光イエローで現在単語をハイライト表示する。
         /// </summary>
         private void OnSpeakProgress(object? sender, SpeakProgressInfo e)
         {
@@ -184,13 +195,26 @@ namespace TxtToVoice
             var (origStart, origLen) = _positionMap.MapToOriginal(e.CharacterPosition);
             if (origStart < 0) return;
 
-            int absEnd = Math.Min(
-                origStart + _speechOriginOffset + Math.Max(origLen, 1),
-                TxtInput.Text.Length);
-            int total = TxtInput.Text.Length;
+            int absStart = origStart + _speechOriginOffset;
+            int len      = Math.Min(Math.Max(origLen, 1), TxtInput.Text.Length - absStart);
+            int absEnd   = absStart + len;
+            int total    = TxtInput.Text.Length;
 
             // UI 更新は毎回（SetStatus は使わず直接書いてログを抑制）
             TxtStatus.Text = $"読み上げ中... ({absEnd} / {total} 文字)";
+
+            // 蛍光ハイライト（チェック ON かつ非 SSML モードの場合のみ）
+            if (ChkHighlight.IsChecked == true && len > 0)
+            {
+                // 蛍光イエロー = 「蛍光ペン」の視覚的連想。通常の選択色（青）と明確に区別できる
+                TxtInput.SelectionBrush     = HighlightBrush;
+                TxtInput.SelectionTextBrush = Brushes.Black;
+                TxtInput.Select(absStart, len);
+
+                // 読み上げ位置が画面に入るようスクロール
+                int lineIdx = TxtInput.GetLineIndexFromCharacterIndex(absStart);
+                if (lineIdx >= 0) TxtInput.ScrollToLine(lineIdx);
+            }
 
             // Logger への書き込みは 1 秒ごとに間引く
             var now = DateTime.Now;
@@ -199,6 +223,14 @@ namespace TxtToVoice
                 Logger.Info($"[進捗] {absEnd} / {total} 文字");
                 _lastProgressLog = now;
             }
+        }
+
+        /// <summary>ハイライト（蛍光色選択）を解除し、SelectionBrush をシステム既定に戻す。</summary>
+        private void ClearReadingHighlight()
+        {
+            TxtInput.SelectionBrush     = SystemColors.HighlightBrush;
+            TxtInput.SelectionTextBrush = SystemColors.HighlightTextBrush;
+            TxtInput.Select(0, 0);
         }
 
         private void UpdatePlaybackButtons()
@@ -289,6 +321,14 @@ namespace TxtToVoice
 
         private void ChkSsml_Changed(object sender, RoutedEventArgs e)
         {
+            SaveCurrentSettings();
+        }
+
+        private void ChkHighlight_Changed(object sender, RoutedEventArgs e)
+        {
+            // ハイライトを OFF にした場合、再生中なら既存のハイライトをすぐ消す
+            if (ChkHighlight.IsChecked == false && _isSpeaking)
+                ClearReadingHighlight();
             SaveCurrentSettings();
         }
 

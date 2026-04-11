@@ -42,5 +42,13 @@ namespace TxtToVoice.Models
         /// <summary>終了時にテキスト・ファイル履歴を消去するかどうか（監査向け、デフォルト: false）</summary>
         [JsonPropertyName("clearSensitiveDataOnExit")]
         public bool ClearSensitiveDataOnExit { get; set; } = false;
+
+        // ----------------------------------------------------------------
+        // 読み上げ位置ハイライト
+        // ----------------------------------------------------------------
+
+        /// <summary>読み上げ中に蛍光色で現在位置をハイライト表示するかどうか（デフォルト: true）</summary>
+        [JsonPropertyName("showReadingHighlight")]
+        public bool ShowReadingHighlight { get; set; } = true;
     }
 }

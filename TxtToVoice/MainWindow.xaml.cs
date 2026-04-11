@@ -48,6 +48,9 @@ namespace TxtToVoice
         private bool _saveRecentFiles          = true;
         private bool _clearSensitiveDataOnExit = false;
 
+        // 読み上げ位置ハイライト
+        private bool _showReadingHighlight = true;
+
         // ----------------------------------------------------------------
         // コンストラクタ
         // ----------------------------------------------------------------
@@ -71,6 +74,21 @@ namespace TxtToVoice
             InitializeVoiceCombo();
             LoadSettings();   // スライダー値・音声を復元（InitializeVoiceCombo の後）
             LoadDictionary();
+
+            // ポータブルモード時の書込可否チェック
+            string? writeError = PathConfig.CheckPortableWriteAccess();
+            if (writeError != null)
+            {
+                MessageBox.Show(
+                    "ポータブルモードで起動しましたが、保存先フォルダへの書き込みができません。\n\n" +
+                    $"原因: {writeError}\n\n" +
+                    "辞書・設定・ログは保存されない可能性があります。\n" +
+                    "フォルダのアクセス権限を確認してください。",
+                    "ポータブルモード — 書き込みエラー",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                Logger.Warn($"ポータブルモード書込可否チェック失敗: {writeError}");
+            }
 
             if (_speechService.IsAvailable)
             {
@@ -304,7 +322,8 @@ namespace TxtToVoice
                 // ポリシー設定は常に保存
                 SaveLastInputText        = _saveLastInputText,
                 SaveRecentFiles          = _saveRecentFiles,
-                ClearSensitiveDataOnExit = _clearSensitiveDataOnExit
+                ClearSensitiveDataOnExit = _clearSensitiveDataOnExit,
+                ShowReadingHighlight     = ChkHighlight.IsChecked == true
             });
 
             Logger.Info("アプリケーション終了");

@@ -49,5 +49,42 @@ namespace TxtToVoice.Services
 
         /// <summary>設定 JSON ファイルのフルパス。</summary>
         public static string SettingsPath => Path.Combine(DataDirectory, "settings.json");
+
+        // ----------------------------------------------------------------
+        // ポータブルモード書込可否チェック
+        // ----------------------------------------------------------------
+
+        /// <summary>
+        /// ポータブルモードで DataDirectory / LogDirectory に書き込めるか確認する。
+        /// 通常モードでは常に null を返す。
+        /// </summary>
+        /// <returns>問題なければ null、書き込み不可ならエラーメッセージ。</returns>
+        public static string? CheckPortableWriteAccess()
+        {
+            if (!IsPortable) return null;
+
+            if (!TryWriteAccess(DataDirectory))
+                return $"データフォルダに書き込めません。\n{DataDirectory}";
+            if (!TryWriteAccess(LogDirectory))
+                return $"ログフォルダに書き込めません。\n{LogDirectory}";
+
+            return null;
+        }
+
+        private static bool TryWriteAccess(string directory)
+        {
+            try
+            {
+                Directory.CreateDirectory(directory);
+                string probe = Path.Combine(directory, ".write_probe");
+                File.WriteAllText(probe, string.Empty);
+                File.Delete(probe);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }
