@@ -10,9 +10,7 @@ namespace TxtToVoice.Services
     /// </summary>
     public static class Logger
     {
-        private static readonly string LogDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "TxtToVoice", "logs");
+        private static string LogDir => PathConfig.LogDirectory;
 
         private static string LogPath =>
             Path.Combine(LogDir, $"app_{DateTime.Now:yyyyMMdd}.log");

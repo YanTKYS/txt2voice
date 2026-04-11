@@ -11,7 +11,7 @@ namespace TxtToVoice.Services
     ///
     /// CSV 列順: 表記, 読み, 備考, 優先順位
     /// 1行目はヘッダー（「表記」で始まる場合はスキップ）。
-    /// RFC 4180 に準じたクォート処理をサポートする。
+    /// RFC 4180 に準じたクォート処理をサポートする（改行を含むフィールドも対応）。
     /// </summary>
     public static class CsvService
     {
@@ -29,6 +29,7 @@ namespace TxtToVoice.Services
 
         /// <summary>
         /// CSV ファイルから辞書エントリのリストを読み込む。
+        /// RFC 4180 §2.6 の引用符内改行を含むフィールドに対応。
         /// </summary>
         public static List<DictionaryEntry> Import(string filePath)
         {
@@ -36,18 +37,19 @@ namespace TxtToVoice.Services
 
             // BOM 付き UTF-8 / UTF-8 / Shift_JIS を自動判別
             Encoding enc = DetectEncoding(filePath);
-            string[] lines = File.ReadAllLines(filePath, enc);
 
-            int startLine = 0;
-            if (lines.Length > 0 && lines[0].TrimStart().StartsWith("表記", StringComparison.Ordinal))
-                startLine = 1;
-
-            for (int i = startLine; i < lines.Length; i++)
+            bool isFirstRecord = true;
+            using var reader = new StreamReader(filePath, enc);
+            foreach (var cols in ParseCsvRecords(reader))
             {
-                string line = lines[i].Trim();
-                if (string.IsNullOrEmpty(line)) continue;
+                // ヘッダー行スキップ（1行目が「表記」で始まる場合）
+                if (isFirstRecord)
+                {
+                    isFirstRecord = false;
+                    if (cols.Count > 0 && cols[0].TrimStart().StartsWith("表記", StringComparison.Ordinal))
+                        continue;
+                }
 
-                List<string> cols = ParseCsvLine(line);
                 if (cols.Count < 2) continue;
 
                 string display = cols[0].Trim();
@@ -100,53 +102,97 @@ namespace TxtToVoice.Services
             return value;
         }
 
-        private static List<string> ParseCsvLine(string line)
+        /// <summary>
+        /// StreamReader から RFC 4180 準拠の CSV レコードを逐次解析して返す。
+        /// 引用符内の改行（CRLF / LF）を含むフィールドに対応する。
+        /// </summary>
+        private static IEnumerable<List<string>> ParseCsvRecords(StreamReader reader)
         {
-            var result = new List<string>();
-            int i = 0;
-            while (i <= line.Length)
+            var record = new List<string>();
+            var field  = new StringBuilder();
+            bool inQuotes = false;
+
+            while (true)
             {
-                if (i == line.Length)
+                int ch = reader.Read();
+
+                if (ch == -1)
                 {
-                    result.Add(string.Empty);
-                    break;
-                }
-                if (line[i] == '"')
-                {
-                    i++; // 開始クォートをスキップ
-                    var sb = new StringBuilder();
-                    while (i < line.Length)
+                    // EOF: 最後のフィールド・レコードをフラッシュ
+                    if (field.Length > 0 || record.Count > 0)
                     {
-                        if (line[i] == '"')
+                        record.Add(field.ToString());
+                        yield return record;
+                    }
+                    yield break;
+                }
+
+                char c = (char)ch;
+
+                if (inQuotes)
+                {
+                    if (c == '"')
+                    {
+                        // "" → " (エスケープ) か、閉じクォートか判定
+                        if (reader.Peek() == '"')
                         {
-                            if (i + 1 < line.Length && line[i + 1] == '"')
-                            {
-                                sb.Append('"');
-                                i += 2;
-                            }
-                            else
-                            {
-                                i++; // 終端クォートをスキップ
-                                break;
-                            }
+                            reader.Read(); // 2つ目の " を消費
+                            field.Append('"');
                         }
                         else
                         {
-                            sb.Append(line[i++]);
+                            inQuotes = false;
                         }
                     }
-                    result.Add(sb.ToString());
-                    if (i < line.Length && line[i] == ',') i++;
+                    else if (c == '\r')
+                    {
+                        // CRLF を LF に正規化してフィールドに取り込む
+                        if (reader.Peek() == '\n') reader.Read();
+                        field.Append('\n');
+                    }
+                    else
+                    {
+                        field.Append(c);
+                    }
                 }
                 else
                 {
-                    int start = i;
-                    while (i < line.Length && line[i] != ',') i++;
-                    result.Add(line.Substring(start, i - start));
-                    if (i < line.Length) i++; // カンマをスキップ
+                    if (c == '"')
+                    {
+                        inQuotes = true;
+                    }
+                    else if (c == ',')
+                    {
+                        record.Add(field.ToString());
+                        field.Clear();
+                    }
+                    else if (c == '\r')
+                    {
+                        if (reader.Peek() == '\n') reader.Read();
+                        record.Add(field.ToString());
+                        field.Clear();
+                        if (record.Count > 0)
+                        {
+                            yield return record;
+                            record = new List<string>();
+                        }
+                    }
+                    else if (c == '\n')
+                    {
+                        record.Add(field.ToString());
+                        field.Clear();
+                        if (record.Count > 0)
+                        {
+                            yield return record;
+                            record = new List<string>();
+                        }
+                    }
+                    else
+                    {
+                        field.Append(c);
+                    }
                 }
             }
-            return result;
         }
 
         /// <summary>ファイル先頭バイトからエンコードを推測する。</summary>

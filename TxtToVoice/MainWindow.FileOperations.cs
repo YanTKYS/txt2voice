@@ -85,6 +85,9 @@ namespace TxtToVoice
 
         private void AddRecentFile(string path)
         {
+            // 保存ポリシーが無効の場合はリストを更新しない
+            if (!_saveRecentFiles) return;
+
             _recentFiles.Remove(path);
             _recentFiles.Insert(0, path);
             if (_recentFiles.Count > MaxRecentFiles)

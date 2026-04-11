@@ -40,12 +40,19 @@ namespace TxtToVoice
             }
             // SSML モード
             ChkSsml.IsChecked = s.SsmlPauseEnabled;
-            // 前回セッションのテキストを復元
-            if (!string.IsNullOrEmpty(s.LastInputText))
+            // 機微データ保存ポリシー
+            _saveLastInputText       = s.SaveLastInputText;
+            _saveRecentFiles          = s.SaveRecentFiles;
+            _clearSensitiveDataOnExit = s.ClearSensitiveDataOnExit;
+            // 前回セッションのテキストを復元（ポリシーが許可している場合のみ）
+            if (_saveLastInputText && !string.IsNullOrEmpty(s.LastInputText))
                 TxtInput.Text = s.LastInputText;
-            // 最近使ったファイル
-            _recentFiles.Clear();
-            _recentFiles.AddRange(s.RecentFiles);
+            // 最近使ったファイル（ポリシーが許可している場合のみ）
+            if (_saveRecentFiles)
+            {
+                _recentFiles.Clear();
+                _recentFiles.AddRange(s.RecentFiles);
+            }
             UpdateRecentFilesMenu();
             UpdateEstimatedTime();
             Logger.Info($"設定を読み込みました: Rate={s.Rate}, Volume={s.Volume}, Voice={s.VoiceName}, Ssml={s.SsmlPauseEnabled}");
@@ -59,7 +66,11 @@ namespace TxtToVoice
                 Volume           = (int)SldVolume.Value,
                 VoiceName        = _speechService.CurrentVoiceName,
                 SsmlPauseEnabled = ChkSsml.IsChecked == true,
-                RecentFiles      = _recentFiles
+                RecentFiles      = _saveRecentFiles ? _recentFiles : new List<string>(),
+                // ポリシー設定は常に保存
+                SaveLastInputText        = _saveLastInputText,
+                SaveRecentFiles          = _saveRecentFiles,
+                ClearSensitiveDataOnExit = _clearSensitiveDataOnExit
             });
         }
 

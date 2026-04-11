@@ -86,7 +86,7 @@ finally { progressDialog.Close(); }
 
 ---
 
-### 10. CSV インポートの複数行セル対応
+### 10. CSV インポートの複数行セル対応 ✅
 
 **課題**  
 `CsvService.Import()` が `File.ReadAllLines()` + 単行パーサの構成のため、
@@ -214,7 +214,7 @@ private void OnSpeakProgress(object? sender, SpeakProgressInfo e)
 
 ---
 
-### 13. 設定保存ポリシー（機微データ対応）
+### 13. 設定保存ポリシー（機微データ対応） ✅
 
 **課題**  
 `lastInputText`（前回入力テキスト）と `recentFiles`（最近使ったファイルパス）が
@@ -276,7 +276,7 @@ TxtToVoice.Tests/
 
 ---
 
-### 9. ポータブルモード
+### 9. ポータブルモード ✅
 
 **課題**  
 USB メモリや共有フォルダから実行したい場合、
@@ -327,6 +327,7 @@ MP3/MP4 保存・D&D ファイル読み込み・最近使ったファイル・SS
 | v0.1.6 | ドラッグ&ドロップ・セッション復元・辞書試し読みボタン・SSML ポーズ挿入 On/Off |
 | v0.1.7 | 最近使ったファイル（Recent Files） |
 | v0.1.8 | バージョン表示・ログ間引き・テスト拡充（CSV/AppSettings/Performance）・README 更新 |
+| v0.1.9 | CSV 複数行セル対応・機微データ保存ポリシー UI・ポータブルモード |
 
 ## 技術的負債（解消済み → v0.1.4）
 

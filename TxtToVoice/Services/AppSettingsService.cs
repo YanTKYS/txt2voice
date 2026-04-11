@@ -15,9 +15,7 @@ namespace TxtToVoice.Services
     /// </summary>
     public class AppSettingsService
     {
-        private static readonly string DefaultSettingsPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "TxtToVoice", "settings.json");
+        private static readonly string DefaultSettingsPath = PathConfig.SettingsPath;
 
         private static readonly JsonSerializerOptions Options = new()
         {

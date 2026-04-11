@@ -166,6 +166,8 @@
                 <MenuItem Header="最近使ったファイル(_R)" x:Name="MenuRecentFiles">
                     <MenuItem Header="（なし）" IsEnabled="False"/>
                 </MenuItem>
+                <Separator x:Name="SepAfterRecentFiles"/>
+                <MenuItem Header="設定(_T)..." Click="MenuSettings_Click"/>
                 <Separator/>
                 <MenuItem Header="終了(_X)" Click="MenuExit_Click"/>
             </MenuItem>

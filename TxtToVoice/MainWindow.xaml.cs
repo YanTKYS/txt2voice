@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using TxtToVoice.Dialogs;
 using TxtToVoice.Models;
 using TxtToVoice.Services;
 
@@ -32,10 +33,8 @@ namespace TxtToVoice
         private readonly AppSettingsService _settingsService = new();
         private readonly ObservableCollection<DictionaryEntry> _entries = new();
 
-        private static readonly string DictionaryPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "TxtToVoice", "dictionary.json");
-
+        // パスは PathConfig で一元管理（ポータブルモード対応）
+        private static readonly string DictionaryPath   = PathConfig.DictionaryPath;
         private static readonly string SampleDictionaryPath =
             Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "sample_dictionary.json");
 
@@ -43,6 +42,11 @@ namespace TxtToVoice
         private bool _isPaused        = false;
         private bool _annotatedPreview = true;
         private readonly List<string> _recentFiles = new();
+
+        // 機微データ保存ポリシー（LoadSettings() で復元、SettingsDialog で変更可能）
+        private bool _saveLastInputText       = true;
+        private bool _saveRecentFiles          = true;
+        private bool _clearSensitiveDataOnExit = false;
 
         // ----------------------------------------------------------------
         // コンストラクタ
@@ -52,7 +56,7 @@ namespace TxtToVoice
         {
             InitializeComponent();
 
-            Logger.Info("アプリケーション起動");
+            Logger.Info($"アプリケーション起動{(PathConfig.IsPortable ? "（ポータブルモード）" : string.Empty)}");
 
             _speechService = new SpeechService();
             _dictService   = new DictionaryService(DictionaryPath);
@@ -130,6 +134,32 @@ namespace TxtToVoice
         }
 
         // ----------------------------------------------------------------
+        // ファイルメニュー — 設定
+        // ----------------------------------------------------------------
+
+        private void MenuSettings_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new SettingsDialog(_saveLastInputText, _saveRecentFiles, _clearSensitiveDataOnExit)
+            {
+                Owner = this
+            };
+            if (dlg.ShowDialog() != true) return;
+
+            _saveLastInputText       = dlg.SaveLastInputText;
+            _saveRecentFiles          = dlg.SaveRecentFiles;
+            _clearSensitiveDataOnExit = dlg.ClearSensitiveDataOnExit;
+
+            // _saveRecentFiles が false になった場合はメモリ上の履歴も消去
+            if (!_saveRecentFiles)
+            {
+                _recentFiles.Clear();
+            }
+
+            SaveCurrentSettings();
+            UpdateRecentFilesMenu();
+        }
+
+        // ----------------------------------------------------------------
         // ヘルプメニュー
         // ----------------------------------------------------------------
 
@@ -159,12 +189,14 @@ namespace TxtToVoice
             string version = Assembly.GetEntryAssembly()
                 ?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
                 ?.InformationalVersion ?? "不明";
+            string portableNote = PathConfig.IsPortable ? "\n動作モード: ポータブルモード（EXEフォルダ内にデータ保存）" : string.Empty;
             MessageBox.Show(
                 $"声の広報 テキスト読み上げツール  v{version}\n\n" +
                 "自治体職員向けの読み上げ補助ツールです。\n" +
-                "Windows の音声合成エンジン（SAPI）を使用します。\n\n" +
-                "辞書ファイル: " + DictionaryPath + "\n" +
-                "ログファイル: %LOCALAPPDATA%\\TxtToVoice\\logs\\",
+                "Windows の音声合成エンジン（SAPI）を使用します。\n" +
+                portableNote + "\n\n" +
+                "辞書ファイル: " + PathConfig.DictionaryPath + "\n" +
+                "ログファイル: " + PathConfig.LogDirectory,
                 "バージョン情報",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
@@ -174,9 +206,17 @@ namespace TxtToVoice
         // 最近使ったファイルメニュー
         // ----------------------------------------------------------------
 
-        /// <summary>_recentFiles の内容を「最近使ったファイル」サブメニューに反映する。</summary>
+        /// <summary>_recentFiles の内容を「最近使ったファイル」サブメニューに反映する。
+        /// _saveRecentFiles が false のときはメニューを非表示にする。</summary>
         internal void UpdateRecentFilesMenu()
         {
+            // 保存ポリシーが false のときはメニュー自体を隠す
+            bool visible = _saveRecentFiles;
+            MenuRecentFiles.Visibility      = visible ? Visibility.Visible : Visibility.Collapsed;
+            SepAfterRecentFiles.Visibility  = visible ? Visibility.Visible : Visibility.Collapsed;
+
+            if (!visible) return;
+
             MenuRecentFiles.Items.Clear();
 
             if (_recentFiles.Count == 0)
@@ -248,6 +288,10 @@ namespace TxtToVoice
             _speechService.Stop();
             _speechService.Dispose();
 
+            // 機微データポリシーを適用して保存
+            bool persistText   = _saveLastInputText       && !_clearSensitiveDataOnExit;
+            bool persistRecent = _saveRecentFiles          && !_clearSensitiveDataOnExit;
+
             string lastText = TxtInput.Text;
             _settingsService.Save(new AppSettings
             {
@@ -255,8 +299,12 @@ namespace TxtToVoice
                 Volume           = (int)SldVolume.Value,
                 VoiceName        = voiceName,
                 SsmlPauseEnabled = ChkSsml.IsChecked == true,
-                LastInputText    = lastText.Length <= 10_000 ? lastText : string.Empty,
-                RecentFiles      = _recentFiles
+                LastInputText    = persistText && lastText.Length <= 10_000 ? lastText : string.Empty,
+                RecentFiles      = persistRecent ? _recentFiles : new List<string>(),
+                // ポリシー設定は常に保存
+                SaveLastInputText        = _saveLastInputText,
+                SaveRecentFiles          = _saveRecentFiles,
+                ClearSensitiveDataOnExit = _clearSensitiveDataOnExit
             });
 
             Logger.Info("アプリケーション終了");

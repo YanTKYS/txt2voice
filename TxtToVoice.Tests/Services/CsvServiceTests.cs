@@ -177,6 +177,32 @@ namespace TxtToVoice.Tests.Services
         }
 
         // ================================================================
+        // インポート — 複数行セル（RFC 4180 §2.6）
+        // ================================================================
+
+        [Fact]
+        public void Import_改行を含むフィールドをクォートで読み込める()
+        {
+            // 引用符内の LF を含むフィールド
+            string path = WriteTempCsv("\"市の花\nバラ\",しのはなばら\n");
+            var result = CsvService.Import(path);
+            Assert.Single(result);
+            Assert.Equal("市の花\nバラ", result[0].Display);
+            Assert.Equal("しのはなばら", result[0].Reading);
+        }
+
+        [Fact]
+        public void Import_改行を含む複数エントリを正しく読み込める()
+        {
+            // 1つ目は複数行フィールド、2つ目は通常
+            string path = WriteTempCsv("\"市の花\nバラ\",しのはなばら\n令和,れいわ\n");
+            var result = CsvService.Import(path);
+            Assert.Equal(2, result.Count);
+            Assert.Equal("市の花\nバラ", result[0].Display);
+            Assert.Equal("令和",         result[1].Display);
+        }
+
+        // ================================================================
         // エクスポート
         // ================================================================
 

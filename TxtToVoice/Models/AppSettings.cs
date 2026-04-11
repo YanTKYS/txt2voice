@@ -26,5 +26,21 @@ namespace TxtToVoice.Models
         /// <summary>最近使ったファイルのパス一覧（最大 5 件、新しい順）</summary>
         [JsonPropertyName("recentFiles")]
         public List<string> RecentFiles { get; set; } = new();
+
+        // ----------------------------------------------------------------
+        // 機微データ保存ポリシー
+        // ----------------------------------------------------------------
+
+        /// <summary>前回テキストをアプリ終了時に保存するかどうか（デフォルト: true）</summary>
+        [JsonPropertyName("saveLastInputText")]
+        public bool SaveLastInputText { get; set; } = true;
+
+        /// <summary>最近使ったファイルのリストを保存するかどうか（デフォルト: true）</summary>
+        [JsonPropertyName("saveRecentFiles")]
+        public bool SaveRecentFiles { get; set; } = true;
+
+        /// <summary>終了時にテキスト・ファイル履歴を消去するかどうか（監査向け、デフォルト: false）</summary>
+        [JsonPropertyName("clearSensitiveDataOnExit")]
+        public bool ClearSensitiveDataOnExit { get; set; } = false;
     }
 }
