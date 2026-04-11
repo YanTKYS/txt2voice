@@ -5,9 +5,70 @@
 
 ---
 
-## 優先度：高（v0.1.5 で実装済み）
+## 優先度：高
 
-### 1. 設定の永続化 ✅
+### 17. Shift_JIS コードページ登録の一本化
+
+**課題**  
+`CsvService` の静的コンストラクタで `Encoding.RegisterProvider` を呼んでいるが、
+テキストファイル読み込み側（`MainWindow.FileOperations.ReadTextFileWithFallback`）は
+`Encoding.GetEncoding("shift_jis")` を直接呼んでいる。
+
+CSV 機能を使う前に Shift_JIS .txt ファイルをドロップ・開く操作をした場合、
+プロバイダーが未登録のまま `GetEncoding` が実行され `ArgumentException` になる可能性がある。
+
+**再現手順**（環境依存）
+
+1. アプリ起動
+2. CSV インポートを使わず Shift_JIS テキストをドラッグ&ドロップ
+3. `ReadTextFileWithFallback` の Shift_JIS フォールバック処理で例外
+
+**実装方針**
+
+`App.OnStartup` で `Encoding.RegisterProvider(CodePagesEncodingProvider.Instance)` を
+一度だけ呼ぶ（全体の共通化）。`CsvService` の静的コンストラクタからは削除して重複を排除。
+
+```csharp
+// App.xaml.cs OnStartup の先頭に追加
+System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+```
+
+**関連ファイル**
+
+- `App.xaml.cs` — `OnStartup` に登録処理を追加
+- `Services/CsvService.cs` — 静的コンストラクタの登録処理を削除（App 側に委譲）
+- `TxtToVoice.Tests/Services/CsvServiceTests.cs` — コンストラクタの登録処理を削除（不要になる）
+
+---
+
+### 18. ポータブルモード時の未処理例外ダイアログのログパス誤表示
+
+**課題**  
+`App.xaml.cs` の `DispatcherUnhandledException` ハンドラ内でログパスをハードコードしている。
+ポータブルモードでは `PathConfig.LogDirectory` が EXE フォルダ配下になるにもかかわらず、
+エラーダイアログに `%LOCALAPPDATA%\TxtToVoice\logs` が表示され、案内が誤る。
+
+```csharp
+// 現状（App.xaml.cs 34-36行）: ハードコード
+string logPath = System.IO.Path.Combine(
+    System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
+    "TxtToVoice", "logs");
+```
+
+**実装方針**
+
+```csharp
+// 修正後: PathConfig を使用
+string logPath = PathConfig.LogDirectory;
+```
+
+**関連ファイル**
+
+- `App.xaml.cs` — `DispatcherUnhandledException` ハンドラのログパスを `PathConfig.LogDirectory` に変更
+
+---
+
+### 3. 音声保存の非同期化 ✅（キャンセル UI は未実装）
 
 **課題**  
 速度・音量スライダーの値と選択中の音声が、アプリ再起動のたびにリセットされる。
@@ -59,7 +120,7 @@ UI スレッドがブロックされ、ウィンドウが「応答なし」状�
 - `SaveToFile()` に `CancellationToken` を受け取る非同期版 `SaveToFileAsync()` を追加
 - `MainWindow.PlaybackOperations.cs` の `SaveAudio()` を `async void SaveAudio()` に変更
 
-**残タスク: 保存進捗ダイアログ＋キャンセル**
+**残タスク: 保存進捗ダイアログ＋キャンセル**（レビューで改めて優先度高と確認）
 
 非同期化はできているが、キャンセル UI がないため長文保存時の運用性がまだ弱い。
 
@@ -133,6 +194,73 @@ RFC 4180 §2.6 の「引用符内に改行を含むフィールド」に非対�
 
 ## 優先度：中
 
+### 19. 機微データ消去のログ扱いを明文化・UI 文言改善
+
+**課題**  
+「設定」ダイアログの「終了時にテキスト・ファイル履歴を消去する」は
+入力テキストと最近使ったファイル履歴のみが対象であり、ログファイルは消去されない。
+ログには読み込んだファイルパスや部分的な入力内容が残りうるため、
+「全部消える」と利用者が誤認する可能性がある。
+
+**実装方針（段階的）**
+
+**(A) 最優先: 文言の明確化**  
+UI の文言を「テキスト・ファイル履歴のみを消去する（ログは含まない）」に変更する。
+
+**(B) 追加オプション: ログの INFO 抑制**  
+監査モード時（`ClearSensitiveDataOnExit = true`）に限り、
+`Logger.Info` の出力を抑制して機微情報のログへの書き込みを防ぐ。
+
+**(C) 強化オプション: ログの削除**  
+終了時にその日のログファイルを削除するオプションを追加する。
+`Logger` にメソッドを追加して `Window_Closing` から呼ぶ。
+
+**関連ファイル**
+
+- `Dialogs/SettingsDialog.xaml` — 文言を修正（A）
+- `Services/Logger.cs` — 抑制・削除オプションを追加（B/C）
+- `MainWindow.xaml.cs` — `Window_Closing` でオプション分岐（B/C）
+
+---
+
+### 20. ポータブルモード起動時の書込可否チェック
+
+**課題**  
+EXE フォルダへの書き込みが制限されている環境（配布先 PC の読み取り専用共有フォルダ等）で
+ポータブルモードを有効にした場合、設定・辞書・ログの保存がすべてサイレントに失敗する。
+エラーメッセージも出ないため、利用者は原因を特定できない。
+
+**実装方針**
+
+起動時（`App.OnStartup` or `MainWindow` コンストラクタ）に
+`DataDirectory` / `LogDirectory` への書き込みテストを実行する。
+
+```csharp
+private static bool TryWriteAccess(string dir)
+{
+    try
+    {
+        Directory.CreateDirectory(dir);
+        string probe = Path.Combine(dir, ".write_probe");
+        File.WriteAllText(probe, string.Empty);
+        File.Delete(probe);
+        return true;
+    }
+    catch { return false; }
+}
+```
+
+失敗した場合の選択肢:
+- **(A) 警告表示のみ**: 「保存先フォルダへの書き込みができません」を MessageBox で通知し続行
+- **(B) 通常モードへフォールバック**: ポータブルモードを無効化して `%LOCALAPPDATA%` を使用
+
+**関連ファイル**
+
+- `Services/PathConfig.cs` — 書込テストユーティリティを追加
+- `App.xaml.cs` または `MainWindow.xaml.cs` — 起動時チェックを呼び出す
+
+---
+
 ### 4. 読み上げ位置のハイライト ✅（ステータスバー表示に変更済み）
 
 **課題**  
@@ -149,7 +277,7 @@ RFC 4180 §2.6 の「引用符内に改行を含むフィールド」に非対�
 
 選択ハイライトを ON/OFF トグルで切り替えられるようにする案が提起された。
 
-**今後の方針（案）**
+**今後の方針（案）**（レビューで改めて実装を推奨）
 
 再生操作パネルにチェックボックス「読み上げ位置をハイライト表示する」を追加し、
 ON 時は `TxtInput.Select(pos, len) + ScrollToLine()`、
@@ -256,6 +384,62 @@ TxtToVoice.Tests/
 
 ## 優先度：低
 
+### 21. テキスト読み込みエンコード判定の README/コード整合
+
+**課題**  
+README は「UTF-8（BOM あり・なし）+ Shift_JIS を自動判別」と記載しているが、
+実装（`ReadTextFileWithFallback`）の判定順は BOM → UTF-8 → Shift_JIS のみで、
+UTF-16 BOM（LE/BE）は非対応。また実装コメントも簡略的で判定ロジックの説明が薄い。
+
+**実装方針**
+
+**(A) ドキュメント整合（最小対応）**  
+README に「UTF-16 は非対応」と明記し、実装コメントに判定順を詳述する。
+
+**(B) UTF-16 BOM 対応（追加実装）**  
+`StreamReader` の `detectEncodingFromByteOrderMarks: true` を使い、
+UTF-16 LE/BE BOM を自動検出する。
+
+```csharp
+// BOM 付き UTF-16 LE/BE を含む自動検出
+using var reader = new StreamReader(path, detectEncodingFromByteOrderMarks: true);
+// → BOM があれば正しいエンコードで読み込まれる
+```
+
+**関連ファイル**
+
+- `MainWindow.FileOperations.cs` — `ReadTextFileWithFallback` の実装とコメントを更新
+- `README.md` — エンコード対応表を更新
+
+---
+
+### 22. CI パフォーマンステスト閾値の環境依存対策
+
+**課題**  
+`DictionaryServicePerformanceTests` は絶対時間（10 秒・15 秒）で合否判定しており、
+CI 環境の性能差（低スペック runner、コンテナ等）でフレーキーになりうる。
+
+**実装方針（選択式）**
+
+**(A) 余裕を持たせた閾値（最小対応）**  
+閾値を 30 秒・45 秒程度に拡大し、アルゴリズム回帰の検出は維持しつつ
+環境差によるフレークを抑制する。
+
+**(B) `[Trait]` で CI 除外**  
+```csharp
+[Trait("Category", "Performance")]
+```
+通常 CI からは除外し、パフォーマンス専用の週次ジョブ等で実行する。
+
+**(C) 相対比較（高度）**  
+ベースライン実行 N 回の中央値を基準に「3 倍以内」等の相対閾値で判定する。
+
+**関連ファイル**
+
+- `TxtToVoice.Tests/Services/DictionaryServicePerformanceTests.cs` — 閾値・Trait を調整
+
+---
+
 ### 7. 最近使ったファイル（Recent Files） ✅
 
 **課題**  
@@ -328,6 +512,21 @@ MP3/MP4 保存・D&D ファイル読み込み・最近使ったファイル・SS
 | v0.1.7 | 最近使ったファイル（Recent Files） |
 | v0.1.8 | バージョン表示・ログ間引き・テスト拡充（CSV/AppSettings/Performance）・README 更新 |
 | v0.1.9 | CSV 複数行セル対応・機微データ保存ポリシー UI・ポータブルモード |
+
+## v0.1.9 レビュー査読結果
+
+| 指摘 | 妥当性 | 対応状況 |
+|---|---|---|
+| Shift_JIS 登録を App.OnStartup に一本化 | **妥当（実バグ）** | → 項目 17 として追加 |
+| ポータブルモード時の例外ダイアログのログパス修正 | **妥当（実バグ）** | → 項目 18 として追加 |
+| 音声保存キャンセル UI の実装 | 妥当（既知残タスク） | 項目 3 に記載済み |
+| 機微データ消去のログ扱いを明文化 | 妥当 | → 項目 19 として追加 |
+| ポータブルモード起動時の書込可否チェック | 妥当 | → 項目 20 として追加 |
+| 読み上げ位置をハイライト ON/OFF で切替可能に | 妥当（継続課題） | 項目 4 に記載済み |
+| エンコード判定の README/コード整合 | 妥当（低優先度） | → 項目 21 として追加 |
+| CI パフォーマンステスト閾値の見直し | 妥当（低優先度） | → 項目 22 として追加 |
+
+---
 
 ## 技術的負債（解消済み → v0.1.4）
 
