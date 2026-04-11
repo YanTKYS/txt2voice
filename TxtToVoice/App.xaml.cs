@@ -8,6 +8,10 @@ namespace TxtToVoice
     {
         protected override void OnStartup(StartupEventArgs e)
         {
+            // Shift_JIS 等のコードページエンコードをアプリ全体で使えるよう登録
+            // CsvService / ReadTextFileWithFallback など全てのエンコード利用箇所が対象
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+
             base.OnStartup(e);
 
             // NAudio が使用する Windows Media Foundation を初期化
@@ -31,9 +35,7 @@ namespace TxtToVoice
                     $"未処理例外: [{actual.GetType().Name}] {actual.Message}\n" +
                     $"StackTrace: {actual.StackTrace}");
 
-                string logPath = System.IO.Path.Combine(
-                    System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
-                    "TxtToVoice", "logs");
+                string logPath = PathConfig.LogDirectory;
 
                 MessageBox.Show(
                     $"予期しないエラーが発生しました。\n\n" +

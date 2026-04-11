@@ -18,8 +18,8 @@ namespace TxtToVoice.Tests.Services
 
         public CsvServiceTests()
         {
-            // .NET Core/5+ では Shift_JIS 等のコードページエンコードを使う前に登録が必要
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            // テストランナーは App.OnStartup を経由しないため、ここで明示的に登録する
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
         }
 
         public void Dispose()

@@ -1,0 +1,32 @@
+<Window x:Class="TxtToVoice.Dialogs.SaveProgressDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="音声保存中"
+        Height="140" Width="360"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Closing="Window_Closing"
+        Background="#F0F2F5">
+
+    <Grid Margin="20,16,20,16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="14"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0"
+                   Text="音声を変換しています..."
+                   FontSize="13" HorizontalAlignment="Center"/>
+
+        <ProgressBar Grid.Row="2" Height="8" IsIndeterminate="True"/>
+
+        <Button Grid.Row="4" x:Name="BtnCancel" Content="キャンセル"
+                Width="90" Height="28"
+                HorizontalAlignment="Center"
+                Click="BtnCancel_Click"/>
+    </Grid>
+</Window>

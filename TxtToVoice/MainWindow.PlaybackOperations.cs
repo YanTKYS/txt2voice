@@ -332,15 +332,26 @@ namespace TxtToVoice
             SetStatus("音声保存中...");
             BtnSaveWav.IsEnabled = false;
 
+            using var cts = new CancellationTokenSource();
+            var progressDialog = new Dialogs.SaveProgressDialog(cts) { Owner = this };
+            progressDialog.Show();
+
             try
             {
-                await _speechService.SaveToFileAsync(content, dlg.FileName, format, isSsml: useSsml);
+                await _speechService.SaveToFileAsync(content, dlg.FileName, format, isSsml: useSsml, ct: cts.Token);
+                progressDialog.MarkCompleted();
                 SetStatus($"音声保存完了: {Path.GetFileName(dlg.FileName)}");
                 MessageBox.Show(
                     $"音声ファイルを保存しました。\n\n{dlg.FileName}",
                     "保存完了",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
+            }
+            catch (OperationCanceledException)
+            {
+                try { File.Delete(dlg.FileName); } catch { /* 無視 */ }
+                SetStatus("音声保存をキャンセルしました。");
+                Logger.Info($"音声保存キャンセル: {dlg.FileName}");
             }
             catch (Exception ex)
             {
@@ -354,6 +365,7 @@ namespace TxtToVoice
             }
             finally
             {
+                progressDialog.Close();
                 BtnSaveWav.IsEnabled = true;
             }
         }

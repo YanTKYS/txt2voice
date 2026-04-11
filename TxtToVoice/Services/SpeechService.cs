@@ -248,7 +248,7 @@ namespace TxtToVoice.Services
         public Task SaveToFileAsync(string content, string outputPath, AudioFormat format,
             bool isSsml = false, CancellationToken ct = default)
             => Task.Run(
-                () => { ct.ThrowIfCancellationRequested(); SaveToFile(content, outputPath, format, isSsml); },
+                () => { ct.ThrowIfCancellationRequested(); SaveToFile(content, outputPath, format, isSsml, ct); },
                 ct);
 
         /// <summary>
@@ -259,7 +259,9 @@ namespace TxtToVoice.Services
         /// <param name="outputPath">出力ファイルパス</param>
         /// <param name="format">出力フォーマット（WAV / MP3 / MP4）</param>
         /// <param name="isSsml">true のとき content を SSML として扱う</param>
-        public void SaveToFile(string content, string outputPath, AudioFormat format, bool isSsml = false)
+        /// <param name="ct">キャンセルトークン</param>
+        public void SaveToFile(string content, string outputPath, AudioFormat format,
+            bool isSsml = false, CancellationToken ct = default)
         {
             if (_synth == null)
                 throw new InvalidOperationException("音声エンジンが利用できません。\n" + InitializationError);
@@ -271,20 +273,28 @@ namespace TxtToVoice.Services
                 Directory.CreateDirectory(dir);
 
             if (format == AudioFormat.Wav)
-                SaveWavDirect(content, outputPath, isSsml);
+                SaveWavDirect(content, outputPath, isSsml, ct);
             else
-                SaveEncoded(content, outputPath, format, isSsml);
+                SaveEncoded(content, outputPath, format, isSsml, ct);
         }
 
-        /// <summary>WAV を直接ファイルに書き出す。</summary>
-        private void SaveWavDirect(string content, string outputPath, bool isSsml)
+        /// <summary>WAV を直接ファイルに書き出す。キャンセル時は OperationCanceledException をスローする。</summary>
+        private void SaveWavDirect(string content, string outputPath, bool isSsml, CancellationToken ct)
         {
             using var wavSynth = BuildSynthClone();
+            using var done = new ManualResetEventSlim(false);
+            wavSynth.SpeakCompleted += (_, _) => done.Set();
+
+            // キャンセル時にベストエフォートで音声合成を中断する
+            using var reg = ct.Register(() => wavSynth.SpeakAsyncCancelAll());
+
             try
             {
                 wavSynth.SetOutputToWaveFile(outputPath);
-                if (isSsml) wavSynth.SpeakSsml(content);
-                else        wavSynth.Speak(content);
+                if (isSsml) wavSynth.SpeakSsmlAsync(content);
+                else        wavSynth.SpeakAsync(content);
+                done.Wait();                    // 完了（通常終了またはキャンセル）を待機
+                ct.ThrowIfCancellationRequested();
             }
             finally
             {
@@ -293,17 +303,25 @@ namespace TxtToVoice.Services
             Logger.Info($"WAV 保存完了: {outputPath}");
         }
 
-        /// <summary>WAV をメモリ経由で MP3 / MP4(AAC) にエンコードして保存する。</summary>
-        private void SaveEncoded(string content, string outputPath, AudioFormat format, bool isSsml)
+        /// <summary>WAV をメモリ経由で MP3 / MP4(AAC) にエンコードして保存する。キャンセル時は OperationCanceledException をスローする。</summary>
+        private void SaveEncoded(string content, string outputPath, AudioFormat format, bool isSsml, CancellationToken ct)
         {
             // 1. WAV をメモリストリームに生成
             using var ms = new MemoryStream();
             using var wavSynth = BuildSynthClone();
+            using var done = new ManualResetEventSlim(false);
+            wavSynth.SpeakCompleted += (_, _) => done.Set();
+
+            // キャンセル時にベストエフォートで音声合成を中断する
+            using var reg = ct.Register(() => wavSynth.SpeakAsyncCancelAll());
+
             try
             {
                 wavSynth.SetOutputToWaveStream(ms);
-                if (isSsml) wavSynth.SpeakSsml(content);
-                else        wavSynth.Speak(content);
+                if (isSsml) wavSynth.SpeakSsmlAsync(content);
+                else        wavSynth.SpeakAsync(content);
+                done.Wait();                    // 完了（通常終了またはキャンセル）を待機
+                ct.ThrowIfCancellationRequested();
             }
             finally
             {

@@ -1,13 +1,13 @@
 # 改善提案一覧
 
-今後の開発で対応予定の改善事項をまとめたドキュメント。
-優先度順に記載。実装時はこのリストから削除またはステータスを更新すること。
+全提案の詳細・経緯を管理するドキュメント。
+**未着手の項目のみを素早く確認したい場合は [docs/backlog.md](./backlog.md) を参照すること。**
 
 ---
 
 ## 優先度：高
 
-### 17. Shift_JIS コードページ登録の一本化
+### 17. Shift_JIS コードページ登録の一本化 ✅
 
 **課題**  
 `CsvService` の静的コンストラクタで `Encoding.RegisterProvider` を呼んでいるが、
@@ -41,7 +41,7 @@ System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Inst
 
 ---
 
-### 18. ポータブルモード時の未処理例外ダイアログのログパス誤表示
+### 18. ポータブルモード時の未処理例外ダイアログのログパス誤表示 ✅
 
 **課題**  
 `App.xaml.cs` の `DispatcherUnhandledException` ハンドラ内でログパスをハードコードしている。
@@ -68,7 +68,7 @@ string logPath = PathConfig.LogDirectory;
 
 ---
 
-### 3. 音声保存の非同期化 ✅（キャンセル UI は未実装）
+### 3. 音声保存の非同期化 ✅（キャンセル UI も実装済み）
 
 **課題**  
 速度・音量スライダーの値と選択中の音声が、アプリ再起動のたびにリセットされる。
@@ -120,30 +120,12 @@ UI スレッドがブロックされ、ウィンドウが「応答なし」状�
 - `SaveToFile()` に `CancellationToken` を受け取る非同期版 `SaveToFileAsync()` を追加
 - `MainWindow.PlaybackOperations.cs` の `SaveAudio()` を `async void SaveAudio()` に変更
 
-**残タスク: 保存進捗ダイアログ＋キャンセル**（レビューで改めて優先度高と確認）
+**v0.2.0 で実装済み: 保存進捗ダイアログ＋キャンセル**
 
-非同期化はできているが、キャンセル UI がないため長文保存時の運用性がまだ弱い。
-
-- モーダルダイアログに「キャンセル」ボタンを設ける
+- `Dialogs/SaveProgressDialog.xaml` / `.xaml.cs` を追加（非モーダル、インジケーター＋キャンセルボタン）
 - `SaveAudio()` 内で `CancellationTokenSource` を生成してダイアログに渡す
-- キャンセル時は保存途中ファイルを削除する
-
-```csharp
-// SaveAudio() に追加するイメージ
-using var cts = new CancellationTokenSource();
-var progressDialog = new SaveProgressDialog(cts) { Owner = this };
-progressDialog.Show();
-try
-{
-    await _speechService.SaveToFileAsync(content, dlg.FileName, format, isSsml: useSsml, ct: cts.Token);
-}
-catch (OperationCanceledException)
-{
-    try { File.Delete(dlg.FileName); } catch { }
-    SetStatus("音声保存をキャンセルしました。");
-}
-finally { progressDialog.Close(); }
-```
+- キャンセル時は書きかけファイルを自動削除
+- `SpeechService` 側で `SpeakAsync` + `ManualResetEventSlim` + `ct.Register(() => SpeakAsyncCancelAll())` でベストエフォート中断
 
 ---
 
@@ -512,6 +494,7 @@ MP3/MP4 保存・D&D ファイル読み込み・最近使ったファイル・SS
 | v0.1.7 | 最近使ったファイル（Recent Files） |
 | v0.1.8 | バージョン表示・ログ間引き・テスト拡充（CSV/AppSettings/Performance）・README 更新 |
 | v0.1.9 | CSV 複数行セル対応・機微データ保存ポリシー UI・ポータブルモード |
+| v0.2.0 | Shift_JIS 登録一本化（App.OnStartup）・ポータブルモード例外ダイアログのログパス修正・音声保存キャンセル UI |
 
 ## v0.1.9 レビュー査読結果
 
