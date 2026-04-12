@@ -285,8 +285,10 @@ TxtToVoice/
 TxtToVoice.Tests/
 └── Services/
     ├── DictionaryServiceTests.cs       辞書ロジック・位置マッピングテスト
-    ├── DictionaryServicePerformanceTests.cs  大規模辞書のパフォーマンス回帰テスト
+    ├── DictionaryServicePerformanceTests.cs  大規模辞書のパフォーマンス回帰テスト（CI 除外可）
     ├── SsmlBuilderTests.cs             SSML 変換テスト
     ├── CsvServiceTests.cs              CSV インポート/エクスポートテスト
-    └── AppSettingsServiceTests.cs      設定読み書きテスト
+    ├── AppSettingsServiceTests.cs      設定読み書きテスト
+    ├── PathConfigTests.cs              パス管理テスト（通常/ポータブルモード）
+    └── SpeechServiceCancelTests.cs     音声サービスキャンセルテスト（エンジン不要）
 ```

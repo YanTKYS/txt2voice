@@ -86,9 +86,9 @@ namespace TxtToVoice.Tests.Services
         public void SpeechService_初期化時に例外をスローしない()
         {
             // 音声エンジンが不在でも IsAvailable=false として正常に初期化されること
-            using var svc = new SpeechService();
-            // IsAvailable の値は環境依存だが、初期化自体は成功しなければならない
-            Assert.True(svc.IsAvailable || !svc.IsAvailable); // 常に true（初期化が完了した証明）
+            // Record.Exception で「例外が発生しないこと」を明示的に検証する
+            var ex = Record.Exception(() => { using var svc = new SpeechService(); });
+            Assert.Null(ex);
         }
 
         [Fact]
