@@ -214,7 +214,9 @@ namespace TxtToVoice
             string version = Assembly.GetEntryAssembly()
                 ?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
                 ?.InformationalVersion ?? "不明";
-            string portableNote = PathConfig.IsPortable ? "\n動作モード: ポータブルモード（EXEフォルダ内にデータ保存）" : string.Empty;
+            string portableNote = PathConfig.IsPortable             ? "\n動作モード: ポータブルモード（EXEフォルダ内にデータ保存）"
+                                : PathConfig.PortableFallbackApplied ? "\n動作モード: 通常モード（ポータブル要求→書込不可→自動切替）"
+                                : string.Empty;
             MessageBox.Show(
                 $"声の広報 テキスト読み上げツール  v{version}\n\n" +
                 "自治体職員向けの読み上げ補助ツールです。\n" +

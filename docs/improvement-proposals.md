@@ -146,6 +146,36 @@ RFC 4180 §2.6 の「引用符内に改行を含むフィールド」に非対�
 
 ## 優先度：中
 
+### 25. 監査モード INFO 抑制の起動直後適用
+
+**課題**  
+`Logger.SuppressInfo` は `LoadSettings()` で設定されるため、`App.OnStartup` および `MainWindow`
+初期化中のログ（「アプリケーション起動」「SpeechSynthesizer 初期化成功」等）は
+監査モードでも書き込まれてしまう。  
+厳密な監査運用では「アプリを一度でも起動した事実」もログに残らないことが要件となりうる。
+
+**実装方針**
+
+`App.OnStartup` の先頭（`Encoding.RegisterProvider` の直後）で
+設定 JSON から `clearSensitiveDataOnExit` フィールドのみを先読みし、`Logger.SuppressInfo` に適用する。  
+完全な設定読み込みは `MainWindow.LoadSettings()` で従来通り行う。
+
+```csharp
+// App.xaml.cs — OnStartup 先頭
+var auditFlag = AppSettingsService.ReadAuditFlag();  // 失敗時は false
+Logger.SuppressInfo = auditFlag;
+```
+
+`AppSettingsService.ReadAuditFlag()` は JSON から `clearSensitiveDataOnExit` のみを
+取り出す静的メソッドとして追加する（読み込み失敗・ファイル不在は false として扱う）。
+
+**関連ファイル**
+
+- `App.xaml.cs` — `OnStartup` 先頭に監査フラグ先読みを追加
+- `Services/AppSettingsService.cs` — `ReadAuditFlag()` 静的メソッドを追加
+
+---
+
 ### 19. 機微データ消去のログ扱いを明文化・UI 文言改善 ✅（A: 文言修正 / B: INFO 抑制 / C: ログ削除オプション 実装済み）
 
 **課題**  
@@ -539,6 +569,18 @@ MP3/MP4 保存・D&D ファイル読み込み・最近使ったファイル・SS
 | `_showReadingHighlight` フィールドが未使用（`ChkHighlight.IsChecked` を直接参照している） | 中 | 妥当（コード品質） | v0.2.2 で削除済み |
 | v0.2.1 新機能（ハイライト・書込チェック）の README 反映 | 低 | 妥当（低優先度） | → 項目 23 として追加 |
 | v0.2.x 実装済み機能（ポータブル書込チェック・ハイライト ON/OFF）のテスト追加 | 低 | 妥当（低優先度） | → 項目 24 として追加 |
+
+---
+
+## v0.2.3 レビュー査読結果
+
+| 指摘 | 優先度 | 妥当性 | 対応状況 |
+|---|---|---|---|
+| 監査モード INFO 抑制を起動直後から適用（App.OnStartup で先読み） | 中 | **妥当（動作上の制限）** | → 項目 25 として追加 |
+| 設定ダイアログの依存関係 UI 明示化（ChkDeleteLogOnExit の IsEnabled 連動） | 中 | 妥当（UX 改善） | v0.2.3 修正済み（`IsEnabled` XAML バインディング追加） |
+| About ダイアログに自動フォールバック状態を表示 | 低 | 妥当（運用改善） | v0.2.3 修正済み（`portableNote` に `PortableFallbackApplied` 分岐追加） |
+| backlog #24 テスト追加（PathConfig / SpeechService キャンセル） | 低 | 妥当（既知課題） | backlog #24 に記載済み |
+| backlog #21/#22 の計画化（エンコード範囲明記・CI 閾値対策） | 低 | 妥当（低優先度） | backlog #21/#22 に記載済み |
 
 ---
 

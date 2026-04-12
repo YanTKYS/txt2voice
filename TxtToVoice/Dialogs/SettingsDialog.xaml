@@ -31,6 +31,7 @@
                 <CheckBox x:Name="ChkDeleteLogOnExit"
                           Content="終了時にログファイルも削除する（監査向け・強化オプション）"
                           FontSize="12" Margin="20,2,0,4"
+                          IsEnabled="{Binding IsChecked, ElementName=ChkClearSensitiveDataOnExit}"
                           ToolTip="「消去する」がオンのときに有効になります。INFO ログ抑制に加えて、終了時にその日のログファイルを削除します。"/>
                 <TextBlock FontSize="10" Foreground="#666" Margin="0,6,0,0"
                            TextWrapping="Wrap">
