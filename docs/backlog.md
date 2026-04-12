@@ -30,3 +30,4 @@
 | 29 | テスト構成の分離 | 純ロジック層（DictionaryService 等）を net8.0 でテスト可能に分離（大規模）。中間キャンセルテストは単独で追加可能。 |
 | 30 | 監査強化モードのログ匿名化 | 監査モード時に WARN/ERROR のファイルフルパスをファイル名のみ（ディレクトリ伏せ）に変換して記録。 |
 | 33 | OSS 日本語 TTS エンジン同梱（OpenJTalk / VOICEVOX 系） | #31 完了後。品質重視の場合に #32 評価後に検討。配布物サイズ・ライセンス確認が必要。 |
+| 34 | WinRT エンジンの読み上げ箇所ハイライト対応 | `MediaPlaybackItem.TimedMetadataTracks` + `SpeechCue` を使い単語境界イベントを取得して `SpeakProgress` を発火。`_synth.Options.IncludeWordBoundaryMetadata = true` 設定が必要。 |

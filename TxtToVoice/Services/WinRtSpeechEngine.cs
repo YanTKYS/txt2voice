@@ -28,7 +28,6 @@ namespace TxtToVoice.Services
     {
         private Windows.Media.SpeechSynthesis.SpeechSynthesizer? _synth;
         private MediaPlayer? _player;
-        private System.Timers.Timer? _progressTimer;
         private CancellationTokenSource? _speakCts;
         private volatile bool _isSpeaking;
         private bool _disposed;
@@ -149,13 +148,11 @@ namespace TxtToVoice.Services
                 _player.MediaEnded += (s, e) =>
                 {
                     _isSpeaking = false;
-                    StopProgressTimer();
                     SpeakCompleted?.Invoke(this, EventArgs.Empty);
                 };
                 _player.MediaFailed += (s, e) =>
                 {
                     _isSpeaking = false;
-                    StopProgressTimer();
                     SpeakError?.Invoke(this, e.ErrorMessage);
                 };
                 _player.PlaybackSession.PlaybackStateChanged += (s, e) =>
@@ -167,7 +164,6 @@ namespace TxtToVoice.Services
                     }
                 };
 
-                SetupProgressTimer(stream);
                 _player.Source = MediaSource.CreateFromStream(stream, stream.ContentType);
                 _player.Play();
 
@@ -182,41 +178,6 @@ namespace TxtToVoice.Services
                 Logger.Error($"WinRT 読み上げエラー: {ex.Message}");
                 SpeakError?.Invoke(this, $"読み上げ中にエラーが発生しました。\n{ex.Message}");
             }
-        }
-
-        /// <summary>
-        /// SpeechSynthesisStream の Timelines（単語境界タイミング）を使い、
-        /// 50ms ポーリングで SpeakProgress イベントを発火する。
-        /// </summary>
-        private void SetupProgressTimer(SpeechSynthesisStream stream)
-        {
-            var timelines = stream.Timelines.ToList();
-            if (timelines.Count == 0) return;
-
-            int idx = 0;
-            _progressTimer = new System.Timers.Timer(50);
-            _progressTimer.Elapsed += (s, e) =>
-            {
-                var player = _player;
-                if (player?.PlaybackSession == null) return;
-                var pos = player.PlaybackSession.Position;
-                while (idx < timelines.Count && timelines[idx].StartTime <= pos)
-                {
-                    var word = timelines[idx];
-                    SpeakProgress?.Invoke(this, new SpeakProgressInfo(
-                        (int)word.StartPositionInText, (int)word.TextLength));
-                    idx++;
-                }
-            };
-            _progressTimer.Start();
-        }
-
-        private void StopProgressTimer()
-        {
-            var t = _progressTimer;
-            _progressTimer = null;
-            t?.Stop();
-            t?.Dispose();
         }
 
         public void Pause()
@@ -241,7 +202,6 @@ namespace TxtToVoice.Services
 
         private void StopInternal(bool fireEvent)
         {
-            StopProgressTimer();
             bool wasSpeaking = _isSpeaking;
             _isSpeaking = false;
             DisposePlayer();
@@ -334,7 +294,6 @@ namespace TxtToVoice.Services
             {
                 _speakCts?.Cancel();
                 _speakCts?.Dispose();
-                StopProgressTimer();
                 DisposePlayer();
                 try { _synth?.Dispose(); } catch { /* 無視 */ }
                 _synth = null;
