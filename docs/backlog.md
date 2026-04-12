@@ -17,7 +17,7 @@
 
 | # | 概要 | 詳細 |
 |---|---|---|
-| 25 | 監査モード INFO 抑制の起動直後適用 | App.OnStartup の先頭で clearSensitiveDataOnExit を先読みして Logger.SuppressInfo を即時設定する。AppSettingsService に ReadAuditFlag() を追加。 |
+| — | *(現在なし)* | — |
 
 ---
 

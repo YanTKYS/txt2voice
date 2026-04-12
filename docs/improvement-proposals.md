@@ -146,7 +146,7 @@ RFC 4180 §2.6 の「引用符内に改行を含むフィールド」に非対�
 
 ## 優先度：中
 
-### 25. 監査モード INFO 抑制の起動直後適用
+### 25. 監査モード INFO 抑制の起動直後適用 ✅
 
 **課題**  
 `Logger.SuppressInfo` は `LoadSettings()` で設定されるため、`App.OnStartup` および `MainWindow`
@@ -544,6 +544,7 @@ MP3/MP4 保存・D&D ファイル読み込み・最近使ったファイル・SS
 | v0.2.2 | キャンセル安全性修正（done.Wait(ct)・ObjectDisposedException ガード・エンコード後キャンセル確認）・未使用フィールド削除 |
 | v0.2.3 | 監査モード INFO ログ抑制・終了時ログ削除オプション・ポータブルモード自動フォールバック（PathConfig 統合）・README v0.2.x 機能説明更新 |
 | v0.2.4 | エンコード判定ドキュメント整合（UTF-16 BOM 対応を明記）・パフォーマンステスト `[Trait]`+閾値拡大・PathConfig / SpeechService キャンセルテスト追加 |
+| v0.2.5 | 監査モード INFO 抑制の起動直後適用（`AppSettingsService.ReadAuditFlag()` + `App.OnStartup` 先読み）・テスト tautology 修正・README テスト一覧更新 |
 
 ## v0.1.9 レビュー査読結果
 
@@ -589,7 +590,7 @@ MP3/MP4 保存・D&D ファイル読み込み・最近使ったファイル・SS
 
 | 指摘 | 優先度 | 妥当性 | 対応状況 |
 |---|---|---|---|
-| backlog #25 を実装（監査モード INFO 抑制を起動直後に適用） | 中 | **妥当（動作上の制限）** | backlog #25 に記載済み（優先度:中） |
+| backlog #25 を実装（監査モード INFO 抑制を起動直後に適用） | 中 | **妥当（動作上の制限）** | v0.2.5 で実装済み |
 | `SpeechService_初期化時に例外をスローしない` のトートロジー修正（`Record.Exception` + `Assert.Null` へ置換） | 中 | **妥当（テスト品質）** | v0.2.4 修正済み |
 | README のテスト一覧に PathConfigTests / SpeechServiceCancelTests を追記 | 低 | 妥当（ドキュメント不整合） | v0.2.4 修正済み |
 

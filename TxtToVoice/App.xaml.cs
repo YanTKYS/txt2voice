@@ -12,6 +12,10 @@ namespace TxtToVoice
             // CsvService / ReadTextFileWithFallback など全てのエンコード利用箇所が対象
             System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 
+            // 監査モード先読み — LoadSettings() より先に INFO 抑制を適用する
+            // これにより、Media Foundation 初期化ログ等の起動直後の INFO も抑制される
+            Logger.SuppressInfo = AppSettingsService.ReadAuditFlag();
+
             base.OnStartup(e);
 
             // NAudio が使用する Windows Media Foundation を初期化

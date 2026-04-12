@@ -31,6 +31,27 @@ namespace TxtToVoice.Services
             _settingsPath = customPath ?? DefaultSettingsPath;
         }
 
+        /// <summary>
+        /// 設定 JSON から <c>clearSensitiveDataOnExit</c> フィールドのみを先読みする。
+        /// ファイル不在・読み込み失敗・JSON 解析エラーの場合は <c>false</c> を返す。
+        /// App.OnStartup の先頭で <see cref="Logger.SuppressInfo"/> を早期適用するために使用する。
+        /// </summary>
+        public static bool ReadAuditFlag()
+        {
+            try
+            {
+                string path = PathConfig.SettingsPath;
+                if (!File.Exists(path)) return false;
+                string json = File.ReadAllText(path, Encoding.UTF8);
+                var s = JsonSerializer.Deserialize<AppSettings>(json, Options);
+                return s?.ClearSensitiveDataOnExit ?? false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public AppSettings Load()
         {
             if (!File.Exists(_settingsPath)) return new AppSettings();
