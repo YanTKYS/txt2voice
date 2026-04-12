@@ -146,6 +146,62 @@ RFC 4180 §2.6 の「引用符内に改行を含むフィールド」に非対�
 
 ## 優先度：中
 
+### 26. 辞書置換エンジンの高速化（都度ソート廃止・Aho-Corasick 移行）
+
+**課題**  
+`DictionaryService.ApplyDictionary()` は毎回 `BuildSortedEntries()` で辞書エントリを長さ降順にソートし、
+各エントリごとに `IndexOf` を走査するため O(エントリ数 × 本文長) の計算量となる。
+辞書が数百件・本文が数万文字になると読み上げ前の置換処理が体感遅延のボトルネックになりうる。
+
+性能テストの閾値も 30〜45 秒と緩めに設定されており、アルゴリズム回帰を早期検知しにくい。
+
+**実装方針（段階的）**
+
+**(A) 都度ソート廃止（最小対応）**  
+辞書更新時のみ `_sortedEntries` を再構築し、`ApplyDictionary()` のたびにソートしない。
+`AddEntry` / `DeleteEntry` / `Import` 時にキャッシュを更新する。
+
+**(B) Aho-Corasick への移行（高度）**  
+1 パスで全エントリの出現位置を O(本文長 + 全エントリ長の合計) で検出する。
+辞書更新時のみオートマトンを構築し直す。
+
+**(C) 性能テスト閾値の再定義**  
+実運用サイズを基準に閾値を 1〜3 秒台に再定義し、回帰検知感度を高める。
+
+**関連ファイル**
+
+- `TxtToVoice/Services/DictionaryService.cs` — `BuildSortedEntries` をキャッシュ化または Aho-Corasick に置換
+- `TxtToVoice.Tests/Services/DictionaryServicePerformanceTests.cs` — 閾値の再定義
+
+---
+
+### 27. CSV インポート時の重複語句マージポリシー明確化
+
+**課題**  
+CSV 追加インポート時、エントリは `AddEntry` でそのまま追加されるため、
+同一「表記」を持つ重複エントリが辞書に積み上がる。
+置換ロジックは長さ・出現順ベースで動作するが、重複時の優先順位はユーザーには不透明で、
+辞書メンテ担当者による誤投入リスクがある。
+
+**実装方針**
+
+インポート前に重複を検出し、処理方針をユーザーが選択できるようにする。
+
+| オプション | 動作 |
+|---|---|
+| 上書き | 既存エントリを新しい読みに置き換える |
+| スキップ | 重複エントリは追加しない（既存を維持） |
+| 両方保持 | 現状と同じ動作（重複を積む） |
+
+インポート実行前に「追加: N 件 / 重複: N 件 / 更新: N 件」のプレビューを表示することも推奨する。
+
+**関連ファイル**
+
+- `TxtToVoice/MainWindow.DictionaryOperations.cs` — インポート処理にポリシー選択を追加
+- `TxtToVoice/Services/DictionaryService.cs` — `ImportEntries(IEnumerable<DictionaryEntry>, MergePolicy)` を追加
+
+---
+
 ### 25. 監査モード INFO 抑制の起動直後適用 ✅
 
 **課題**  
@@ -367,6 +423,87 @@ TxtToVoice.Tests/
 ---
 
 ## 優先度：低
+
+### 28. 音声保存進捗の可視化改善（フェーズ表示・キャンセル状態の明確化）
+
+**課題**  
+`SaveProgressDialog` のプログレスバーは `IsIndeterminate=true` 固定のため、
+長尺保存（数分）でユーザーが完了見込みを把握できない。
+
+MP3/MP4 保存ではエンコード中のキャンセルが「エンコード完了後チェック」に近く、
+キャンセルを押してもすぐ停止しない体感になる。
+
+**実装方針**
+
+フェーズラベルの追加（最小対応）:  
+- 「音声生成中...」（`SpeakAsync` 段階）  
+- 「エンコード中...」（NAudio 変換段階、MP3/MP4 のみ）  
+- キャンセルボタン押下後: 「停止処理中...」に変更し、ボタンを無効化
+
+進捗率（%）の表示は NAudio / SAPI が進捗イベントを提供しないため実現困難。
+
+**関連ファイル**
+
+- `TxtToVoice/Dialogs/SaveProgressDialog.xaml` / `.xaml.cs` — フェーズラベル追加・キャンセル後状態の明確化
+- `TxtToVoice/Services/SpeechService.cs` — フェーズ通知用コールバックの追加
+
+---
+
+### 29. テスト構成の分離（Windows 依存テストと純ロジックテストの分離）
+
+**課題**  
+テストプロジェクトが `net8.0-windows` + `UseWPF` 前提のため、
+純ロジック（`DictionaryService` / `CsvService` 等）の検証でも Windows 実行環境を必要とする。
+
+`SpeechServiceCancelTests` は事前キャンセルの検証が中心で、
+保存処理の途中キャンセル・ファイル後始末・例外系の統合テストが不足している。
+
+**実装方針**
+
+**(A) ロジック層の分離（大規模）**  
+`TxtToVoice.Core` プロジェクトを切り出し `net8.0`（クロス OS）でビルドできるようにする。
+`DictionaryService` / `CsvService` / `SsmlBuilder` / `Logger` / `PathConfig` 等が対象。
+UI・WPF 依存は `TxtToVoice` プロジェクトに残す。
+
+**(B) 中間キャンセルテストの追加（単独で可能）**  
+`SpeechServiceCancelTests` に `CancellationTokenSource.CancelAfter(ms)` を使った
+遅延キャンセルテストを追加する。エンジン不在の CI 環境では `[Trait("Category", "RequiresEngine")]` で除外する。
+
+**関連ファイル**
+
+- `TxtToVoice.Tests/TxtToVoice.Tests.csproj` — `net8.0-windows` を `net8.0` に変更（A の場合）
+- `TxtToVoice.Tests/Services/SpeechServiceCancelTests.cs` — 中間キャンセルテストを追加（B）
+
+---
+
+### 30. 監査強化モードのログ匿名化オプション
+
+**課題**  
+v0.2.5 で INFO 抑制は改善済みだが、WARN / ERROR は常時記録されるため、
+例外発生時にファイルフルパスや入力文字列の断片がログへ残りうる。
+
+**実装方針**
+
+監査強化モード（`ClearSensitiveDataOnExit = true`）時に限り、
+ファイルパスをファイル名のみ（ディレクトリ部を `***`）に変換してログへ記録する。
+
+```csharp
+// Logger.Write() 内で呼び出す（監査モード時のみ適用）
+private static string Sanitize(string message)
+{
+    if (!SuppressInfo) return message;
+    return Regex.Replace(message, @"[A-Za-z]:\\[^\s:""]+",
+        m => $@"***\{Path.GetFileName(m.Value)}");
+}
+```
+
+例外本文の全文マスクは過剰でデバッグ性が落ちるため、パス部分のみを対象とする。
+
+**関連ファイル**
+
+- `TxtToVoice/Services/Logger.cs` — `Sanitize()` ユーティリティを追加し、`Write()` 内で呼び出す
+
+---
 
 ### 21. テキスト読み込みエンコード判定の README/コード整合 ✅
 
@@ -593,6 +730,18 @@ MP3/MP4 保存・D&D ファイル読み込み・最近使ったファイル・SS
 | backlog #25 を実装（監査モード INFO 抑制を起動直後に適用） | 中 | **妥当（動作上の制限）** | v0.2.5 で実装済み |
 | `SpeechService_初期化時に例外をスローしない` のトートロジー修正（`Record.Exception` + `Assert.Null` へ置換） | 中 | **妥当（テスト品質）** | v0.2.4 修正済み |
 | README のテスト一覧に PathConfigTests / SpeechServiceCancelTests を追記 | 低 | 妥当（ドキュメント不整合） | v0.2.4 修正済み |
+
+---
+
+## v0.2.5 レビュー査読結果
+
+| 指摘 | 優先度 | 妥当性 | 対応状況 |
+|---|---|---|---|
+| 辞書置換エンジンの高速化（都度ソート廃止・Aho-Corasick 移行・閾値再定義） | 中 | **妥当（性能改善）** | → 項目 26 として追加 |
+| CSV インポート時の重複語句マージポリシー明確化（上書き/スキップ/確認） | 中 | **妥当（運用リスク）** | → 項目 27 として追加 |
+| 音声保存進捗の可視化改善（フェーズ表示・キャンセル状態の明確化） | 低 | 妥当（UX 改善） | → 項目 28 として追加 |
+| テスト構成の分離（Windows 依存 vs 純ロジック・中間キャンセルテスト追加） | 低 | 妥当（技術負債） | → 項目 29 として追加 |
+| 監査強化モードのログ匿名化オプション（WARN/ERROR パスのマスキング） | 低 | 妥当（監査要件依存） | → 項目 30 として追加 |
 
 ---
 
