@@ -202,6 +202,52 @@ CSV 追加インポート時、エントリは `AddEntry` でそのまま追加�
 
 ---
 
+### 31. ISpeechEngine 抽象化（音声エンジン差し替え可能化）
+
+**課題**  
+`SpeechService` が `System.Speech.Synthesis.SpeechSynthesizer` に直接結合しており、
+エンジンの差し替え・テスト時のモック注入・将来のマルチエンジン対応がいずれも困難な状態にある。
+
+項目 #32（WinRT 移行）・#33（OSS エンジン同梱）を安全に段階導入するためには、
+このインターフェース抽象化が前提ステップとなる。
+
+**実装方針**
+
+`ISpeechEngine` インターフェースを新設し、現行の `SpeechSynthesizer` ラッパーを
+`SystemSpeechEngine` として切り出す。`SpeechService` はエンジンを DI（コンストラクタ注入）で受け取る。
+
+```csharp
+public interface ISpeechEngine : IDisposable
+{
+    bool     IsAvailable        { get; }
+    string?  InitializationError { get; }
+    string?  CurrentVoiceName   { get; }
+    IReadOnlyList<string> GetVoices();
+    void SetVoice(string voiceName);
+    void SetRate(int rate);
+    void SetVolume(int volume);
+    Task SpeakAsync(string text);
+    Task SpeakSsmlAsync(string ssml);
+    void Pause();
+    void Resume();
+    void Stop();
+    Task SaveWavAsync(string text, string outputPath, CancellationToken ct);
+}
+```
+
+設定ダイアログで「音声エンジン種別」（`SystemSpeech` / `WinRT` 等）を選択できるよう `AppSettings` に `SpeechEngineType` フィールドを追加する。
+既定値は現行互換（`SystemSpeech`）として段階導入を可能にする。
+
+**関連ファイル**
+
+- `TxtToVoice/Services/ISpeechEngine.cs` — 新規追加（インターフェース定義）
+- `TxtToVoice/Services/SystemSpeechEngine.cs` — 新規追加（現行実装のラッパー）
+- `TxtToVoice/Services/SpeechService.cs` — エンジン注入対応にリファクタリング
+- `TxtToVoice/Models/AppSettings.cs` — `SpeechEngineType` フィールドを追加
+- `TxtToVoice/Dialogs/SettingsDialog.xaml` / `.xaml.cs` — エンジン種別選択 UI を追加
+
+---
+
 ### 25. 監査モード INFO 抑制の起動直後適用 ✅
 
 **課題**  
@@ -502,6 +548,82 @@ private static string Sanitize(string message)
 **関連ファイル**
 
 - `TxtToVoice/Services/Logger.cs` — `Sanitize()` ユーティリティを追加し、`Write()` 内で呼び出す
+
+---
+
+### 32. WinRT 音声エンジン実装（Windows.Media.SpeechSynthesis への移行検証）
+
+**前提**: 項目 #31（ISpeechEngine 抽象化）が完了していること。
+
+**概要**  
+`System.Speech.Synthesis` の代わりに Windows 10/11 の WinRT 音声合成 API
+（`Windows.Media.SpeechSynthesis`）を使う `WinRtSpeechEngine` を実装する。
+
+**メリット**
+
+- OS 標準機能で完結（閉域環境向き）
+- 端末に導入済みの OneCore 系音声を利用でき、場合によっては自然さが改善
+- ネット接続不要で運用可能
+- 将来的な SSML 対応 API の利用も容易
+
+**デメリット・懸念点**
+
+- `Windows.Media.SpeechSynthesis` は UWP/WinRT API のため、WPF（.NET 8）から呼び出すには
+  `Microsoft.Windows.SDK.Contracts` または `CsWinRT` が必要（NuGet 追加）
+- 音声ファイル出力が `SpeechSynthesisStream` ベースで WAV/MP3 変換フローが差し替わる
+- 実際の音声品質は端末に入っている音声に依存する（環境差あり）
+
+**適合度**: 高（現行の閉域 Windows 運用に近い）
+
+**実装方針**
+
+1. `WinRtSpeechEngine : ISpeechEngine` を新規追加
+2. `AppSettings.SpeechEngineType = "WinRT"` で切替
+3. 品質・互換性を確認後、既定値変更を検討
+
+**関連ファイル**
+
+- `TxtToVoice/Services/WinRtSpeechEngine.cs` — 新規追加
+- `TxtToVoice.csproj` — `Microsoft.Windows.SDK.Contracts` 等の NuGet 参照を追加
+
+---
+
+### 33. OSS 日本語 TTS エンジン同梱（OpenJTalk / VOICEVOX 系）
+
+**前提**: 項目 #31（ISpeechEngine 抽象化）が完了していること。
+
+**概要**  
+OSS の日本語 TTS エンジンをアプリに同梱しローカル実行する。
+読みルールや辞書のカスタマイズ自由度が高く、読み上げ品質の大幅改善が期待できる。
+
+**候補エンジン**
+
+| エンジン | 特徴 | ライセンス（参考） |
+|---|---|---|
+| OpenJTalk + HTS Engine | 軽量・辞書カスタム可・実績あり | MIT 系（音声モデルに要確認） |
+| VOICEVOX エンジン（ローカル） | 自然さ高・HTTP/IPC 連携 | LGPL 系（要確認） |
+
+**メリット**
+
+- 完全オフライン・端末依存なし
+- 読みルール・辞書カスタマイズの自由度が高い
+
+**デメリット・懸念点**
+
+- 配布物が大きくなる（音声モデル含め数十〜数百 MB）
+- ライセンス確認・更新追従・サポートのメンテコスト増
+- VOICEVOX 型は別プロセス起動が必要（CPU/メモリ消費・監視運用）
+- UI 操作への応答性調整が必要（初期化遅延等）
+
+**適合度**: 中〜高（品質重視かつ端末スペックが十分な場合に有力）
+
+**推奨導入順序**  
+まず #32（WinRT）で品質・互換性を検証し、不十分な場合に本エンジンを評価する二段階戦略が安全。
+
+**関連ファイル**
+
+- `TxtToVoice/Services/OpenJTalkEngine.cs` or `VoicevoxEngine.cs` — 新規追加
+- `TxtToVoice.csproj` — エンジンバイナリの同梱設定を追加
 
 ---
 
