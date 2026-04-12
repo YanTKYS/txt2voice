@@ -1,7 +1,11 @@
 # 読み上げ品質改善 検討メモ
 
-System.Speech.Synthesis の範囲で実装可能な自然な読み上げへの改善案。
-外部 API・インターネット接続は一切使用しない。
+読み上げ品質の改善策を段階別に整理するドキュメント。
+
+- **短期（現行エンジン内）**: System.Speech.Synthesis の範囲で対応できる改善（SSML・前処理等）
+- **中長期（エンジン移行）**: より高品質な音声エンジンへの移行戦略（WinRT / OSS TTS）
+
+外部 API・インターネット接続は使用しない（閉域 Windows 環境を前提）。
 
 ---
 
@@ -91,22 +95,90 @@ SSML の `<prosody rate>` で重要語の前後を意図的に遅くする。
 
 ---
 
+## 中長期: 音声エンジン移行戦略
+
+上記 1〜3 の改善は現行エンジン（Windows SAPI / Haruka）の制約内での対応であり、
+抑揚・自然さには原理的な上限がある。より高品質な読み上げを目指す場合は
+以下の段階的移行戦略を検討する。
+
+### Step 0: ISpeechEngine 抽象化（backlog #31 — 前提ステップ）
+
+現行の `SpeechService` は `System.Speech.Synthesis.SpeechSynthesizer` に直接結合しており、
+エンジンの差し替えが困難な状態にある。
+
+移行に先立ち `ISpeechEngine` インターフェースを切り出し、現行実装を `SystemSpeechEngine` として
+ラップする。これによりエンジンを設定で切り替え可能な構造になる。
+
+```
+SpeechService
+└── ISpeechEngine（注入）
+    ├── SystemSpeechEngine  ← 現行互換（既定値）
+    ├── WinRtSpeechEngine   ← Step 1 で追加
+    └── OpenJTalkEngine 等  ← Step 2 で追加
+```
+
+### Step 1: WinRT 音声エンジンへの移行（backlog #32 — 第一候補）
+
+`Windows.Media.SpeechSynthesis`（WinRT API）を使う `WinRtSpeechEngine` を実装し、
+端末に導入済みの OneCore 系音声を利用する。
+
+| 観点 | 評価 |
+|---|---|
+| 閉域・オフライン | 〇（OS 標準機能） |
+| 音声品質 | △〜〇（端末依存だが Haruka より自然なことが多い） |
+| 実装コスト | 中（NuGet 追加・保存フロー差し替え） |
+| 適合度 | **高**（現行運用に最も近い） |
+
+**推奨**: まずこのステップで品質改善効果を確認する。
+
+### Step 2: OSS 日本語 TTS エンジン同梱（backlog #33 — 品質重視）
+
+Step 1 で十分な品質が得られない場合、OSS エンジン（OpenJTalk 系 / VOICEVOX 系）を評価する。
+
+| エンジン候補 | 音声品質 | 配布物増加 | 運用コスト | 適合度 |
+|---|---|---|---|---|
+| OpenJTalk + HTS 音声モデル | 中 | 中（数十 MB） | 低 | 中〜高 |
+| VOICEVOX エンジン（ローカル） | 高 | 大（数百 MB） | 高（別プロセス管理） | 中 |
+
+ライセンス確認（音声モデル含む）と配布物サイズ評価が必要。
+
+---
+
 ## 実装優先順位
 
 ```
-1. 句読点ポーズ自動挿入   ← 効果が最も高く実装も容易
+【短期: 現行エンジン内改善】
+1. 句読点ポーズ自動挿入   ← 効果が最も高く実装も容易（✅ v0.1.6 実装済み）
 2. 数字・日付前処理        ← 自治体文書では頻出
 3. prosody による速度調整  ← 音声エンジン依存のため優先度低
+
+【中長期: エンジン移行】
+4. ISpeechEngine 抽象化   ← 前提ステップ（backlog #31）
+5. WinRT エンジン実装      ← 第一候補、まず検証（backlog #32）
+6. OSS TTS エンジン同梱   ← Step 5 評価後に判断（backlog #33）
 ```
 
 ## 関連ファイル（実装時に追加・変更するファイル）
 
 ```
+【短期: 現行エンジン内改善】
 TxtToVoice/
 ├── Services/
-│   ├── SsmlBuilder.cs        # 新規: テキスト → SSML 変換
+│   ├── SsmlBuilder.cs        # 新規: テキスト → SSML 変換（✅ 実装済み）
 │   └── TextPreprocessor.cs   # 新規: 数字・日付前処理
 ├── MainWindow.xaml.cs        # 変更: プレビューに前処理結果を反映
 └── Services/
-    └── SpeechService.cs      # 変更: SpeakAsync を SpeakSsmlAsync に切替
+    └── SpeechService.cs      # 変更: SpeakAsync を SpeakSsmlAsync に切替（✅ 実装済み）
+
+【中長期: エンジン移行（backlog #31〜33）】
+TxtToVoice/
+└── Services/
+    ├── ISpeechEngine.cs       # 新規: エンジン抽象インターフェース（#31）
+    ├── SystemSpeechEngine.cs  # 新規: 現行 System.Speech ラッパー（#31）
+    ├── WinRtSpeechEngine.cs   # 新規: WinRT 実装（#32）
+    └── OpenJTalkEngine.cs 等  # 新規: OSS TTS 実装（#33）
+TxtToVoice/Models/
+    └── AppSettings.cs         # 変更: SpeechEngineType フィールド追加（#31）
+TxtToVoice/Dialogs/
+    └── SettingsDialog.xaml    # 変更: エンジン種別選択 UI（#31）
 ```
