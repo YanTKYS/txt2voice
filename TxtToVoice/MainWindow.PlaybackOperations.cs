@@ -51,6 +51,9 @@ namespace TxtToVoice
             _saveLastInputText       = s.SaveLastInputText;
             _saveRecentFiles          = s.SaveRecentFiles;
             _clearSensitiveDataOnExit = s.ClearSensitiveDataOnExit;
+            _deleteLogOnExit          = s.DeleteLogOnExit;
+            // 監査モードを Logger に即時反映（INFO ログ抑制）
+            Logger.SuppressInfo = _clearSensitiveDataOnExit;
             // 前回セッションのテキストを復元（ポリシーが許可している場合のみ）
             if (_saveLastInputText && !string.IsNullOrEmpty(s.LastInputText))
                 TxtInput.Text = s.LastInputText;
@@ -78,7 +81,8 @@ namespace TxtToVoice
                 // ポリシー設定は常に保存
                 SaveLastInputText        = _saveLastInputText,
                 SaveRecentFiles          = _saveRecentFiles,
-                ClearSensitiveDataOnExit = _clearSensitiveDataOnExit
+                ClearSensitiveDataOnExit = _clearSensitiveDataOnExit,
+                DeleteLogOnExit          = _deleteLogOnExit
             });
         }
 

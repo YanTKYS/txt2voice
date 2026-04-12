@@ -2,8 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="設定"
-        Height="260" Width="520"
-        MinHeight="220" MinWidth="420"
+        Height="320" Width="520"
+        MinHeight="280" MinWidth="420"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         ShowInTaskbar="False"
@@ -26,12 +26,16 @@
                           Content="最近使ったファイルのリストを保存する"
                           FontSize="12" Margin="0,4"/>
                 <CheckBox x:Name="ChkClearSensitiveDataOnExit"
-                          Content="終了時に入力テキスト・ファイル履歴を消去する（ログは含まない・監査向け）"
+                          Content="終了時に入力テキスト・ファイル履歴を消去する（監査向け）"
                           FontSize="12" Margin="0,4"/>
+                <CheckBox x:Name="ChkDeleteLogOnExit"
+                          Content="終了時にログファイルも削除する（監査向け・強化オプション）"
+                          FontSize="12" Margin="20,2,0,4"
+                          ToolTip="「消去する」がオンのときに有効になります。INFO ログ抑制に加えて、終了時にその日のログファイルを削除します。"/>
                 <TextBlock FontSize="10" Foreground="#666" Margin="0,6,0,0"
                            TextWrapping="Wrap">
-                    ※「消去する」をオンにすると、他の設定に関わらず終了時に入力テキスト・ファイル履歴を保存しません。
-                    ログファイルは消去対象外です（ログファイルの場所はバージョン情報ダイアログで確認できます）。
+                    ※「消去する」をオンにすると入力テキスト・ファイル履歴を保存せず、INFO ログの書き込みも抑制されます。
+                    「ログも削除」をオンにするとさらに終了時にその日のログファイルを削除します（ログの場所はバージョン情報で確認できます）。
                 </TextBlock>
             </StackPanel>
         </GroupBox>

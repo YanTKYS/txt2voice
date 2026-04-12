@@ -50,5 +50,13 @@ namespace TxtToVoice.Models
         /// <summary>読み上げ中に蛍光色で現在位置をハイライト表示するかどうか（デフォルト: true）</summary>
         [JsonPropertyName("showReadingHighlight")]
         public bool ShowReadingHighlight { get; set; } = true;
+
+        // ----------------------------------------------------------------
+        // 監査モード拡張：ログ削除
+        // ----------------------------------------------------------------
+
+        /// <summary>終了時にその日のログファイルを削除するかどうか（監査向け、デフォルト: false）</summary>
+        [JsonPropertyName("deleteLogOnExit")]
+        public bool DeleteLogOnExit { get; set; } = false;
     }
 }

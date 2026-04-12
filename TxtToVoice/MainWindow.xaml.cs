@@ -47,6 +47,7 @@ namespace TxtToVoice
         private bool _saveLastInputText       = true;
         private bool _saveRecentFiles          = true;
         private bool _clearSensitiveDataOnExit = false;
+        private bool _deleteLogOnExit          = false;
 
         // ----------------------------------------------------------------
         // コンストラクタ
@@ -56,7 +57,10 @@ namespace TxtToVoice
         {
             InitializeComponent();
 
-            Logger.Info($"アプリケーション起動{(PathConfig.IsPortable ? "（ポータブルモード）" : string.Empty)}");
+            string portableNote = PathConfig.IsPortable ? "（ポータブルモード）"
+                                : PathConfig.PortableFallbackApplied ? "（ポータブル要求→書込不可→通常モードへ自動切替）"
+                                : string.Empty;
+            Logger.Info($"アプリケーション起動{portableNote}");
 
             _speechService = new SpeechService();
             _dictService   = new DictionaryService(DictionaryPath);
@@ -72,19 +76,19 @@ namespace TxtToVoice
             LoadSettings();   // スライダー値・音声を復元（InitializeVoiceCombo の後）
             LoadDictionary();
 
-            // ポータブルモード時の書込可否チェック
-            string? writeError = PathConfig.CheckPortableWriteAccess();
-            if (writeError != null)
+            // ポータブルモード書込不可フォールバックの通知
+            if (PathConfig.PortableFallbackApplied)
             {
+                string fallbackData = PathConfig.DataDirectory;
                 MessageBox.Show(
-                    "ポータブルモードで起動しましたが、保存先フォルダへの書き込みができません。\n\n" +
-                    $"原因: {writeError}\n\n" +
-                    "辞書・設定・ログは保存されない可能性があります。\n" +
-                    "フォルダのアクセス権限を確認してください。",
-                    "ポータブルモード — 書き込みエラー",
+                    "portable.flag が見つかりましたが、EXE フォルダへの書き込みができません。\n\n" +
+                    "辞書・設定・ログは通常の保存先（%LOCALAPPDATA%\\TxtToVoice）に自動切替されました。\n\n" +
+                    $"保存先: {fallbackData}\n\n" +
+                    "ポータブルモードを使う場合はフォルダのアクセス権限を確認してください。",
+                    "ポータブルモード — 通常モードへ自動切替",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
-                Logger.Warn($"ポータブルモード書込可否チェック失敗: {writeError}");
+                Logger.Warn($"ポータブルモード書込不可: 通常モードへフォールバック。保存先={fallbackData}");
             }
 
             if (_speechService.IsAvailable)
@@ -154,7 +158,9 @@ namespace TxtToVoice
 
         private void MenuSettings_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new SettingsDialog(_saveLastInputText, _saveRecentFiles, _clearSensitiveDataOnExit)
+            var dlg = new SettingsDialog(
+                _saveLastInputText, _saveRecentFiles,
+                _clearSensitiveDataOnExit, _deleteLogOnExit)
             {
                 Owner = this
             };
@@ -163,6 +169,10 @@ namespace TxtToVoice
             _saveLastInputText       = dlg.SaveLastInputText;
             _saveRecentFiles          = dlg.SaveRecentFiles;
             _clearSensitiveDataOnExit = dlg.ClearSensitiveDataOnExit;
+            _deleteLogOnExit          = dlg.DeleteLogOnExit;
+
+            // 監査モードの変化を Logger にも即時反映する
+            Logger.SuppressInfo = _clearSensitiveDataOnExit;
 
             // _saveRecentFiles が false になった場合はメモリ上の履歴も消去
             if (!_saveRecentFiles)
@@ -320,10 +330,15 @@ namespace TxtToVoice
                 SaveLastInputText        = _saveLastInputText,
                 SaveRecentFiles          = _saveRecentFiles,
                 ClearSensitiveDataOnExit = _clearSensitiveDataOnExit,
+                DeleteLogOnExit          = _deleteLogOnExit,
                 ShowReadingHighlight     = ChkHighlight.IsChecked == true
             });
 
             Logger.Info("アプリケーション終了");
+
+            // 監査モード + ログ削除オプションが有効なときは終了時にログファイルを削除する
+            if (_clearSensitiveDataOnExit && _deleteLogOnExit)
+                Logger.DeleteTodayLog();
         }
     }
 }

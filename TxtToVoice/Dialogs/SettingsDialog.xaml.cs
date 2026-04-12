@@ -16,12 +16,17 @@ namespace TxtToVoice.Dialogs
         /// <summary>終了時に機微データを消去するかどうか（OK 押下後に確定）</summary>
         public bool ClearSensitiveDataOnExit { get; private set; }
 
-        public SettingsDialog(bool saveLastInputText, bool saveRecentFiles, bool clearSensitiveDataOnExit)
+        /// <summary>終了時にログファイルを削除するかどうか（OK 押下後に確定）</summary>
+        public bool DeleteLogOnExit { get; private set; }
+
+        public SettingsDialog(bool saveLastInputText, bool saveRecentFiles,
+            bool clearSensitiveDataOnExit, bool deleteLogOnExit)
         {
             InitializeComponent();
             ChkSaveLastInputText.IsChecked        = saveLastInputText;
             ChkSaveRecentFiles.IsChecked           = saveRecentFiles;
             ChkClearSensitiveDataOnExit.IsChecked  = clearSensitiveDataOnExit;
+            ChkDeleteLogOnExit.IsChecked           = deleteLogOnExit;
         }
 
         private void BtnOk_Click(object sender, RoutedEventArgs e)
@@ -29,6 +34,7 @@ namespace TxtToVoice.Dialogs
             SaveLastInputText       = ChkSaveLastInputText.IsChecked        == true;
             SaveRecentFiles          = ChkSaveRecentFiles.IsChecked           == true;
             ClearSensitiveDataOnExit = ChkClearSensitiveDataOnExit.IsChecked  == true;
+            DeleteLogOnExit          = ChkDeleteLogOnExit.IsChecked           == true;
             DialogResult = true;
         }
 
