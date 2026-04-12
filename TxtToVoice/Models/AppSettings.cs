@@ -58,5 +58,13 @@ namespace TxtToVoice.Models
         /// <summary>終了時にその日のログファイルを削除するかどうか（監査向け、デフォルト: false）</summary>
         [JsonPropertyName("deleteLogOnExit")]
         public bool DeleteLogOnExit { get; set; } = false;
+
+        // ----------------------------------------------------------------
+        // 音声エンジン
+        // ----------------------------------------------------------------
+
+        /// <summary>使用する音声エンジン種別（"SystemSpeech" または "WinRT"、デフォルト: "SystemSpeech"）</summary>
+        [JsonPropertyName("speechEngineType")]
+        public string SpeechEngineType { get; set; } = "SystemSpeech";
     }
 }

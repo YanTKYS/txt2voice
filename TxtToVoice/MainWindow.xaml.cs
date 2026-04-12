@@ -49,6 +49,9 @@ namespace TxtToVoice
         private bool _clearSensitiveDataOnExit = false;
         private bool _deleteLogOnExit          = false;
 
+        // 音声エンジン種別（変更は次回起動時に適用）
+        private string _speechEngineType = "SystemSpeech";
+
         // ----------------------------------------------------------------
         // コンストラクタ
         // ----------------------------------------------------------------
@@ -62,7 +65,12 @@ namespace TxtToVoice
                                 : string.Empty;
             Logger.Info($"アプリケーション起動{portableNote}");
 
-            _speechService = new SpeechService();
+            // 設定から音声エンジン種別を先読みして適切なエンジンを生成する
+            _speechEngineType = AppSettingsService.ReadEngineType();
+            ISpeechEngine engine = _speechEngineType == "WinRT"
+                ? (ISpeechEngine)new WinRtSpeechEngine()
+                : new SystemSpeechEngine();
+            _speechService = new SpeechService(engine);
             _dictService   = new DictionaryService(DictionaryPath);
 
             DgDictionary.ItemsSource = _entries;
@@ -97,10 +105,11 @@ namespace TxtToVoice
             }
             else
             {
-                SetStatus("警告: 音声エンジンを初期化できませんでした。テキスト編集・辞書管理は利用できます。");
+                string engineLabel = _speechEngineType == "WinRT" ? "WinRT (OneCore)" : "SAPI (System.Speech)";
+                SetStatus($"警告: 音声エンジン（{engineLabel}）を初期化できませんでした。テキスト編集・辞書管理は利用できます。");
                 DisableSpeechControls();
                 MessageBox.Show(
-                    "音声エンジン（Windows SAPI）を初期化できませんでした。\n\n" +
+                    $"音声エンジン（{engineLabel}）を初期化できませんでした。\n\n" +
                     $"詳細: {_speechService.InitializationError}\n\n" +
                     "テキスト編集・辞書管理は引き続き利用できます。\n" +
                     "音声機能を使うには、Windowsの「設定 → 時刻と言語 → 音声認識」から\n" +
@@ -160,7 +169,8 @@ namespace TxtToVoice
         {
             var dlg = new SettingsDialog(
                 _saveLastInputText, _saveRecentFiles,
-                _clearSensitiveDataOnExit, _deleteLogOnExit)
+                _clearSensitiveDataOnExit, _deleteLogOnExit,
+                _speechEngineType)
             {
                 Owner = this
             };
@@ -170,6 +180,7 @@ namespace TxtToVoice
             _saveRecentFiles          = dlg.SaveRecentFiles;
             _clearSensitiveDataOnExit = dlg.ClearSensitiveDataOnExit;
             _deleteLogOnExit          = dlg.DeleteLogOnExit;
+            _speechEngineType         = dlg.SpeechEngineType;
 
             // 監査モードの変化を Logger にも即時反映する
             Logger.SuppressInfo = _clearSensitiveDataOnExit;
@@ -217,10 +228,11 @@ namespace TxtToVoice
             string portableNote = PathConfig.IsPortable             ? "\n動作モード: ポータブルモード（EXEフォルダ内にデータ保存）"
                                 : PathConfig.PortableFallbackApplied ? "\n動作モード: 通常モード（ポータブル要求→書込不可→自動切替）"
                                 : string.Empty;
+            string engineLabel = _speechEngineType == "WinRT" ? "Windows WinRT (OneCore)" : "Windows SAPI (System.Speech)";
             MessageBox.Show(
                 $"声の広報 テキスト読み上げツール  v{version}\n\n" +
                 "自治体職員向けの読み上げ補助ツールです。\n" +
-                "Windows の音声合成エンジン（SAPI）を使用します。\n" +
+                $"音声エンジン: {engineLabel}\n" +
                 portableNote + "\n\n" +
                 "辞書ファイル: " + PathConfig.DictionaryPath + "\n" +
                 "ログファイル: " + PathConfig.LogDirectory,
@@ -328,12 +340,13 @@ namespace TxtToVoice
                 SsmlPauseEnabled = ChkSsml.IsChecked == true,
                 LastInputText    = persistText && lastText.Length <= 10_000 ? lastText : string.Empty,
                 RecentFiles      = persistRecent ? _recentFiles : new List<string>(),
-                // ポリシー設定は常に保存
+                // ポリシー設定・エンジン種別は常に保存
                 SaveLastInputText        = _saveLastInputText,
                 SaveRecentFiles          = _saveRecentFiles,
                 ClearSensitiveDataOnExit = _clearSensitiveDataOnExit,
                 DeleteLogOnExit          = _deleteLogOnExit,
-                ShowReadingHighlight     = ChkHighlight.IsChecked == true
+                ShowReadingHighlight     = ChkHighlight.IsChecked == true,
+                SpeechEngineType         = _speechEngineType
             });
 
             Logger.Info("アプリケーション終了");

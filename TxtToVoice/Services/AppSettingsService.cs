@@ -32,6 +32,27 @@ namespace TxtToVoice.Services
         }
 
         /// <summary>
+        /// 設定 JSON から <c>speechEngineType</c> フィールドのみを先読みする。
+        /// ファイル不在・読み込み失敗・JSON 解析エラーの場合は <c>"SystemSpeech"</c> を返す。
+        /// MainWindow コンストラクタで音声エンジンを生成する前に呼び出す。
+        /// </summary>
+        public static string ReadEngineType()
+        {
+            try
+            {
+                string path = PathConfig.SettingsPath;
+                if (!File.Exists(path)) return "SystemSpeech";
+                string json = File.ReadAllText(path, Encoding.UTF8);
+                var s = JsonSerializer.Deserialize<AppSettings>(json, Options);
+                return s?.SpeechEngineType ?? "SystemSpeech";
+            }
+            catch
+            {
+                return "SystemSpeech";
+            }
+        }
+
+        /// <summary>
         /// 設定 JSON から <c>clearSensitiveDataOnExit</c> フィールドのみを先読みする。
         /// ファイル不在・読み込み失敗・JSON 解析エラーの場合は <c>false</c> を返す。
         /// App.OnStartup の先頭で <see cref="Logger.SuppressInfo"/> を早期適用するために使用する。

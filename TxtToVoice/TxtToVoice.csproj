@@ -2,14 +2,15 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <!-- net8.0-windows10.0.19041.0: WinRT API (Windows.Media.SpeechSynthesis 等) を利用するために必要 -->
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <RootNamespace>TxtToVoice</RootNamespace>
     <AssemblyName>TxtToVoice</AssemblyName>
     <Company>声の広報 制作支援</Company>
     <Product>テキスト読み上げツール</Product>
-    <Version>0.2.5</Version>
+    <Version>0.3.0</Version>
     <ApplicationIcon></ApplicationIcon>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <Optimize>true</Optimize>

@@ -52,6 +52,7 @@ namespace TxtToVoice
             _saveRecentFiles          = s.SaveRecentFiles;
             _clearSensitiveDataOnExit = s.ClearSensitiveDataOnExit;
             _deleteLogOnExit          = s.DeleteLogOnExit;
+            _speechEngineType         = s.SpeechEngineType;
             // 監査モードを Logger に即時反映（INFO ログ抑制）
             Logger.SuppressInfo = _clearSensitiveDataOnExit;
             // 前回セッションのテキストを復元（ポリシーが許可している場合のみ）
@@ -78,11 +79,12 @@ namespace TxtToVoice
                 SsmlPauseEnabled     = ChkSsml.IsChecked == true,
                 ShowReadingHighlight = ChkHighlight.IsChecked == true,
                 RecentFiles          = _saveRecentFiles ? _recentFiles : new List<string>(),
-                // ポリシー設定は常に保存
+                // ポリシー設定・エンジン種別は常に保存
                 SaveLastInputText        = _saveLastInputText,
                 SaveRecentFiles          = _saveRecentFiles,
                 ClearSensitiveDataOnExit = _clearSensitiveDataOnExit,
-                DeleteLogOnExit          = _deleteLogOnExit
+                DeleteLogOnExit          = _deleteLogOnExit,
+                SpeechEngineType         = _speechEngineType
             });
         }
 

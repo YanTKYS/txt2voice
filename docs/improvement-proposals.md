@@ -202,7 +202,7 @@ CSV 追加インポート時、エントリは `AddEntry` でそのまま追加�
 
 ---
 
-### 31. ISpeechEngine 抽象化（音声エンジン差し替え可能化）
+### 31. ISpeechEngine 抽象化（音声エンジン差し替え可能化） ✅
 
 **課題**  
 `SpeechService` が `System.Speech.Synthesis.SpeechSynthesizer` に直接結合しており、
@@ -551,7 +551,7 @@ private static string Sanitize(string message)
 
 ---
 
-### 32. WinRT 音声エンジン実装（Windows.Media.SpeechSynthesis への移行検証）
+### 32. WinRT 音声エンジン実装（Windows.Media.SpeechSynthesis への移行検証） ✅
 
 **前提**: 項目 #31（ISpeechEngine 抽象化）が完了していること。
 
@@ -804,6 +804,7 @@ MP3/MP4 保存・D&D ファイル読み込み・最近使ったファイル・SS
 | v0.2.3 | 監査モード INFO ログ抑制・終了時ログ削除オプション・ポータブルモード自動フォールバック（PathConfig 統合）・README v0.2.x 機能説明更新 |
 | v0.2.4 | エンコード判定ドキュメント整合（UTF-16 BOM 対応を明記）・パフォーマンステスト `[Trait]`+閾値拡大・PathConfig / SpeechService キャンセルテスト追加 |
 | v0.2.5 | 監査モード INFO 抑制の起動直後適用（`AppSettingsService.ReadAuditFlag()` + `App.OnStartup` 先読み）・テスト tautology 修正・README テスト一覧更新 |
+| v0.3.0 | ISpeechEngine 抽象化（SystemSpeechEngine 切り出し）・WinRtSpeechEngine 実装・設定ダイアログにエンジン種別選択 UI 追加・TargetFramework を `net8.0-windows10.0.19041.0` に更新 |
 
 ## v0.1.9 レビュー査読結果
 
