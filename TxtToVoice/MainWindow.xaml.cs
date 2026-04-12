@@ -48,9 +48,6 @@ namespace TxtToVoice
         private bool _saveRecentFiles          = true;
         private bool _clearSensitiveDataOnExit = false;
 
-        // 読み上げ位置ハイライト
-        private bool _showReadingHighlight = true;
-
         // ----------------------------------------------------------------
         // コンストラクタ
         // ----------------------------------------------------------------

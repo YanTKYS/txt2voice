@@ -68,36 +68,6 @@ string logPath = PathConfig.LogDirectory;
 
 ---
 
-### 3. 音声保存の非同期化 ✅（キャンセル UI も実装済み）
-
-**課題**  
-速度・音量スライダーの値と選択中の音声が、アプリ再起動のたびにリセットされる。
-
-**実装方針**
-
-- 保存先: `%LOCALAPPDATA%\TxtToVoice\settings.json`
-- 保存タイミング: スライダー値変更時・音声選択変更時・ウィンドウクローズ時
-- 読み込みタイミング: `MainWindow` コンストラクタの末尾（`InitializeVoiceCombo()` の後）
-
-**保存する設定項目**
-
-| キー | 型 | 説明 |
-|---|---|---|
-| `rate` | int | 読み上げ速度（-10〜10） |
-| `volume` | int | 音量（0〜100） |
-| `voiceName` | string | 選択音声名 |
-
-**関連ファイル**
-
-```
-TxtToVoice/
-├── Models/AppSettings.cs              # 新規: 設定モデル
-├── Services/AppSettingsService.cs     # 新規: 設定の読み書き（JsonPersistenceService と同パターン）
-└── MainWindow.PlaybackOperations.cs   # 変更: スライダー変更時に SaveSettings() を呼ぶ
-```
-
----
-
 ### 2. ドラッグ&ドロップでファイルを開く ✅
 
 **課題**  
@@ -109,7 +79,7 @@ XAML の `Window` 要素に `AllowDrop="True"` を追加し、`Drop` イベン�
 
 ---
 
-### 3. 音声保存の非同期化 ✅（キャンセル UI は未実装）
+### 3. 音声保存の非同期化 ✅（キャンセル UI も実装済み）
 
 **課題**  
 `SpeechService.SaveToFile()` は同期処理のため、長い原稿（数千文字）を MP3 保存すると
@@ -397,6 +367,49 @@ using var reader = new StreamReader(path, detectEncodingFromByteOrderMarks: true
 
 ---
 
+### 23. README の v0.2.x 機能説明更新
+
+**課題**  
+v0.2.1 で追加した以下の機能が README に未掲載。  
+- 読み上げ位置ハイライト ON/OFF（蛍光イエロー表示）  
+- ポータブルモード起動時の書込可否チェック（警告ダイアログ）  
+- 機微データ消去の UI 文言改善（「ログは含まない」の明記）
+
+**実装方針**
+
+README の「機能一覧」および「操作手順」セクションを v0.2.1 時点に合わせて更新する。  
+スクリーンショットがあれば補足として追記する。
+
+**関連ファイル**
+
+- `README.md` — 各機能の説明を追記
+
+---
+
+### 24. v0.2.x 向けテスト追加
+
+**課題**  
+v0.2.0/v0.2.1 で実装した以下の機能にテストがない。
+
+- `PathConfig.CheckPortableWriteAccess()` — ポータブルモード書込可否チェック
+- `SpeechService.SaveWavDirect` / `SaveEncoded` — キャンセル時の `OperationCanceledException` 伝播
+- 読み上げ位置ハイライト ON/OFF 切り替え（UI ロジック）
+
+**実装方針**
+
+```
+TxtToVoice.Tests/
+├── Services/PathConfigTests.cs        # CheckPortableWriteAccess のユニットテスト
+└── Services/SpeechServiceSaveTests.cs # キャンセル伝播テスト（mock エンジン環境）
+```
+
+**関連ファイル**
+
+- `TxtToVoice.Tests/Services/PathConfigTests.cs` — 新規追加
+- `TxtToVoice.Tests/Services/SpeechServiceSaveTests.cs` — 新規追加（環境依存のため [Trait] で CI 除外可）
+
+---
+
 ### 22. CI パフォーマンステスト閾値の環境依存対策
 
 **課題**  
@@ -511,6 +524,19 @@ MP3/MP4 保存・D&D ファイル読み込み・最近使ったファイル・SS
 | 読み上げ位置をハイライト ON/OFF で切替可能に | 妥当（継続課題） | 項目 4 に記載済み |
 | エンコード判定の README/コード整合 | 妥当（低優先度） | → 項目 21 として追加 |
 | CI パフォーマンステスト閾値の見直し | 妥当（低優先度） | → 項目 22 として追加 |
+
+---
+
+## v0.2.1 レビュー査読結果
+
+| 指摘 | 優先度 | 妥当性 | 対応状況 |
+|---|---|---|---|
+| `done.Wait()` → `done.Wait(ct)` に変更（エンジン無応答時に無限待機） | 高 | **妥当（実バグ）** | v0.2.2 で修正済み |
+| `SpeakCompleted` コールバック内 `done.Set()` の `ObjectDisposedException` ガード | 高 | **妥当（実バグ）** | v0.2.2 で修正済み |
+| NAudio エンコード後に `ct.ThrowIfCancellationRequested()` を追加 | 中 | 妥当（改善） | v0.2.2 で修正済み |
+| `_showReadingHighlight` フィールドが未使用（`ChkHighlight.IsChecked` を直接参照している） | 中 | 妥当（コード品質） | v0.2.2 で削除済み |
+| v0.2.1 新機能（ハイライト・書込チェック）の README 反映 | 低 | 妥当（低優先度） | → 項目 23 として追加 |
+| v0.2.x 実装済み機能（ポータブル書込チェック・ハイライト ON/OFF）のテスト追加 | 低 | 妥当（低優先度） | → 項目 24 として追加 |
 
 ---
 

@@ -283,7 +283,7 @@ namespace TxtToVoice.Services
         {
             using var wavSynth = BuildSynthClone();
             using var done = new ManualResetEventSlim(false);
-            wavSynth.SpeakCompleted += (_, _) => done.Set();
+            wavSynth.SpeakCompleted += (_, _) => { try { done.Set(); } catch (ObjectDisposedException) { } };
 
             // キャンセル時にベストエフォートで音声合成を中断する
             using var reg = ct.Register(() => wavSynth.SpeakAsyncCancelAll());
@@ -293,7 +293,7 @@ namespace TxtToVoice.Services
                 wavSynth.SetOutputToWaveFile(outputPath);
                 if (isSsml) wavSynth.SpeakSsmlAsync(content);
                 else        wavSynth.SpeakAsync(content);
-                done.Wait();                    // 完了（通常終了またはキャンセル）を待機
+                done.Wait(ct);                  // 完了またはキャンセルを待機（ct 指定で無限待機を防ぐ）
                 ct.ThrowIfCancellationRequested();
             }
             finally
@@ -310,7 +310,7 @@ namespace TxtToVoice.Services
             using var ms = new MemoryStream();
             using var wavSynth = BuildSynthClone();
             using var done = new ManualResetEventSlim(false);
-            wavSynth.SpeakCompleted += (_, _) => done.Set();
+            wavSynth.SpeakCompleted += (_, _) => { try { done.Set(); } catch (ObjectDisposedException) { } };
 
             // キャンセル時にベストエフォートで音声合成を中断する
             using var reg = ct.Register(() => wavSynth.SpeakAsyncCancelAll());
@@ -320,7 +320,7 @@ namespace TxtToVoice.Services
                 wavSynth.SetOutputToWaveStream(ms);
                 if (isSsml) wavSynth.SpeakSsmlAsync(content);
                 else        wavSynth.SpeakAsync(content);
-                done.Wait();                    // 完了（通常終了またはキャンセル）を待機
+                done.Wait(ct);                  // 完了またはキャンセルを待機（ct 指定で無限待機を防ぐ）
                 ct.ThrowIfCancellationRequested();
             }
             finally
@@ -336,11 +336,13 @@ namespace TxtToVoice.Services
             if (format == AudioFormat.Mp3)
             {
                 MediaFoundationEncoder.EncodeToMp3(reader, outputPath, desiredBitRate: 128_000);
+                ct.ThrowIfCancellationRequested(); // エンコード完了後にキャンセル確認
                 Logger.Info($"MP3 保存完了: {outputPath}");
             }
             else
             {
                 MediaFoundationEncoder.EncodeToAac(reader, outputPath, desiredBitRate: 128_000);
+                ct.ThrowIfCancellationRequested(); // エンコード完了後にキャンセル確認
                 Logger.Info($"MP4(AAC) 保存完了: {outputPath}");
             }
         }
