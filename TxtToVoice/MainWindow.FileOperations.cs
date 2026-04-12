@@ -96,7 +96,18 @@ namespace TxtToVoice
             UpdateRecentFilesMenu();
         }
 
-        /// <summary>BOM → UTF-8 → Shift_JIS の順で自動判別して読み込む。</summary>
+        /// <summary>
+        /// BOM（UTF-8 / UTF-16 LE / UTF-16 BE）を自動検出し、BOM なしは UTF-8 → Shift_JIS
+        /// の順でフォールバックしてテキストを読み込む。
+        ///
+        /// 判定順:
+        ///   1. BOM あり — StreamReader が自動検出（UTF-8 BOM / UTF-16 LE BOM / UTF-16 BE BOM）
+        ///   2. BOM なし — UTF-8 として厳密に解釈（不正バイト列で DecoderFallbackException）
+        ///   3.          — Shift_JIS へフォールバック
+        ///
+        /// ※ File.ReadAllText は内部で detectEncodingFromByteOrderMarks: true の StreamReader を
+        ///   使用するため、UTF-16 BOM ファイルも正しく読み込まれる。
+        /// </summary>
         private static string ReadTextFileWithFallback(string path)
         {
             try

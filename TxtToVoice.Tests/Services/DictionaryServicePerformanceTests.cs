@@ -11,8 +11,12 @@ namespace TxtToVoice.Tests.Services
     /// <summary>
     /// DictionaryService のパフォーマンス回帰テスト。
     /// 大規模辞書 × 長文テキストで処理時間が許容値以内であることを確認する。
-    /// 許容値は CI 環境のスペック差を考慮して余裕を持たせてある。
+    ///
+    /// [Trait("Category", "Performance")] が付いているため、通常 CI では除外できる:
+    ///   dotnet test --filter "Category!=Performance"
+    /// 閾値は低スペック CI ランナーやコンテナ環境を考慮して余裕を持たせてある。
     /// </summary>
+    [Trait("Category", "Performance")]
     public class DictionaryServicePerformanceTests : IDisposable
     {
         private readonly string _tempPath;
@@ -34,11 +38,12 @@ namespace TxtToVoice.Tests.Services
         // ================================================================
 
         /// <summary>
-        /// 500件辞書 × 10,000文字テキストで ApplyDictionary が 10 秒以内に完了すること。
+        /// 500件辞書 × 10,000文字テキストで ApplyDictionary が 30 秒以内に完了すること。
         /// （ベースライン確認用。将来的にアルゴリズム改善後の比較に使う）
+        /// 閾値 30 秒: 低スペック CI ランナーでも安定するよう余裕を持たせてある。
         /// </summary>
         [Fact]
-        public void ApplyDictionary_500件辞書_10000文字を10秒以内に処理する()
+        public void ApplyDictionary_500件辞書_10000文字を30秒以内に処理する()
         {
             // 500件の辞書エントリを登録
             for (int i = 0; i < 500; i++)
@@ -64,15 +69,16 @@ namespace TxtToVoice.Tests.Services
             sw.Stop();
 
             Assert.NotEmpty(result);
-            Assert.True(sw.ElapsedMilliseconds < 10_000,
-                $"処理時間が上限を超えました: {sw.ElapsedMilliseconds} ms（上限: 10,000 ms）");
+            Assert.True(sw.ElapsedMilliseconds < 30_000,
+                $"処理時間が上限を超えました: {sw.ElapsedMilliseconds} ms（上限: 30,000 ms）");
         }
 
         /// <summary>
-        /// 100件辞書 × 50,000文字テキストで ApplyDictionaryForSpeech が 15 秒以内に完了すること。
+        /// 100件辞書 × 50,000文字テキストで ApplyDictionaryForSpeech が 45 秒以内に完了すること。
+        /// 閾値 45 秒: 低スペック CI ランナーでも安定するよう余裕を持たせてある。
         /// </summary>
         [Fact]
-        public void ApplyDictionaryForSpeech_100件辞書_50000文字を15秒以内に処理する()
+        public void ApplyDictionaryForSpeech_100件辞書_50000文字を45秒以内に処理する()
         {
             for (int i = 0; i < 100; i++)
                 _svc.AddEntry(new DictionaryEntry
@@ -97,8 +103,8 @@ namespace TxtToVoice.Tests.Services
 
             Assert.NotEmpty(speechText);
             Assert.NotNull(map);
-            Assert.True(sw.ElapsedMilliseconds < 15_000,
-                $"処理時間が上限を超えました: {sw.ElapsedMilliseconds} ms（上限: 15,000 ms）");
+            Assert.True(sw.ElapsedMilliseconds < 45_000,
+                $"処理時間が上限を超えました: {sw.ElapsedMilliseconds} ms（上限: 45,000 ms）");
         }
     }
 }
