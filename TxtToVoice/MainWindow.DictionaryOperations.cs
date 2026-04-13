@@ -81,6 +81,7 @@ namespace TxtToVoice
         {
             if (sender is System.Windows.Controls.RadioButton rb && rb.IsChecked != true) return;
             _annotatedPreview = RbPreviewAnnotated.IsChecked == true;
+            if (_dictService is null) return;
             if (!string.IsNullOrEmpty(TxtInput.Text))
                 ApplyAndPreview();
         }
