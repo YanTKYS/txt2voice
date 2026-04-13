@@ -327,11 +327,13 @@ namespace TxtToVoice
 
         private void ChkSsml_Changed(object sender, RoutedEventArgs e)
         {
+            if (_speechService is null) return;
             SaveCurrentSettings();
         }
 
         private void ChkHighlight_Changed(object sender, RoutedEventArgs e)
         {
+            if (_speechService is null) return;
             // ハイライトを OFF にした場合、再生中なら既存のハイライトをすぐ消す
             if (ChkHighlight.IsChecked == false && _isSpeaking)
                 ClearReadingHighlight();
