@@ -14,11 +14,14 @@
 Windows SAPI の日本語音声（Haruka 等）はニューラル TTS ではないため、
 抑揚・感情表現は機械的になる。外部 API なしでの音質向上には天井がある。
 
+WinRT OneCore 音声（v0.3.0 で対応済み）は SAPI より自然なことが多いが、
+端末にインストール済みの音声パッケージに依存する。
+
 ---
 
 ## 改善候補
 
-### 1. 句読点ポーズ自動挿入（効果: 高 / 難易度: 低）
+### 1. 句読点ポーズ自動挿入（効果: 高 / 難易度: 低）✅ v0.1.6 実装済み
 
 現状は句読点をそのまま渡しているため、息継ぎなしで読み続ける。
 SSML の `<break>` タグを自動付与するだけで聞き取りやすさが大きく向上する。
@@ -101,35 +104,45 @@ SSML の `<prosody rate>` で重要語の前後を意図的に遅くする。
 抑揚・自然さには原理的な上限がある。より高品質な読み上げを目指す場合は
 以下の段階的移行戦略を検討する。
 
-### Step 0: ISpeechEngine 抽象化（backlog #31 — 前提ステップ）
+### Step 0: ISpeechEngine 抽象化（backlog #31）✅ v0.3.0 実装済み
 
-現行の `SpeechService` は `System.Speech.Synthesis.SpeechSynthesizer` に直接結合しており、
-エンジンの差し替えが困難な状態にある。
-
-移行に先立ち `ISpeechEngine` インターフェースを切り出し、現行実装を `SystemSpeechEngine` として
-ラップする。これによりエンジンを設定で切り替え可能な構造になる。
+`SpeechService` が `System.Speech.Synthesis.SpeechSynthesizer` に直接結合していた構造を解消した。
 
 ```
-SpeechService
-└── ISpeechEngine（注入）
-    ├── SystemSpeechEngine  ← 現行互換（既定値）
-    ├── WinRtSpeechEngine   ← Step 1 で追加
-    └── OpenJTalkEngine 等  ← Step 2 で追加
+変更前:
+  SpeechService → SpeechSynthesizer（直接依存）
+
+変更後:
+  SpeechService → ISpeechEngine（インターフェース）
+                      ├── SystemSpeechEngine（System.Speech、既定）
+                      └── WinRtSpeechEngine（WinRT OneCore）
 ```
 
-### Step 1: WinRT 音声エンジンへの移行（backlog #32 — 第一候補）
+- `ISpeechEngine` インターフェース（`Services/ISpeechEngine.cs`）
+- `SystemSpeechEngine`（`Services/SystemSpeechEngine.cs`）— 旧 SpeechService の実装を移植
+- `SpeechService` は UI スレッドへのイベント転送と `SaveToFileAsync` の非同期ラップのみ担当
+- 設定ダイアログ（ファイル→設定）からエンジンを切り替え可能（変更は次回起動時に適用）
 
-`Windows.Media.SpeechSynthesis`（WinRT API）を使う `WinRtSpeechEngine` を実装し、
-端末に導入済みの OneCore 系音声を利用する。
+### Step 1: WinRT 音声エンジンへの移行（backlog #32）✅ v0.3.0 実装済み
+
+`Windows.Media.SpeechSynthesis`（WinRT API）を使う `WinRtSpeechEngine` を実装した。
+端末に導入済みの OneCore 系音声（Haruka-Mobile 等）を利用できる。
 
 | 観点 | 評価 |
 |---|---|
 | 閉域・オフライン | 〇（OS 標準機能） |
-| 音声品質 | △〜〇（端末依存だが Haruka より自然なことが多い） |
-| 実装コスト | 中（NuGet 追加・保存フロー差し替え） |
+| 必要 OS | Windows 10 Build 19041 (2004) 以降 |
+| 音声品質 | △〜〇（端末依存だが SAPI より自然なことが多い） |
+| 実装コスト | 完了 |
 | 適合度 | **高**（現行運用に最も近い） |
 
-**推奨**: まずこのステップで品質改善効果を確認する。
+**既知の制限（v0.3.1 時点）**
+
+- **読み上げ箇所ハイライト非対応**: WinRT の単語境界メタデータは `MediaPlaybackItem.TimedMetadataTracks`
+  経由でのイベント駆動取得が必要であり未実装（backlog #34）。SAPI モードではハイライト動作。
+- 音声の名前は SAPI と異なる（例: `"Microsoft Haruka"` vs `"Microsoft Haruka Desktop"`）。
+  エンジン切り替え後は起動時に音声を再選択すること。
+- SSML モードでの読み上げは対応済み。音声ファイル保存（WAV/MP3/MP4）も対応済み。
 
 ### Step 2: OSS 日本語 TTS エンジン同梱（backlog #33 — 品質重視）
 
@@ -148,37 +161,39 @@ Step 1 で十分な品質が得られない場合、OSS エンジン（OpenJTalk
 
 ```
 【短期: 現行エンジン内改善】
-1. 句読点ポーズ自動挿入   ← 効果が最も高く実装も容易（✅ v0.1.6 実装済み）
-2. 数字・日付前処理        ← 自治体文書では頻出
-3. prosody による速度調整  ← 音声エンジン依存のため優先度低
+1. 句読点ポーズ自動挿入   ← ✅ v0.1.6 実装済み
+2. 数字・日付前処理        ← 自治体文書では頻出（未着手）
+3. prosody による速度調整  ← 音声エンジン依存のため優先度低（未着手）
 
 【中長期: エンジン移行】
-4. ISpeechEngine 抽象化   ← 前提ステップ（backlog #31）
-5. WinRT エンジン実装      ← 第一候補、まず検証（backlog #32）
+4. ISpeechEngine 抽象化   ← ✅ v0.3.0 実装済み（backlog #31）
+5. WinRT エンジン実装      ← ✅ v0.3.0 実装済み（backlog #32）
+   └─ 読み上げハイライト   ← 未実装（backlog #34）
 6. OSS TTS エンジン同梱   ← Step 5 評価後に判断（backlog #33）
 ```
 
-## 関連ファイル（実装時に追加・変更するファイル）
+## 関連ファイル
 
 ```
 【短期: 現行エンジン内改善】
 TxtToVoice/
 ├── Services/
-│   ├── SsmlBuilder.cs        # 新規: テキスト → SSML 変換（✅ 実装済み）
-│   └── TextPreprocessor.cs   # 新規: 数字・日付前処理
-├── MainWindow.xaml.cs        # 変更: プレビューに前処理結果を反映
+│   ├── SsmlBuilder.cs        # ✅ 実装済み: テキスト → SSML 変換
+│   └── TextPreprocessor.cs   # 未実装: 数字・日付前処理
+├── MainWindow.xaml.cs        # 変更: プレビューに前処理結果を反映（前処理実装時）
 └── Services/
-    └── SpeechService.cs      # 変更: SpeakAsync を SpeakSsmlAsync に切替（✅ 実装済み）
+    └── SpeechService.cs      # ✅ 実装済み: SpeakAsync を SpeakSsmlAsync に切替
 
-【中長期: エンジン移行（backlog #31〜33）】
+【中長期: エンジン移行】
 TxtToVoice/
 └── Services/
-    ├── ISpeechEngine.cs       # 新規: エンジン抽象インターフェース（#31）
-    ├── SystemSpeechEngine.cs  # 新規: 現行 System.Speech ラッパー（#31）
-    ├── WinRtSpeechEngine.cs   # 新規: WinRT 実装（#32）
-    └── OpenJTalkEngine.cs 等  # 新規: OSS TTS 実装（#33）
+    ├── ISpeechEngine.cs       # ✅ 実装済み: エンジン抽象インターフェース (#31)
+    ├── SystemSpeechEngine.cs  # ✅ 実装済み: System.Speech ラッパー (#31)
+    ├── WinRtSpeechEngine.cs   # ✅ 実装済み: WinRT 実装 (#32)
+    │                            ※ 読み上げハイライト（SpeakProgress）は未実装 (#34)
+    └── OpenJTalkEngine.cs 等  # 未実装: OSS TTS 実装 (#33)
 TxtToVoice/Models/
-    └── AppSettings.cs         # 変更: SpeechEngineType フィールド追加（#31）
+    └── AppSettings.cs         # ✅ 実装済み: SpeechEngineType フィールド追加 (#31)
 TxtToVoice/Dialogs/
-    └── SettingsDialog.xaml    # 変更: エンジン種別選択 UI（#31）
+    └── SettingsDialog.xaml    # ✅ 実装済み: エンジン種別選択 UI (#31)
 ```
