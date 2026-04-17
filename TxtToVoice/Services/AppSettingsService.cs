@@ -33,7 +33,7 @@ namespace TxtToVoice.Services
 
         /// <summary>
         /// 設定 JSON から <c>speechEngineType</c> フィールドのみを先読みする。
-        /// ファイル不在・読み込み失敗・JSON 解析エラーの場合は <c>"SystemSpeech"</c> を返す。
+        /// ファイル不在・読み込み失敗・JSON 解析エラーの場合は <see cref="SpeechEngineFactory.Default"/> を返す。
         /// MainWindow コンストラクタで音声エンジンを生成する前に呼び出す。
         /// </summary>
         public static string ReadEngineType()
@@ -41,14 +41,14 @@ namespace TxtToVoice.Services
             try
             {
                 string path = PathConfig.SettingsPath;
-                if (!File.Exists(path)) return "SystemSpeech";
+                if (!File.Exists(path)) return SpeechEngineFactory.Default;
                 string json = File.ReadAllText(path, Encoding.UTF8);
                 var s = JsonSerializer.Deserialize<AppSettings>(json, Options);
-                return s?.SpeechEngineType ?? "SystemSpeech";
+                return s?.SpeechEngineType ?? SpeechEngineFactory.Default;
             }
             catch
             {
-                return "SystemSpeech";
+                return SpeechEngineFactory.Default;
             }
         }
 

@@ -1,4 +1,5 @@
 using System.Windows;
+using TxtToVoice.Services;
 
 namespace TxtToVoice.Dialogs
 {
@@ -19,8 +20,8 @@ namespace TxtToVoice.Dialogs
         /// <summary>終了時にログファイルを削除するかどうか（OK 押下後に確定）</summary>
         public bool DeleteLogOnExit { get; private set; }
 
-        /// <summary>使用する音声エンジン種別（"SystemSpeech" または "WinRT"、OK 押下後に確定）</summary>
-        public string SpeechEngineType { get; private set; } = "SystemSpeech";
+        /// <summary>使用する音声エンジン種別（<see cref="SpeechEngineFactory"/> 定数、OK 押下後に確定）</summary>
+        public string SpeechEngineType { get; private set; } = SpeechEngineFactory.Default;
 
         public SettingsDialog(bool saveLastInputText, bool saveRecentFiles,
             bool clearSensitiveDataOnExit, bool deleteLogOnExit,
@@ -31,8 +32,9 @@ namespace TxtToVoice.Dialogs
             ChkSaveRecentFiles.IsChecked           = saveRecentFiles;
             ChkClearSensitiveDataOnExit.IsChecked  = clearSensitiveDataOnExit;
             ChkDeleteLogOnExit.IsChecked           = deleteLogOnExit;
-            RbWinRt.IsChecked       = speechEngineType == "WinRT";
-            RbSystemSpeech.IsChecked = speechEngineType != "WinRT";
+            bool isWinRt = speechEngineType == SpeechEngineFactory.WinRt;
+            RbWinRt.IsChecked       = isWinRt;
+            RbSystemSpeech.IsChecked = !isWinRt;
         }
 
         private void BtnOk_Click(object sender, RoutedEventArgs e)
@@ -41,7 +43,9 @@ namespace TxtToVoice.Dialogs
             SaveRecentFiles          = ChkSaveRecentFiles.IsChecked           == true;
             ClearSensitiveDataOnExit = ChkClearSensitiveDataOnExit.IsChecked  == true;
             DeleteLogOnExit          = ChkDeleteLogOnExit.IsChecked           == true;
-            SpeechEngineType         = RbWinRt.IsChecked == true ? "WinRT" : "SystemSpeech";
+            SpeechEngineType         = RbWinRt.IsChecked == true
+                                         ? SpeechEngineFactory.WinRt
+                                         : SpeechEngineFactory.SystemSpeech;
             DialogResult = true;
         }
 

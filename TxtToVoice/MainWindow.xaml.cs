@@ -50,7 +50,7 @@ namespace TxtToVoice
         private bool _deleteLogOnExit          = false;
 
         // 音声エンジン種別（変更は次回起動時に適用）
-        private string _speechEngineType = "SystemSpeech";
+        private string _speechEngineType = SpeechEngineFactory.Default;
 
         // ----------------------------------------------------------------
         // コンストラクタ
@@ -67,10 +67,7 @@ namespace TxtToVoice
 
             // 設定から音声エンジン種別を先読みして適切なエンジンを生成する
             _speechEngineType = AppSettingsService.ReadEngineType();
-            ISpeechEngine engine = _speechEngineType == "WinRT"
-                ? (ISpeechEngine)new WinRtSpeechEngine()
-                : new SystemSpeechEngine();
-            _speechService = new SpeechService(engine);
+            _speechService   = new SpeechService(SpeechEngineFactory.Create(_speechEngineType));
             _dictService   = new DictionaryService(DictionaryPath);
 
             DgDictionary.ItemsSource = _entries;
@@ -105,7 +102,7 @@ namespace TxtToVoice
             }
             else
             {
-                string engineLabel = _speechEngineType == "WinRT" ? "WinRT (OneCore)" : "SAPI (System.Speech)";
+                string engineLabel = SpeechEngineFactory.GetLabel(_speechEngineType);
                 SetStatus($"警告: 音声エンジン（{engineLabel}）を初期化できませんでした。テキスト編集・辞書管理は利用できます。");
                 DisableSpeechControls();
                 MessageBox.Show(
@@ -228,7 +225,7 @@ namespace TxtToVoice
             string portableNote = PathConfig.IsPortable             ? "\n動作モード: ポータブルモード（EXEフォルダ内にデータ保存）"
                                 : PathConfig.PortableFallbackApplied ? "\n動作モード: 通常モード（ポータブル要求→書込不可→自動切替）"
                                 : string.Empty;
-            string engineLabel = _speechEngineType == "WinRT" ? "Windows WinRT (OneCore)" : "Windows SAPI (System.Speech)";
+            string engineLabel = SpeechEngineFactory.GetLabel(_speechEngineType, prefixWindows: true);
             MessageBox.Show(
                 $"声の広報 テキスト読み上げツール  v{version}\n\n" +
                 "自治体職員向けの読み上げ補助ツールです。\n" +
@@ -323,31 +320,13 @@ namespace TxtToVoice
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            string voiceName = _speechService.CurrentVoiceName;
+            // 設定は Dispose 前に組み立てる（CurrentVoiceName は破棄後に取得できないため）
+            var settings = BuildAppSettings(isExit: true);
+
             _speechService.Stop();
             _speechService.Dispose();
 
-            // 機微データポリシーを適用して保存
-            bool persistText   = _saveLastInputText       && !_clearSensitiveDataOnExit;
-            bool persistRecent = _saveRecentFiles          && !_clearSensitiveDataOnExit;
-
-            string lastText = TxtInput.Text;
-            _settingsService.Save(new AppSettings
-            {
-                Rate             = (int)SldRate.Value,
-                Volume           = (int)SldVolume.Value,
-                VoiceName        = voiceName,
-                SsmlPauseEnabled = ChkSsml.IsChecked == true,
-                LastInputText    = persistText && lastText.Length <= 10_000 ? lastText : string.Empty,
-                RecentFiles      = persistRecent ? _recentFiles : new List<string>(),
-                // ポリシー設定・エンジン種別は常に保存
-                SaveLastInputText        = _saveLastInputText,
-                SaveRecentFiles          = _saveRecentFiles,
-                ClearSensitiveDataOnExit = _clearSensitiveDataOnExit,
-                DeleteLogOnExit          = _deleteLogOnExit,
-                ShowReadingHighlight     = ChkHighlight.IsChecked == true,
-                SpeechEngineType         = _speechEngineType
-            });
+            _settingsService.Save(settings);
 
             Logger.Info("アプリケーション終了");
 

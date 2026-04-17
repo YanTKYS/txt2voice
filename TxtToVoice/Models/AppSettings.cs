@@ -63,7 +63,11 @@ namespace TxtToVoice.Models
         // 音声エンジン
         // ----------------------------------------------------------------
 
-        /// <summary>使用する音声エンジン種別（"SystemSpeech" または "WinRT"、デフォルト: "SystemSpeech"）</summary>
+        /// <summary>
+        /// 使用する音声エンジン種別（デフォルト: "SystemSpeech"）。
+        /// 有効値は <c>TxtToVoice.Services.SpeechEngineFactory</c> の定数を参照すること
+        /// （Models 層は Services に依存させないため文字列リテラルで保持）。
+        /// </summary>
         [JsonPropertyName("speechEngineType")]
         public string SpeechEngineType { get; set; } = "SystemSpeech";
     }

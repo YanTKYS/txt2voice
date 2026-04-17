@@ -69,23 +69,47 @@ namespace TxtToVoice
             Logger.Info($"設定を読み込みました: Rate={s.Rate}, Volume={s.Volume}, Voice={s.VoiceName}, Ssml={s.SsmlPauseEnabled}");
         }
 
+        /// <summary>LastInputText を保存対象に含めるかどうかの上限（文字数）</summary>
+        private const int MaxPersistedInputTextLength = 10_000;
+
         private void SaveCurrentSettings()
         {
-            _settingsService.Save(new AppSettings
+            _settingsService.Save(BuildAppSettings(isExit: false));
+        }
+
+        /// <summary>
+        /// 現在の UI 状態・ポリシーから <see cref="AppSettings"/> を組み立てる。
+        /// <paramref name="isExit"/> が true のときは終了時の機微データ消去ポリシーを適用し、
+        /// LastInputText および RecentFiles を <c>_clearSensitiveDataOnExit</c> でフィルタする。
+        /// 終了時以外（設定変更等）では LastInputText は保存対象に含めない（従来動作）。
+        /// </summary>
+        internal AppSettings BuildAppSettings(bool isExit)
+        {
+            bool persistText   = isExit && _saveLastInputText && !_clearSensitiveDataOnExit;
+            bool persistRecent = isExit
+                ? _saveRecentFiles && !_clearSensitiveDataOnExit
+                : _saveRecentFiles;
+
+            string lastText = TxtInput.Text;
+
+            return new AppSettings
             {
                 Rate             = (int)SldRate.Value,
                 Volume           = (int)SldVolume.Value,
                 VoiceName        = _speechService.CurrentVoiceName,
-                SsmlPauseEnabled     = ChkSsml.IsChecked == true,
-                ShowReadingHighlight = ChkHighlight.IsChecked == true,
-                RecentFiles          = _saveRecentFiles ? _recentFiles : new List<string>(),
+                SsmlPauseEnabled = ChkSsml.IsChecked == true,
+                LastInputText    = persistText && lastText.Length <= MaxPersistedInputTextLength
+                                     ? lastText
+                                     : string.Empty,
+                RecentFiles      = persistRecent ? _recentFiles : new List<string>(),
                 // ポリシー設定・エンジン種別は常に保存
                 SaveLastInputText        = _saveLastInputText,
                 SaveRecentFiles          = _saveRecentFiles,
                 ClearSensitiveDataOnExit = _clearSensitiveDataOnExit,
                 DeleteLogOnExit          = _deleteLogOnExit,
+                ShowReadingHighlight     = ChkHighlight.IsChecked == true,
                 SpeechEngineType         = _speechEngineType
-            });
+            };
         }
 
         // ----------------------------------------------------------------
