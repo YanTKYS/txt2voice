@@ -44,7 +44,16 @@ namespace TxtToVoice.Services
                 if (!File.Exists(path)) return SpeechEngineFactory.Default;
                 string json = File.ReadAllText(path, Encoding.UTF8);
                 var s = JsonSerializer.Deserialize<AppSettings>(json, Options);
-                return s?.SpeechEngineType ?? SpeechEngineFactory.Default;
+                if (s == null) return SpeechEngineFactory.Default;
+
+                // 未知値はデフォルトに正規化して即保存（自己修復）
+                if (!SpeechEngineFactory.IsKnown(s.SpeechEngineType))
+                {
+                    s.SpeechEngineType = SpeechEngineFactory.Default;
+                    new AppSettingsService().Save(s);
+                    return SpeechEngineFactory.Default;
+                }
+                return s.SpeechEngineType;
             }
             catch
             {

@@ -19,6 +19,10 @@ namespace TxtToVoice.Services
         /// <summary>未知の値を受け取ったときの既定種別。</summary>
         public const string Default = SystemSpeech;
 
+        /// <summary>指定した文字列が既知の有効なエンジン種別かどうかを返す。</summary>
+        public static bool IsKnown(string? engineType)
+            => engineType == SystemSpeech || engineType == WinRt;
+
         // ----------------------------------------------------------------
         // 生成
         // ----------------------------------------------------------------

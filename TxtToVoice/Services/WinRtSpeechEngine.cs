@@ -28,6 +28,7 @@ namespace TxtToVoice.Services
     {
         private Windows.Media.SpeechSynthesis.SpeechSynthesizer? _synth;
         private MediaPlayer? _player;
+        private MediaPlaybackItem? _mediaItem;
         private CancellationTokenSource? _speakCts;
         private volatile bool _isSpeaking;
         private bool _disposed;
@@ -42,6 +43,8 @@ namespace TxtToVoice.Services
             try
             {
                 _synth = new Windows.Media.SpeechSynthesis.SpeechSynthesizer();
+                // 単語境界メタデータを有効にして SpeakProgress イベントを発火できるようにする
+                _synth.Options.IncludeWordBoundaryMetadata = true;
                 IsAvailable = true;
                 Logger.Info("WinRtSpeechEngine 初期化成功");
             }
@@ -164,7 +167,12 @@ namespace TxtToVoice.Services
                     }
                 };
 
-                _player.Source = MediaSource.CreateFromStream(stream, stream.ContentType);
+                // MediaPlaybackItem 経由で TimedMetadataTracks から SpeakProgress を発火する
+                var mediaSource = MediaSource.CreateFromStream(stream, stream.ContentType);
+                _mediaItem = new MediaPlaybackItem(mediaSource);
+                SetupTimedMetadataTracks(_mediaItem);
+
+                _player.Source = _mediaItem;
                 _player.Play();
 
                 Logger.Info($"WinRT 読み上げ開始: {content.Length}文字");
@@ -177,6 +185,32 @@ namespace TxtToVoice.Services
             {
                 Logger.Error($"WinRT 読み上げエラー: {ex.Message}");
                 SpeakError?.Invoke(this, $"読み上げ中にエラーが発生しました。\n{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// MediaPlaybackItem の TimedMetadataTracks に SpeechCue リスナーを登録する。
+        /// SpeechSynthesisStream は合成済みのインメモリストリームのため、
+        /// 作成直後にすべてのトラックが利用可能になる。
+        /// </summary>
+        private void SetupTimedMetadataTracks(MediaPlaybackItem item)
+        {
+            int count = (int)item.TimedMetadataTracks.Count;
+            for (int i = 0; i < count; i++)
+            {
+                item.TimedMetadataTracks.SetPresentationMode(
+                    (uint)i, TimedMetadataTrackPresentationMode.ApplicationPresented);
+                item.TimedMetadataTracks[i].CueEntered += OnSpeechCueEntered;
+            }
+        }
+
+        private void OnSpeechCueEntered(TimedMetadataTrack sender, MediaCueEventArgs args)
+        {
+            if (args.Cue is SpeechCue cue)
+            {
+                int start = cue.StartPositionInInput ?? 0;
+                int count = (cue.EndPositionInInput ?? start) - start;
+                SpeakProgress?.Invoke(this, new SpeakProgressInfo(start, count));
             }
         }
 
@@ -213,10 +247,11 @@ namespace TxtToVoice.Services
         {
             var p = _player;
             _player = null;
+            _mediaItem = null; // player が mediaItem を保持しているため、参照を手放せば GC に委ねられる
             if (p == null) return;
-            try { p.Pause(); }    catch { /* 無視 */ }
+            try { p.Pause(); }       catch { /* 無視 */ }
             try { p.Source = null; } catch { /* 無視 */ }
-            try { p.Dispose(); }  catch { /* 無視 */ }
+            try { p.Dispose(); }     catch { /* 無視 */ }
         }
 
         // ----------------------------------------------------------------
@@ -249,37 +284,41 @@ namespace TxtToVoice.Services
                 throw new InvalidOperationException($"WinRT 音声合成失敗: {ex.Message}", ex);
             }
 
-            ct.ThrowIfCancellationRequested();
-
-            // SpeechSynthesisStream（IRandomAccessStream / WAV フォーマット）を MemoryStream に読み込む
-            // NAudio の WaveFileReader はシーク可能なストリームを必要とする
-            var ms = new MemoryStream();
-            stream.Seek(0);
-            using (var netStream = stream.AsStreamForRead())
-                netStream.CopyTo(ms);
-            ms.Seek(0, SeekOrigin.Begin);
-
-            if (format == AudioFormat.Wav)
+            // SpeechSynthesisStream を確実に解放する
+            using (stream)
             {
-                using var fs = new FileStream(outputPath, FileMode.Create, FileAccess.Write);
-                ms.CopyTo(fs);
                 ct.ThrowIfCancellationRequested();
-                Logger.Info($"WinRT WAV 保存完了: {outputPath}");
-            }
-            else
-            {
-                using var reader = new WaveFileReader(ms);
-                if (format == AudioFormat.Mp3)
+
+                // MemoryStream にコピー（WaveFileReader はシーク可能なストリームを必要とする）
+                // stream.Size で事前確保してコピー時の再アロケーションを抑制する
+                using var ms = new MemoryStream((int)stream.Size);
+                stream.Seek(0);
+                using (var netStream = stream.AsStreamForRead())
+                    netStream.CopyTo(ms);
+                ms.Seek(0, SeekOrigin.Begin);
+
+                if (format == AudioFormat.Wav)
                 {
-                    MediaFoundationEncoder.EncodeToMp3(reader, outputPath, desiredBitRate: 128_000);
+                    using var fs = new FileStream(outputPath, FileMode.Create, FileAccess.Write);
+                    ms.CopyTo(fs);
                     ct.ThrowIfCancellationRequested();
-                    Logger.Info($"WinRT MP3 保存完了: {outputPath}");
+                    Logger.Info($"WinRT WAV 保存完了: {outputPath}");
                 }
                 else
                 {
-                    MediaFoundationEncoder.EncodeToAac(reader, outputPath, desiredBitRate: 128_000);
-                    ct.ThrowIfCancellationRequested();
-                    Logger.Info($"WinRT MP4(AAC) 保存完了: {outputPath}");
+                    using var reader = new WaveFileReader(ms);
+                    if (format == AudioFormat.Mp3)
+                    {
+                        MediaFoundationEncoder.EncodeToMp3(reader, outputPath, desiredBitRate: 128_000);
+                        ct.ThrowIfCancellationRequested();
+                        Logger.Info($"WinRT MP3 保存完了: {outputPath}");
+                    }
+                    else
+                    {
+                        MediaFoundationEncoder.EncodeToAac(reader, outputPath, desiredBitRate: 128_000);
+                        ct.ThrowIfCancellationRequested();
+                        Logger.Info($"WinRT MP4(AAC) 保存完了: {outputPath}");
+                    }
                 }
             }
         }
