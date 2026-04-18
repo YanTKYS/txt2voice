@@ -14,7 +14,7 @@ namespace TxtToVoice.Tests.Services
         // ================================================================
 
         [Fact]
-        public void 定数_Default は SystemSpeech と同じ値である()
+        public void 定数_DefaultはSystemSpeechと同じ値である()
         {
             Assert.Equal(SpeechEngineFactory.SystemSpeech, SpeechEngineFactory.Default);
         }
