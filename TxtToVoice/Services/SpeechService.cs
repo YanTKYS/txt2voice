@@ -97,9 +97,9 @@ namespace TxtToVoice.Services
 
         /// <summary>テキストまたは SSML を音声ファイルとして非同期で保存する。</summary>
         public Task SaveToFileAsync(string content, string outputPath, AudioFormat format,
-            bool isSsml = false, CancellationToken ct = default)
+            bool isSsml = false, IProgress<string>? progress = null, CancellationToken ct = default)
             => Task.Run(
-                () => { ct.ThrowIfCancellationRequested(); _engine.SaveToFile(content, outputPath, format, isSsml, ct); },
+                () => { ct.ThrowIfCancellationRequested(); _engine.SaveToFile(content, outputPath, format, isSsml, progress, ct); },
                 ct);
 
         // ----------------------------------------------------------------

@@ -259,7 +259,7 @@ namespace TxtToVoice.Services
         // ----------------------------------------------------------------
 
         public void SaveToFile(string content, string outputPath, AudioFormat format,
-            bool isSsml = false, CancellationToken ct = default)
+            bool isSsml = false, IProgress<string>? progress = null, CancellationToken ct = default)
         {
             if (_synth == null)
                 throw new InvalidOperationException("音声エンジンが利用できません。\n" + InitializationError);
@@ -272,6 +272,7 @@ namespace TxtToVoice.Services
             if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
 
             // WinRT 合成（Task.Run 内のため .GetAwaiter().GetResult() が安全）
+            progress?.Report("音声を合成しています...");
             SpeechSynthesisStream stream;
             try
             {
@@ -306,6 +307,8 @@ namespace TxtToVoice.Services
                 }
                 else
                 {
+                    string encLabel = format == AudioFormat.Mp3 ? "MP3" : "MP4";
+                    progress?.Report($"{encLabel} にエンコードしています...");
                     using var reader = new WaveFileReader(ms);
                     if (format == AudioFormat.Mp3)
                     {

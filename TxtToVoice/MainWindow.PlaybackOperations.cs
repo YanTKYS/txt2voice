@@ -406,11 +406,13 @@ namespace TxtToVoice
 
             using var cts = new CancellationTokenSource();
             var progressDialog = new Dialogs.SaveProgressDialog(cts) { Owner = this };
+            var progress = new Progress<string>(msg => progressDialog.UpdatePhase(msg));
             progressDialog.Show();
 
             try
             {
-                await _speechService.SaveToFileAsync(content, dlg.FileName, format, isSsml: useSsml, ct: cts.Token);
+                await _speechService.SaveToFileAsync(content, dlg.FileName, format,
+                    isSsml: useSsml, progress: progress, ct: cts.Token);
                 progressDialog.MarkCompleted();
                 SetStatus($"音声保存完了: {Path.GetFileName(dlg.FileName)}");
                 MessageBox.Show(

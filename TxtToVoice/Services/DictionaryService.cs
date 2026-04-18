@@ -20,6 +20,9 @@ namespace TxtToVoice.Services
         private List<DictionaryEntry> _entries = new();
         private readonly JsonPersistenceService _persistence;
 
+        // BuildSortedEntries() の結果をキャッシュする。エントリ変更時に null にして無効化する。
+        private List<DictionaryEntry>? _sortedCache;
+
         public IReadOnlyList<DictionaryEntry> Entries => _entries.AsReadOnly();
 
         public DictionaryService(string dictionaryPath)
@@ -34,6 +37,7 @@ namespace TxtToVoice.Services
         public void Load()
         {
             _entries = _persistence.Load();
+            _sortedCache = null;
             Logger.Info($"辞書読み込み完了: {_entries.Count}件");
         }
 
@@ -42,6 +46,7 @@ namespace TxtToVoice.Services
         public void AddEntry(DictionaryEntry entry)
         {
             _entries.Add(entry);
+            _sortedCache = null;
             Logger.Info($"辞書追加: 「{entry.Display}」→「{entry.Reading}」");
         }
 
@@ -49,6 +54,7 @@ namespace TxtToVoice.Services
         {
             if (index < 0 || index >= _entries.Count) return;
             _entries[index] = entry;
+            _sortedCache = null;
             Logger.Info($"辞書更新: index={index} 「{entry.Display}」→「{entry.Reading}」");
         }
 
@@ -57,12 +63,36 @@ namespace TxtToVoice.Services
             if (index < 0 || index >= _entries.Count) return;
             var removed = _entries[index];
             _entries.RemoveAt(index);
+            _sortedCache = null;
             Logger.Info($"辞書削除: 「{removed.Display}」");
         }
 
         public void ReplaceAll(IEnumerable<DictionaryEntry> entries)
         {
             _entries = entries.ToList();
+            _sortedCache = null;
+        }
+
+        // ----------------------------------------------------------------
+        // CSV インポート向けユーティリティ
+        // ----------------------------------------------------------------
+
+        /// <summary>指定した表記を持つエントリが既に存在するかどうかを返す。</summary>
+        public bool HasDisplay(string display)
+            => _entries.Any(e => e.Display.Equals(display, StringComparison.Ordinal));
+
+        /// <summary>
+        /// 表記が一致する既存エントリを <paramref name="entry"/> で上書きする。
+        /// 一致がない場合は何もしない（追加しない）。
+        /// </summary>
+        public void UpdateByDisplay(DictionaryEntry entry)
+        {
+            int idx = _entries.FindIndex(
+                e => e.Display.Equals(entry.Display, StringComparison.Ordinal));
+            if (idx < 0) return;
+            _entries[idx] = entry;
+            _sortedCache = null;
+            Logger.Info($"辞書上書き（表記一致）: 「{entry.Display}」→「{entry.Reading}」");
         }
 
         // ----------------------------------------------------------------
@@ -161,6 +191,7 @@ namespace TxtToVoice.Services
                     added++;
                 }
             }
+            if (added > 0) _sortedCache = null;
             Logger.Info($"サンプル辞書読み込み: {added}件追加");
             return added;
         }
@@ -169,12 +200,15 @@ namespace TxtToVoice.Services
         // プライベートヘルパー
         // ----------------------------------------------------------------
 
-        private List<DictionaryEntry> BuildSortedEntries() =>
-            _entries
+        private List<DictionaryEntry> BuildSortedEntries()
+        {
+            _sortedCache ??= _entries
                 .Where(e => !string.IsNullOrEmpty(e.Display) && !string.IsNullOrEmpty(e.Reading))
                 .OrderByDescending(e => e.Display.Length)
                 .ThenByDescending(e => e.Priority)
                 .ToList();
+            return _sortedCache;
+        }
 
         /// <summary>
         /// テキスト内の全置換箇所を (Start, Length, Display, Reading) のリストで返す。

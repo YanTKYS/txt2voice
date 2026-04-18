@@ -135,7 +135,7 @@ namespace TxtToVoice.Services
         // ----------------------------------------------------------------
 
         public void SaveToFile(string content, string outputPath, AudioFormat format,
-            bool isSsml = false, CancellationToken ct = default)
+            bool isSsml = false, IProgress<string>? progress = null, CancellationToken ct = default)
         {
             if (_synth == null)
                 throw new InvalidOperationException("音声エンジンが利用できません。\n" + InitializationError);
@@ -145,16 +145,18 @@ namespace TxtToVoice.Services
             string? dir = Path.GetDirectoryName(outputPath);
             if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
 
-            if (format == AudioFormat.Wav) SaveWavDirect(content, outputPath, isSsml, ct);
-            else                           SaveEncoded(content, outputPath, format, isSsml, ct);
+            if (format == AudioFormat.Wav) SaveWavDirect(content, outputPath, isSsml, progress, ct);
+            else                           SaveEncoded(content, outputPath, format, isSsml, progress, ct);
         }
 
-        private void SaveWavDirect(string content, string outputPath, bool isSsml, CancellationToken ct)
+        private void SaveWavDirect(string content, string outputPath, bool isSsml,
+            IProgress<string>? progress, CancellationToken ct)
         {
             using var wavSynth = BuildSynthClone();
             using var done = new ManualResetEventSlim(false);
             wavSynth.SpeakCompleted += (_, _) => { try { done.Set(); } catch (ObjectDisposedException) { } };
             using var reg = ct.Register(() => wavSynth.SpeakAsyncCancelAll());
+            progress?.Report("音声を合成しています...");
             try
             {
                 wavSynth.SetOutputToWaveFile(outputPath);
@@ -167,13 +169,15 @@ namespace TxtToVoice.Services
             Logger.Info($"WAV 保存完了: {outputPath}");
         }
 
-        private void SaveEncoded(string content, string outputPath, AudioFormat format, bool isSsml, CancellationToken ct)
+        private void SaveEncoded(string content, string outputPath, AudioFormat format, bool isSsml,
+            IProgress<string>? progress, CancellationToken ct)
         {
             using var ms = new MemoryStream();
             using var wavSynth = BuildSynthClone();
             using var done = new ManualResetEventSlim(false);
             wavSynth.SpeakCompleted += (_, _) => { try { done.Set(); } catch (ObjectDisposedException) { } };
             using var reg = ct.Register(() => wavSynth.SpeakAsyncCancelAll());
+            progress?.Report("音声を合成しています...");
             try
             {
                 wavSynth.SetOutputToWaveStream(ms);
@@ -184,6 +188,8 @@ namespace TxtToVoice.Services
             }
             finally { try { wavSynth.SetOutputToDefaultAudioDevice(); } catch { /* 無視 */ } }
             ms.Seek(0, SeekOrigin.Begin);
+            string encLabel = format == AudioFormat.Mp3 ? "MP3" : "MP4";
+            progress?.Report($"{encLabel} にエンコードしています...");
             using var reader = new WaveFileReader(ms);
             if (format == AudioFormat.Mp3)
             {

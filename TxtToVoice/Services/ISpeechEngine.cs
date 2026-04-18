@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace TxtToVoice.Services
 {
@@ -65,8 +66,9 @@ namespace TxtToVoice.Services
         /// <summary>
         /// テキストまたは SSML を音声ファイルとして保存する（同期処理）。
         /// Task.Run 内から呼び出すこと。
+        /// <paramref name="progress"/> に合成フェーズ・エンコードフェーズのメッセージを報告する。
         /// </summary>
         void SaveToFile(string content, string outputPath, AudioFormat format,
-            bool isSsml = false, CancellationToken ct = default);
+            bool isSsml = false, IProgress<string>? progress = null, CancellationToken ct = default);
     }
 }

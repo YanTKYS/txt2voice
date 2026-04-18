@@ -187,12 +187,53 @@ namespace TxtToVoice
                 if (answer == MessageBoxResult.Cancel) return;
 
                 if (answer == MessageBoxResult.No)
+                {
+                    // 全置換: 重複チェック不要
                     _dictService.ReplaceAll(imported);
+                    SaveDictionaryAndRefresh();
+                    SetStatus($"CSV インポート完了（全置換）: {imported.Count} 件");
+                }
                 else
-                    foreach (var entry in imported) _dictService.AddEntry(entry);
+                {
+                    // 追加モード: 重複を検出してマージポリシーを確認する
+                    var newEntries = imported
+                        .Where(e => !_dictService.HasDisplay(e.Display))
+                        .ToList();
+                    var duplicates = imported
+                        .Where(e => _dictService.HasDisplay(e.Display))
+                        .ToList();
 
-                SaveDictionaryAndRefresh();
-                SetStatus($"CSV インポート完了: {imported.Count} 件");
+                    if (duplicates.Count == 0)
+                    {
+                        foreach (var e in imported) _dictService.AddEntry(e);
+                        SaveDictionaryAndRefresh();
+                        SetStatus($"CSV インポート完了: {imported.Count} 件追加");
+                    }
+                    else
+                    {
+                        var mergeAnswer = MessageBox.Show(
+                            $"インポート内訳:  新規 {newEntries.Count} 件 / 重複 {duplicates.Count} 件\n\n" +
+                            "「はい」　 : 重複を上書き（既存エントリの読みを更新）\n" +
+                            "「いいえ」 : 重複をスキップ（既存エントリをそのまま保持）\n" +
+                            "「キャンセル」: インポートを中止",
+                            "重複エントリの処理",
+                            MessageBoxButton.YesNoCancel,
+                            MessageBoxImage.Question);
+
+                        if (mergeAnswer == MessageBoxResult.Cancel) return;
+
+                        foreach (var e in newEntries) _dictService.AddEntry(e);
+
+                        if (mergeAnswer == MessageBoxResult.Yes)
+                            foreach (var e in duplicates) _dictService.UpdateByDisplay(e);
+
+                        SaveDictionaryAndRefresh();
+                        string overwriteNote = mergeAnswer == MessageBoxResult.Yes
+                            ? $"重複 {duplicates.Count} 件上書き"
+                            : $"重複 {duplicates.Count} 件スキップ";
+                        SetStatus($"CSV インポート完了: 新規 {newEntries.Count} 件追加、{overwriteNote}");
+                    }
+                }
             }
             catch (Exception ex)
             {

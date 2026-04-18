@@ -19,7 +19,8 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0"
-                   Text="音声を変換しています..."
+                   x:Name="TxtPhase"
+                   Text="音声を合成しています..."
                    FontSize="13" HorizontalAlignment="Center"/>
 
         <ProgressBar Grid.Row="2" Height="8" IsIndeterminate="True"/>

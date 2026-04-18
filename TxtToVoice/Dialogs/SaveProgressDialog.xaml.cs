@@ -22,6 +22,17 @@ namespace TxtToVoice.Dialogs
         /// <summary>保存が正常完了したことをマークする。ウィンドウを閉じてもキャンセルしない。</summary>
         public void MarkCompleted() => _completed = true;
 
+        /// <summary>
+        /// フェーズラベルを更新する（UI スレッド・バックグラウンドスレッドいずれからも呼び出し可）。
+        /// </summary>
+        public void UpdatePhase(string message)
+        {
+            if (!Dispatcher.CheckAccess())
+                Dispatcher.Invoke(() => TxtPhase.Text = message);
+            else
+                TxtPhase.Text = message;
+        }
+
         private void BtnCancel_Click(object sender, RoutedEventArgs e)
         {
             BtnCancel.IsEnabled = false;

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace TxtToVoice.Services
 {
@@ -38,6 +39,10 @@ namespace TxtToVoice.Services
 
         private static void Write(string level, string message)
         {
+            // 監査モードでは WARN/ERROR のメッセージ中にあるファイルフルパスをファイル名のみに置換する
+            if (SuppressInfo)
+                message = AnonymizePaths(message);
+
             lock (_lock)
             {
                 try
@@ -52,6 +57,17 @@ namespace TxtToVoice.Services
                 }
             }
         }
+
+        /// <summary>
+        /// メッセージ中の Windows 絶対パス（例: C:\Users\foo\bar.txt）を
+        /// ファイル名のみ（例: bar.txt）に置換する。
+        /// </summary>
+        private static string AnonymizePaths(string message)
+            => Regex.Replace(message, @"[A-Za-z]:\\[^\s,""']+", m =>
+            {
+                try   { return Path.GetFileName(m.Value); }
+                catch { return m.Value; }
+            });
 
         /// <summary>
         /// 今日のログファイルを削除する。終了時ログ消去オプション（監査向け）で使用する。
