@@ -34,7 +34,7 @@
 |------|------|
 | OS | Windows 10 / 11 |
 | ランタイム | .NET 8 Desktop Runtime（スタンドアロン版は不要） |
-| 音声合成 | Windows 標準音声エンジン（追加インストール不要） |
+| 音声合成 | Windows 標準音声エンジン（SAPI / WinRT OneCore、追加インストール不要） |
 | インターネット | 不要（完全オフライン動作） |
 
 ---
@@ -54,7 +54,7 @@ dotnet restore
 dotnet build -c Release
 ```
 
-ビルド成果物は `TxtToVoice\bin\Release\net8.0-windows\` に出力されます。
+ビルド成果物は `TxtToVoice\bin\Release\net8.0-windows10.0.19041.0\` に出力されます。
 
 ### テスト
 
@@ -111,7 +111,20 @@ dotnet publish -c Release -r win-x64 --self-contained true ^
      単語を蛍光イエローで強調表示します（通常の文字選択とは異なる色で識別できます）
    - 読み上げ中はステータスバーに進捗が表示されます（例: 読み上げ中... 45/200 文字）
 
-4. **音声ファイルとして保存する**
+4. **音声エンジンを切り替える（オプション）**
+   - 「ファイル」→「設定」ダイアログの「音声エンジン」で **SAPI（System.Speech）** と
+     **WinRT（OneCore）** を切り替えられます
+   - 変更は**次回起動時**に適用されます
+
+   | エンジン | 特徴 | 推奨用途 |
+   |---------|------|---------|
+   | SAPI（既定） | 読み上げ箇所ハイライト対応。安定動作 | 通常の読み上げ・位置確認 |
+   | WinRT（OneCore） | OneCore 系音声を使用。発音が自然になる場合あり | 音声品質を優先したい場合 |
+
+   > **WinRT の制限**: 読み上げ箇所ハイライトは現時点で非対応です（WinRT 選択時はハイライトが動作しません）。
+   > また、音声の表示名が SAPI と異なるため、エンジン切り替え後に音声を再選択してください。
+
+5. **音声ファイルとして保存する**
    - 「音声保存」ボタン（または Ctrl+S）を押します
    - **MP3 / WAV / MP4（AAC）** から保存形式を選択できます
    - 辞書補正済みテキストが保存されます。SSML モードがオンの場合はポーズも反映されます
@@ -226,6 +239,20 @@ Windows の「コントロールパネル」→「音声認識」→「テキス
 インストール済みの音声エンジンを確認してください。
 日本語音声が入っていない場合は、Windows の言語設定から「日本語」の音声パッケージを追加してください。
 
+### WinRT エンジン選択後に音声が一覧に表示されない
+
+WinRT（OneCore）エンジンの音声は SAPI の音声とは別の名前体系です
+（例: SAPI `"Microsoft Haruka Desktop"` → WinRT `"Microsoft Haruka"` 等）。
+エンジンを切り替えた後は起動時に「音声選択」から改めて音声を選択してください。
+OneCore 音声がインストールされていない場合は「設定」→「時刻と言語」→「音声認識」で
+日本語の音声パッケージを追加してください。
+
+### WinRT エンジンで読み上げ箇所のハイライトが表示されない
+
+WinRT エンジンでは読み上げ箇所ハイライト機能は現時点で未対応です（今後のバージョンで対応予定）。
+ハイライト機能を使いたい場合は「ファイル」→「設定」で SAPI（System.Speech）エンジンに
+切り替えて再起動してください。
+
 ### 「辞書ファイルが破損しているか読み込めません」と表示される
 
 辞書ファイル（`%LOCALAPPDATA%\TxtToVoice\dictionary.json`）が壊れています。
@@ -277,6 +304,10 @@ TxtToVoice/
 │   ├── JsonPersistenceService.cs  辞書 JSON 読み書き
 │   ├── DictionaryService.cs    辞書管理・テキスト置換ロジック
 │   ├── CsvService.cs           CSV インポート / エクスポート
+│   ├── ISpeechEngine.cs        音声エンジン抽象インターフェース
+│   ├── SystemSpeechEngine.cs   SAPI（System.Speech）エンジン実装
+│   ├── WinRtSpeechEngine.cs    WinRT（OneCore）エンジン実装
+│   ├── SpeechEngineFactory.cs  エンジン種別定数・生成・ラベル書式
 │   ├── SpeechService.cs        音声合成ラッパー（WAV/MP3/MP4 保存・キャンセル対応）
 │   └── SsmlBuilder.cs          テキスト → SSML 変換（ポーズ自動挿入）
 └── Data/

@@ -138,8 +138,9 @@ SSML の `<prosody rate>` で重要語の前後を意図的に遅くする。
 
 **既知の制限（v0.3.1 時点）**
 
-- **読み上げ箇所ハイライト非対応**: WinRT の単語境界メタデータは `MediaPlaybackItem.TimedMetadataTracks`
-  経由でのイベント駆動取得が必要であり未実装（backlog #34）。SAPI モードではハイライト動作。
+- **読み上げ箇所ハイライト非対応** ⚠️ backlog #34（優先度：高）: WinRT の単語境界メタデータは
+  `MediaPlaybackItem.TimedMetadataTracks` 経由でのイベント駆動取得が必要であり未実装。
+  SAPI モードではハイライト動作。SAPI との機能パリティ回復として最優先で対応予定。
 - 音声の名前は SAPI と異なる（例: `"Microsoft Haruka"` vs `"Microsoft Haruka Desktop"`）。
   エンジン切り替え後は起動時に音声を再選択すること。
 - SSML モードでの読み上げは対応済み。音声ファイル保存（WAV/MP3/MP4）も対応済み。
@@ -193,7 +194,7 @@ Step 1 で十分な品質が得られない場合、OSS エンジン（OpenJTalk
 【中長期: エンジン移行】
 4. ISpeechEngine 抽象化   ← ✅ v0.3.0 実装済み（backlog #31）
 5. WinRT エンジン実装      ← ✅ v0.3.0 実装済み（backlog #32）
-   └─ 読み上げハイライト   ← 未実装（backlog #34）
+   └─ 読み上げハイライト   ← 未実装（backlog #34、優先度：高）
 6. OSS TTS エンジン同梱   ← Step 5 評価後に判断（backlog #33）
 ```
 
