@@ -15,6 +15,14 @@ namespace TxtToVoice.Models
         [JsonPropertyName("voiceName")]
         public string VoiceName { get; set; } = string.Empty;
 
+        /// <summary>
+        /// 音声の内部識別子（WinRT: VoiceInformation.Id、SAPI: VoiceInfo.Id）。
+        /// voiceName（DisplayName）より安定した識別子として保存する。
+        /// 設定ファイルに存在しない場合は空文字列（後方互換: voiceName で検索）。
+        /// </summary>
+        [JsonPropertyName("voiceId")]
+        public string VoiceId { get; set; } = string.Empty;
+
         /// <summary>SSML ポーズ挿入が有効かどうか</summary>
         [JsonPropertyName("ssmlPauseEnabled")]
         public bool SsmlPauseEnabled { get; set; } = false;

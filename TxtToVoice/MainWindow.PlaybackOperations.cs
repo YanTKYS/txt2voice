@@ -37,10 +37,15 @@ namespace TxtToVoice
             // スライダー設定（ValueChanged → SetRate/SetVolume が呼ばれる）
             SldRate.Value   = Math.Clamp(s.Rate,   -10, 10);
             SldVolume.Value = Math.Clamp(s.Volume,   0, 100);
-            // 音声選択
-            if (!string.IsNullOrEmpty(s.VoiceName))
+            // 音声選択: VoiceId（内部識別子）で検索し、見つからない場合は VoiceName にフォールバック
+            string? voiceDisplayName = null;
+            if (!string.IsNullOrEmpty(s.VoiceId))
+                voiceDisplayName = _speechService.FindVoiceNameById(s.VoiceId);
+            if (voiceDisplayName == null && !string.IsNullOrEmpty(s.VoiceName))
+                voiceDisplayName = s.VoiceName;
+            if (voiceDisplayName != null)
             {
-                int idx = CmbVoice.Items.IndexOf(s.VoiceName);
+                int idx = CmbVoice.Items.IndexOf(voiceDisplayName);
                 if (idx >= 0) CmbVoice.SelectedIndex = idx;
             }
             // SSML モード
@@ -69,9 +74,6 @@ namespace TxtToVoice
             Logger.Info($"設定を読み込みました: Rate={s.Rate}, Volume={s.Volume}, Voice={s.VoiceName}, Ssml={s.SsmlPauseEnabled}");
         }
 
-        /// <summary>LastInputText を保存対象に含めるかどうかの上限（文字数）</summary>
-        private const int MaxPersistedInputTextLength = 10_000;
-
         private void SaveCurrentSettings()
         {
             _settingsService.Save(BuildAppSettings(isExit: false));
@@ -82,35 +84,24 @@ namespace TxtToVoice
         /// <paramref name="isExit"/> が true のときは終了時の機微データ消去ポリシーを適用し、
         /// LastInputText および RecentFiles を <c>_clearSensitiveDataOnExit</c> でフィルタする。
         /// 終了時以外（設定変更等）では LastInputText は保存対象に含めない（従来動作）。
+        /// ロジックの詳細は <see cref="AppSettingsBuilder.Build"/> を参照。
         /// </summary>
         internal AppSettings BuildAppSettings(bool isExit)
-        {
-            bool persistText   = isExit && _saveLastInputText && !_clearSensitiveDataOnExit;
-            bool persistRecent = isExit
-                ? _saveRecentFiles && !_clearSensitiveDataOnExit
-                : _saveRecentFiles;
-
-            string lastText = TxtInput.Text;
-
-            return new AppSettings
-            {
-                Rate             = (int)SldRate.Value,
-                Volume           = (int)SldVolume.Value,
-                VoiceName        = _speechService.CurrentVoiceName,
-                SsmlPauseEnabled = ChkSsml.IsChecked == true,
-                LastInputText    = persistText && lastText.Length <= MaxPersistedInputTextLength
-                                     ? lastText
-                                     : string.Empty,
-                RecentFiles      = persistRecent ? _recentFiles : new List<string>(),
-                // ポリシー設定・エンジン種別は常に保存
-                SaveLastInputText        = _saveLastInputText,
-                SaveRecentFiles          = _saveRecentFiles,
-                ClearSensitiveDataOnExit = _clearSensitiveDataOnExit,
-                DeleteLogOnExit          = _deleteLogOnExit,
-                ShowReadingHighlight     = ChkHighlight.IsChecked == true,
-                SpeechEngineType         = _speechEngineType
-            };
-        }
+            => AppSettingsBuilder.Build(
+                isExit,
+                (int)SldRate.Value,
+                (int)SldVolume.Value,
+                _speechService.CurrentVoiceName,
+                _speechService.CurrentVoiceId,
+                ChkSsml.IsChecked    == true,
+                ChkHighlight.IsChecked == true,
+                _saveLastInputText,
+                _saveRecentFiles,
+                _clearSensitiveDataOnExit,
+                _deleteLogOnExit,
+                _speechEngineType,
+                TxtInput.Text,
+                _recentFiles);
 
         // ----------------------------------------------------------------
         // 再生操作ボタン

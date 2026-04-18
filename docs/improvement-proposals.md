@@ -144,7 +144,7 @@ RFC 4180 §2.6 の「引用符内に改行を含むフィールド」に非対�
 
 ---
 
-### 36. BuildAppSettings テストの追加
+### 36. BuildAppSettings テストの追加 ✅
 
 **課題**  
 `BuildAppSettings(isExit)` は `TxtInput`, `SldRate`, `ChkHighlight`, `ChkSsml` 等の UI コントロールを直接参照し、保存ポリシー分岐（監査モード・SSML・ハイライト等）が多い。将来の設定項目追加で回帰しやすく、現状テストがない。
@@ -166,7 +166,7 @@ RFC 4180 §2.6 の「引用符内に改行を含むフィールド」に非対�
 
 ---
 
-### 38. ログ匿名化の強化（空白パス・UNCパス対応）
+### 38. ログ匿名化の強化（空白パス・UNCパス対応） ✅
 
 **課題**  
 `Logger.AnonymizePaths()` の正規表現 `[A-Za-z]:\\[^\s,"']+` は以下のケースを取りこぼす。
@@ -208,7 +208,7 @@ private static string AnonymizePaths(string message)
 
 ---
 
-### 39. v0.3.4 追加機能へのテスト追加（回帰防止）
+### 39. v0.3.4 追加機能へのテスト追加（回帰防止） ✅
 
 **課題**  
 v0.3.4 で辞書キャッシュ化・CSV 重複マージ・保存進捗フェーズ・ログ匿名化を一括実装したが、対応するテストがない。将来の変更による回帰を早期検知するためにテストを整備する。
@@ -244,7 +244,7 @@ TxtToVoice.Tests/Services/
 
 ## 優先度：中
 
-### 40. CSV 重複判定の計算量最適化
+### 40. CSV 重複判定の計算量最適化 ✅
 
 **課題**  
 `MenuImportCsv_Click` の重複検出処理は `imported` リストを 2 回走査し、各要素ごとに `HasDisplay()`（内部 `Any()` による線形検索）を呼び出す。辞書件数 M・インポート件数 N のとき O(N × M) の計算量となり、大規模辞書での CSV インポート時に体感遅延になりうる。
@@ -278,7 +278,7 @@ foreach (var item in imported)
 
 ---
 
-### 41. 音声選択の安定化（表示名ではなく ID 保存）
+### 41. 音声選択の安定化（表示名ではなく ID 保存） ✅
 
 **課題**  
 現在の設定モデルは音声を `voiceName`（文字列 1 本）で保管しており、WinRT 側は `DisplayName` を保存キーとして利用している。以下のリスクがある。
@@ -984,6 +984,7 @@ MP3/MP4 保存・D&D ファイル読み込み・最近使ったファイル・SS
 | v0.3.2 | SpeechEngineFactory 新設（定数・Create・GetLabel）・BuildAppSettings 共通化リファクタ |
 | v0.3.3 | WinRT 読み上げ位置ハイライト対応（TimedMetadataTracks / SpeechCue）・エンジン設定値の正規化・自己修復（IsKnown）・WinRT 保存処理 using 解放・SpeechEngineFactoryTests 追加（#34/#35/#36 部分/#37 部分） |
 | v0.3.4 | 辞書ソートキャッシュ化（#26）・CSV 重複マージポリシー選択（#27）・保存進捗フェーズ表示（#28）・ログ匿名化（#30） |
+| v0.3.5 | BuildAppSettings テスト可能化・AppSettingsBuilder 新設（#36）・ログ匿名化強化（#38）・v0.3.4 テスト拡充（#39）・CSV 重複判定 HashSet 最適化（#40）・音声選択 VoiceId 保存（#41） |
 
 ## v0.1.9 レビュー査読結果
 
@@ -1044,6 +1045,18 @@ MP3/MP4 保存・D&D ファイル読み込み・最近使ったファイル・SS
 | 音声保存進捗の可視化改善（フェーズ表示・キャンセル状態の明確化） | 低 | 妥当（UX 改善） | → 項目 28 として追加 |
 | テスト構成の分離（Windows 依存 vs 純ロジック・中間キャンセルテスト追加） | 低 | 妥当（技術負債） | → 項目 29 として追加 |
 | 監査強化モードのログ匿名化オプション（WARN/ERROR パスのマスキング） | 低 | 妥当（監査要件依存） | → 項目 30 として追加 |
+
+---
+
+## v0.3.5 レビュー査読結果（実装時の判断記録）
+
+| 項目 | 対応内容 |
+|---|---|
+| #36 BuildAppSettings テスト | `AppSettingsBuilder` を `TxtToVoice.Services` に公開クラスとして追加。`MainWindow` は薄いラッパーに変更。`InternalsVisibleTo` で `AnonymizePaths` の internal テストも可能に |
+| #38 ログ匿名化強化 | シングルクォート付き（.NET 例外型）・ダブルクォート付き・クォートなしドライブレター・クォートなし UNC の 4 パターン対応 |
+| #39 v0.3.4 テスト追加 | DictionaryService キャッシュ/マージ・LoggerAnonymize・SpeechProgress の 4 テストクラスを追加。SpeechProgress は `[Trait("Category", "RequiresEngine")]` で CI 除外可 |
+| #40 CSV 重複判定最適化 | `HashSet<string>` + 1 パスに変更。`HasDisplay()` / `UpdateByDisplay()` は他の呼び出し元（UI ボタン等）向けに残存 |
+| #41 音声選択 ID 保存 | `voiceId` を `AppSettings` / `ISpeechEngine` / 両エンジンに追加。ロード時は ID 検索 → DisplayName フォールバックの 2 段構え |
 
 ---
 

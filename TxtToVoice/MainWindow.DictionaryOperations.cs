@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -196,13 +197,19 @@ namespace TxtToVoice
                 }
                 else
                 {
-                    // 追加モード: 重複を検出してマージポリシーを確認する
-                    var newEntries = imported
-                        .Where(item => !_dictService.HasDisplay(item.Display))
-                        .ToList();
-                    var duplicates = imported
-                        .Where(item => _dictService.HasDisplay(item.Display))
-                        .ToList();
+                    // 追加モード: HashSet で O(1) 判定・1 パス振り分け
+                    var existingDisplays = new HashSet<string>(
+                        _dictService.Entries.Select(entry => entry.Display),
+                        StringComparer.Ordinal);
+                    var newEntries = new List<DictionaryEntry>();
+                    var duplicates = new List<DictionaryEntry>();
+                    foreach (var item in imported)
+                    {
+                        if (existingDisplays.Contains(item.Display))
+                            duplicates.Add(item);
+                        else
+                            newEntries.Add(item);
+                    }
 
                     if (duplicates.Count == 0)
                     {

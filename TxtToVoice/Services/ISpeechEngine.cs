@@ -24,6 +24,12 @@ namespace TxtToVoice.Services
         /// <summary>現在選択されている音声の名前</summary>
         string CurrentVoiceName { get; }
 
+        /// <summary>現在選択されている音声の内部識別子（WinRT: VoiceInformation.Id、SAPI: VoiceInfo.Id）。取得できない場合は null。</summary>
+        string? CurrentVoiceId { get; }
+
+        /// <summary>内部識別子で音声を検索し、コンボボックス表示名を返す。見つからない場合は null。</summary>
+        string? FindVoiceNameById(string voiceId);
+
         /// <summary>読み上げ開始時に発火</summary>
         event EventHandler? SpeakStarted;
 

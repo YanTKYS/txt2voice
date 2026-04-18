@@ -59,15 +59,39 @@ namespace TxtToVoice.Services
         }
 
         /// <summary>
-        /// メッセージ中の Windows 絶対パス（例: C:\Users\foo\bar.txt）を
-        /// ファイル名のみ（例: bar.txt）に置換する。
+        /// メッセージ中の Windows 絶対パス・UNC パスをファイル名のみに置換する。
+        /// 対応パターン:
+        ///   1. シングルクォート付き（.NET 例外メッセージに多い形式、空白含むパスに対応）
+        ///   2. ダブルクォート付き（空白含むパスに対応）
+        ///   3. クォートなしドライブレターパス（空白・コンマ・クォートで切る）
+        ///   4. クォートなし UNC パス（\\server\share\... 形式）
         /// </summary>
-        private static string AnonymizePaths(string message)
-            => Regex.Replace(message, @"[A-Za-z]:\\[^\s,""']+", m =>
-            {
-                try   { return Path.GetFileName(m.Value); }
-                catch { return m.Value; }
-            });
+        internal static string AnonymizePaths(string message)
+        {
+            // 1. シングルクォート付きパス（空白含む・UNC 両対応、.NET 例外メッセージに多い）
+            message = Regex.Replace(message, @"'(?:[A-Za-z]:\\|\\\\)[^']+'",
+                m =>
+                {
+                    string inner = m.Value[1..^1];
+                    try   { return $"'{Path.GetFileName(inner)}'"; }
+                    catch { return m.Value; }
+                });
+            // 2. ダブルクォート付きパス（空白含む・UNC 両対応）
+            message = Regex.Replace(message, @"""(?:[A-Za-z]:\\|\\\\)[^""]+""",
+                m =>
+                {
+                    string inner = m.Value[1..^1];
+                    try   { return $"\"{Path.GetFileName(inner)}\""; }
+                    catch { return m.Value; }
+                });
+            // 3. クォートなしドライブレターパス（空白・コンマ・クォートで区切る）
+            message = Regex.Replace(message, @"[A-Za-z]:\\[^\s,""']+",
+                m => { try { return Path.GetFileName(m.Value); } catch { return m.Value; } });
+            // 4. クォートなし UNC パス（\\server\share\... 形式）
+            message = Regex.Replace(message, @"\\\\[A-Za-z0-9._-]+\\[^\s,""']+",
+                m => { try { return Path.GetFileName(m.Value); } catch { return m.Value; } });
+            return message;
+        }
 
         /// <summary>
         /// 今日のログファイルを削除する。終了時ログ消去オプション（監査向け）で使用する。

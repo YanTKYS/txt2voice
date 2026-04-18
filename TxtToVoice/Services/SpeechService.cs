@@ -70,7 +70,9 @@ namespace TxtToVoice.Services
 
         public bool IsAvailable => _engine.IsAvailable;
         public string? InitializationError => _engine.InitializationError;
-        public string CurrentVoiceName => _engine.CurrentVoiceName;
+        public string  CurrentVoiceName  => _engine.CurrentVoiceName;
+        public string? CurrentVoiceId    => _engine.CurrentVoiceId;
+        public string? FindVoiceNameById(string voiceId) => _engine.FindVoiceNameById(voiceId);
 
         // ----------------------------------------------------------------
         // 音声・パラメータ設定

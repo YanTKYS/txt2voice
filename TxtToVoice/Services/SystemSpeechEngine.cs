@@ -46,6 +46,7 @@ namespace TxtToVoice.Services
         public bool IsAvailable { get; private set; }
         public string? InitializationError { get; private set; }
         public string CurrentVoiceName => _synth?.Voice?.Name ?? string.Empty;
+        public string? CurrentVoiceId   => _synth?.Voice?.Id;
 
         // ----------------------------------------------------------------
         // 音声・パラメータ設定
@@ -69,6 +70,19 @@ namespace TxtToVoice.Services
             if (_synth == null || string.IsNullOrEmpty(voiceName)) return;
             try   { _synth.SelectVoice(voiceName); }
             catch (Exception ex) { Logger.Warn($"音声選択失敗: {voiceName} / {ex.Message}"); }
+        }
+
+        public string? FindVoiceNameById(string voiceId)
+        {
+            if (_synth == null || string.IsNullOrEmpty(voiceId)) return null;
+            try
+            {
+                foreach (var v in _synth.GetInstalledVoices())
+                    if (v.Enabled && v.VoiceInfo.Id == voiceId)
+                        return v.VoiceInfo.Name;
+                return null;
+            }
+            catch { return null; }
         }
 
         public void SetRate(int rate)   { if (_synth != null) _synth.Rate   = Math.Clamp(rate,   -10, 10); }

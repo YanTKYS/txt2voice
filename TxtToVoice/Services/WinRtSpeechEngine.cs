@@ -58,7 +58,11 @@ namespace TxtToVoice.Services
 
         public bool IsAvailable { get; private set; }
         public string? InitializationError { get; private set; }
-        public string CurrentVoiceName => _synth?.Voice.DisplayName ?? string.Empty;
+        public string  CurrentVoiceName => _synth?.Voice.DisplayName ?? string.Empty;
+        public string? CurrentVoiceId
+        {
+            get { try { return _synth?.Voice.Id; } catch { return null; } }
+        }
 
         // ----------------------------------------------------------------
         // 音声・パラメータ設定
@@ -85,6 +89,17 @@ namespace TxtToVoice.Services
                 if (voice != null) _synth.Voice = voice;
             }
             catch (Exception ex) { Logger.Warn($"WinRT 音声選択失敗: {voiceName} / {ex.Message}"); }
+        }
+
+        public string? FindVoiceNameById(string voiceId)
+        {
+            if (string.IsNullOrEmpty(voiceId)) return null;
+            try
+            {
+                return Windows.Media.SpeechSynthesis.SpeechSynthesizer.AllVoices
+                    .FirstOrDefault(v => v.Id == voiceId)?.DisplayName;
+            }
+            catch { return null; }
         }
 
         public void SetRate(int rate)
