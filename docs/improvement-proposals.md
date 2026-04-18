@@ -144,7 +144,165 @@ RFC 4180 §2.6 の「引用符内に改行を含むフィールド」に非対�
 
 ---
 
+### 36. BuildAppSettings テストの追加
+
+**課題**  
+`BuildAppSettings(isExit)` は `TxtInput`, `SldRate`, `ChkHighlight`, `ChkSsml` 等の UI コントロールを直接参照し、保存ポリシー分岐（監査モード・SSML・ハイライト等）が多い。将来の設定項目追加で回帰しやすく、現状テストがない。
+
+`SpeechEngineFactory` の単体テスト（`SpeechEngineFactoryTests`）は v0.3.3 で追加済みだが、`BuildAppSettings` 本体のテストは UI 依存の問題で未着手。
+
+**実装方針**
+
+**(A) ViewModel 層への分離**  
+設定値を `AppSettingsViewModel`（または設定構造体）に集約し、UI コントロールへの直接依存を排除したうえで単体テストを追加する。
+
+**(B) WPF テストフレームワーク経由**  
+`Microsoft.Extensions.Testing.Abstractions` 等の WPF テストフレームワークを使い、UI スレッドでのテストを実行する。
+
+**関連ファイル**
+
+- `TxtToVoice/MainWindow.PlaybackOperations.cs` — `BuildAppSettings(isExit)` のロジック分離（A の場合）
+- `TxtToVoice.Tests/` — テストクラスの追加
+
+---
+
+### 38. ログ匿名化の強化（空白パス・UNCパス対応）
+
+**課題**  
+`Logger.AnonymizePaths()` の正規表現 `[A-Za-z]:\\[^\s,"']+` は以下のケースを取りこぼす。
+
+- **空白を含むパス**（例: `C:\Users\A\My Documents\原稿.txt`）— `[^\s]` で空白前に切れる
+- **UNC パス**（例: `\\server\share\原稿.txt`）— ドライブレター先頭パターンに非適合
+- **引用符で囲まれたパス**（例: `"C:\path\file.txt"`）— `[,"']` で末尾切れが誤る場合あり
+
+**実装方針**
+
+以下の 3 パターンをカバーするように正規表現を複数化する。
+
+1. **引用符付きパス（Windows & UNC）**: `"(?:[A-Za-z]:\\|\\\\)[^"]+"`
+2. **ドライブレターパス（スペース含む）**: `[A-Za-z]:\\(?:\S+\\)*\S+`
+3. **UNC パス**: `\\\\[A-Za-z0-9._-]+\\[A-Za-z0-9._$-]+(?:\\\S+)*`
+
+```csharp
+private static string AnonymizePaths(string message)
+{
+    // 引用符付きパス (Windows ドライブ & UNC)
+    message = Regex.Replace(message, @"""(?:[A-Za-z]:\\|\\\\)[^""]+""",
+        m => $"\"{Path.GetFileName(m.Value.Trim('"'))}\"");
+    // ドライブレターパス（空白含む）
+    message = Regex.Replace(message, @"[A-Za-z]:\\(?:\S+\\)*\S+",
+        m => { try { return Path.GetFileName(m.Value); } catch { return m.Value; } });
+    // UNC パス
+    message = Regex.Replace(message, @"\\\\[A-Za-z0-9._-]+\\[A-Za-z0-9._$-]+(?:\\\S+)*",
+        m => { try { return Path.GetFileName(m.Value); } catch { return m.Value; } });
+    return message;
+}
+```
+
+過度な置換によるデバッグ性低下を避けるため、ファイル名部分（`Path.GetFileName`）は維持する。
+
+**関連ファイル**
+
+- `TxtToVoice/Services/Logger.cs` — `AnonymizePaths()` の正規表現を強化
+- `TxtToVoice.Tests/Services/LoggerAnonymizeTests.cs` — 空白パス・UNC・引用符のテストケースを追加（新規）
+
+---
+
+### 39. v0.3.4 追加機能へのテスト追加（回帰防止）
+
+**課題**  
+v0.3.4 で辞書キャッシュ化・CSV 重複マージ・保存進捗フェーズ・ログ匿名化を一括実装したが、対応するテストがない。将来の変更による回帰を早期検知するためにテストを整備する。
+
+| 機能 | 対象クラス |
+|---|---|
+| 辞書ソートキャッシュ無効化 | `DictionaryService._sortedCache` |
+| CSV 重複マージ（上書き/スキップ） | `DictionaryService.HasDisplay()` / `UpdateByDisplay()` |
+| Logger パス匿名化 | `Logger.AnonymizePaths()`（#38 と連動） |
+| 保存進捗フェーズメッセージ | `SystemSpeechEngine` / `WinRtSpeechEngine` |
+
+**実装方針**
+
+```
+TxtToVoice.Tests/Services/
+├── DictionaryServiceCacheTests.cs   # キャッシュ無効化（Add/Update/Remove/Load/ReplaceAll）
+├── DictionaryServiceMergeTests.cs   # HasDisplay・UpdateByDisplay の境界値テスト
+├── LoggerAnonymizeTests.cs          # AnonymizePaths（通常パス・空白含む・UNC・引用符）
+└── SpeechProgressTests.cs           # WAV / MP3 / MP4 保存時のフェーズメッセージ
+```
+
+`DictionaryService` および `Logger` のテストは WPF 依存なしで追加可能。  
+`SpeechProgressTests` はエンジン依存のため `[Trait("Category", "RequiresEngine")]` での CI 除外を検討。
+
+**関連ファイル**
+
+- `TxtToVoice.Tests/Services/DictionaryServiceCacheTests.cs` — 新規追加
+- `TxtToVoice.Tests/Services/DictionaryServiceMergeTests.cs` — 新規追加
+- `TxtToVoice.Tests/Services/LoggerAnonymizeTests.cs` — 新規追加
+- `TxtToVoice.Tests/Services/SpeechProgressTests.cs` — 新規追加（CI 除外条件付き）
+
+---
+
 ## 優先度：中
+
+### 40. CSV 重複判定の計算量最適化
+
+**課題**  
+`MenuImportCsv_Click` の重複検出処理は `imported` リストを 2 回走査し、各要素ごとに `HasDisplay()`（内部 `Any()` による線形検索）を呼び出す。辞書件数 M・インポート件数 N のとき O(N × M) の計算量となり、大規模辞書での CSV インポート時に体感遅延になりうる。
+
+**実装方針**
+
+1. 既存エントリの Display を `HashSet<string>` に変換（O(M)）
+2. `imported` を 1 パスで走査し `newEntries` / `duplicates` に振り分け（O(N)）
+
+```csharp
+var existingDisplays = new HashSet<string>(
+    _dictService.Entries.Select(e => e.Display), StringComparer.Ordinal);
+
+var newEntries = new List<DictionaryEntry>();
+var duplicates = new List<DictionaryEntry>();
+foreach (var item in imported)
+{
+    if (existingDisplays.Contains(item.Display))
+        duplicates.Add(item);
+    else
+        newEntries.Add(item);
+}
+```
+
+全体計算量: O(M + N)（従来の O(N × M) から改善）。  
+`DictionaryService.HasDisplay()` / `UpdateByDisplay()` は他の呼び出し元でも使われるため残存させる。
+
+**関連ファイル**
+
+- `TxtToVoice/MainWindow.DictionaryOperations.cs` — `MenuImportCsv_Click` の重複検出ロジックを HashSet 化
+
+---
+
+### 41. 音声選択の安定化（表示名ではなく ID 保存）
+
+**課題**  
+現在の設定モデルは音声を `voiceName`（文字列 1 本）で保管しており、WinRT 側は `DisplayName` を保存キーとして利用している。以下のリスクがある。
+
+- 同名音声が複数ある環境では意図しない音声が選択される可能性がある
+- OS アップデート後に `DisplayName` が変化した場合、起動時に音声が見つからずデフォルト音声にフォールバックする
+- 将来的な複数エンジン共存時に、`voiceName` 1 本の構造では識別子の形式が統一されず管理が複雑になる
+
+**実装方針**
+
+1. `AppSettings` に `VoiceId`（内部識別子）と `VoiceDisplayName`（表示用）を追加
+2. 起動時は `VoiceId` で音声を選択し、不一致時は `VoiceDisplayName` にフォールバック
+3. 既存 `voiceName` キーは移行期間中の後方互換キーとして読み込み専用で保持
+4. WinRT: `VoiceInformation.Id`、SAPI: `VoiceInfo.Id` を `VoiceId` に使用
+
+**関連ファイル**
+
+- `TxtToVoice/Models/AppSettings.cs` — `VoiceId`・`VoiceDisplayName` フィールドを追加
+- `TxtToVoice/Services/AppSettingsService.cs` — 移行ロジック追加（`voiceName` 読み込み → `VoiceId` に変換）
+- `TxtToVoice/Services/WinRtSpeechEngine.cs` — `VoiceInformation.Id` ベースの音声選択に変更
+- `TxtToVoice/Services/SystemSpeechEngine.cs` — `VoiceInfo.Id` ベースの音声選択に変更
+- `TxtToVoice/Dialogs/SettingsDialog.xaml.cs` — 音声選択時に `VoiceId` も保存
+
+---
 
 ### 26. 辞書置換エンジンの高速化（都度ソート廃止・Aho-Corasick 移行）
 
@@ -470,7 +628,7 @@ TxtToVoice.Tests/
 
 ## 優先度：低
 
-### 28. 音声保存進捗の可視化改善（フェーズ表示・キャンセル状態の明確化）
+### 28. 音声保存進捗の可視化改善（フェーズ表示・キャンセル状態の明確化） ✅
 
 **課題**  
 `SaveProgressDialog` のプログレスバーは `IsIndeterminate=true` 固定のため、
@@ -492,6 +650,23 @@ MP3/MP4 保存ではエンコード中のキャンセルが「エンコード完
 
 - `TxtToVoice/Dialogs/SaveProgressDialog.xaml` / `.xaml.cs` — フェーズラベル追加・キャンセル後状態の明確化
 - `TxtToVoice/Services/SpeechService.cs` — フェーズ通知用コールバックの追加
+
+---
+
+### 37. WinRT 保存処理の長文メモリ効率改善
+
+**課題**  
+`WinRtSpeechEngine.SaveToFile()` は `SpeechSynthesisStream` を `MemoryStream` に全量読み込んでから NAudio でエンコードするため、長文合成では一時的に大量のメモリを消費する。
+
+**実装状況**  
+v0.3.3 で `using` による明示解放と `new MemoryStream((int)stream.Size)` による事前確保は対応済み。
+
+**残課題**  
+一時 WAV ファイルを経由したストリーミングエンコードへの移行（`MemoryStream` 廃止）を別途検討。ただし `SpeechSynthesisStream` が `IRandomAccessStream` 形式のため NAudio へのブリッジが必要。
+
+**関連ファイル**
+
+- `TxtToVoice/Services/WinRtSpeechEngine.cs` — `SaveToFile()` のストリーミング化
 
 ---
 
@@ -522,7 +697,7 @@ UI・WPF 依存は `TxtToVoice` プロジェクトに残す。
 
 ---
 
-### 30. 監査強化モードのログ匿名化オプション
+### 30. 監査強化モードのログ匿名化オプション ✅
 
 **課題**  
 v0.2.5 で INFO 抑制は改善済みだが、WARN / ERROR は常時記録されるため、
@@ -805,6 +980,10 @@ MP3/MP4 保存・D&D ファイル読み込み・最近使ったファイル・SS
 | v0.2.4 | エンコード判定ドキュメント整合（UTF-16 BOM 対応を明記）・パフォーマンステスト `[Trait]`+閾値拡大・PathConfig / SpeechService キャンセルテスト追加 |
 | v0.2.5 | 監査モード INFO 抑制の起動直後適用（`AppSettingsService.ReadAuditFlag()` + `App.OnStartup` 先読み）・テスト tautology 修正・README テスト一覧更新 |
 | v0.3.0 | ISpeechEngine 抽象化（SystemSpeechEngine 切り出し）・WinRtSpeechEngine 実装・設定ダイアログにエンジン種別選択 UI 追加・TargetFramework を `net8.0-windows10.0.19041.0` に更新 |
+| v0.3.1 | v0.3.0 ビルドエラー修正（`Timelines` プロパティ削除）・テストプロジェクト TargetFramework 修正・起動時 NullReferenceException 修正（ChkHighlight / ChkSsml / PreviewMode_Changed） |
+| v0.3.2 | SpeechEngineFactory 新設（定数・Create・GetLabel）・BuildAppSettings 共通化リファクタ |
+| v0.3.3 | WinRT 読み上げ位置ハイライト対応（TimedMetadataTracks / SpeechCue）・エンジン設定値の正規化・自己修復（IsKnown）・WinRT 保存処理 using 解放・SpeechEngineFactoryTests 追加（#34/#35/#36 部分/#37 部分） |
+| v0.3.4 | 辞書ソートキャッシュ化（#26）・CSV 重複マージポリシー選択（#27）・保存進捗フェーズ表示（#28）・ログ匿名化（#30） |
 
 ## v0.1.9 レビュー査読結果
 
@@ -865,6 +1044,19 @@ MP3/MP4 保存・D&D ファイル読み込み・最近使ったファイル・SS
 | 音声保存進捗の可視化改善（フェーズ表示・キャンセル状態の明確化） | 低 | 妥当（UX 改善） | → 項目 28 として追加 |
 | テスト構成の分離（Windows 依存 vs 純ロジック・中間キャンセルテスト追加） | 低 | 妥当（技術負債） | → 項目 29 として追加 |
 | 監査強化モードのログ匿名化オプション（WARN/ERROR パスのマスキング） | 低 | 妥当（監査要件依存） | → 項目 30 として追加 |
+
+---
+
+## v0.3.4 レビュー査読結果
+
+| 指摘 | 優先度 | 妥当性 | 対応状況 |
+|---|---|---|---|
+| BuildAppSettings テストの追加（backlog #36 を 中→高 に昇格） | 高 | **妥当（回帰リスク）** | backlog #36 を高に昇格 |
+| ログ匿名化の強化（空白パス・UNCパス対応） | 高 | **妥当（実装上の抜け）** | → 項目 #38 として追加 |
+| v0.3.4 追加機能へのテスト追加（キャッシュ・マージ・匿名化・進捗） | 高 | **妥当（回帰防止）** | → 項目 #39 として追加 |
+| CSV 重複判定の計算量最適化（HashSet 化・1 パス振り分け） | 中 | 妥当（性能改善） | → 項目 #40 として追加 |
+| 音声選択の安定化（表示名ではなく ID 保存） | 中 | 妥当（運用安定性） | → 項目 #41 として追加 |
+| backlog #29/#33/#37 は引き続き低優先度として継続 | 低 | 妥当（中長期テーマ） | backlog 低優先度に据え置き |
 
 ---
 
