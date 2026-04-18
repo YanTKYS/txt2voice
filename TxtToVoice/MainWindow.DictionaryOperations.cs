@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -197,15 +198,15 @@ namespace TxtToVoice
                 {
                     // 追加モード: 重複を検出してマージポリシーを確認する
                     var newEntries = imported
-                        .Where(e => !_dictService.HasDisplay(e.Display))
+                        .Where(item => !_dictService.HasDisplay(item.Display))
                         .ToList();
                     var duplicates = imported
-                        .Where(e => _dictService.HasDisplay(e.Display))
+                        .Where(item => _dictService.HasDisplay(item.Display))
                         .ToList();
 
                     if (duplicates.Count == 0)
                     {
-                        foreach (var e in imported) _dictService.AddEntry(e);
+                        foreach (var item in imported) _dictService.AddEntry(item);
                         SaveDictionaryAndRefresh();
                         SetStatus($"CSV インポート完了: {imported.Count} 件追加");
                     }
@@ -222,10 +223,10 @@ namespace TxtToVoice
 
                         if (mergeAnswer == MessageBoxResult.Cancel) return;
 
-                        foreach (var e in newEntries) _dictService.AddEntry(e);
+                        foreach (var item in newEntries) _dictService.AddEntry(item);
 
                         if (mergeAnswer == MessageBoxResult.Yes)
-                            foreach (var e in duplicates) _dictService.UpdateByDisplay(e);
+                            foreach (var item in duplicates) _dictService.UpdateByDisplay(item);
 
                         SaveDictionaryAndRefresh();
                         string overwriteNote = mergeAnswer == MessageBoxResult.Yes
