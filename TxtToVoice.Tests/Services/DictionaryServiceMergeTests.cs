@@ -85,7 +85,7 @@ namespace TxtToVoice.Tests.Services
         {
             Add("市役所", "しやくしょ");
             _svc.UpdateByDisplay(new DictionaryEntry { Display = "図書館", Reading = "としょかん" });
-            Assert.Equal(1, _svc.Entries.Count);
+            Assert.Single(_svc.Entries);
             Assert.False(_svc.HasDisplay("図書館"));
         }
 
