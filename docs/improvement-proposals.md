@@ -896,16 +896,30 @@ Data/openjtalk/
 
 ---
 
-**ライセンス確認状況**
+**ライセンス確認結果** ✅ 確認済み（内部配布・再配布とも可）
 
-| コンポーネント | ライセンス | 再配布 | 要確認事項 |
+| コンポーネント | ライセンス | 再配布 | 主な条件 |
 |---|---|---|---|
+| jtalkDLL オリジナル部分 | MIT License | ○ | 著作権表示の保持 |
 | Open JTalk 本体 | Modified BSD License | ○ | 著作権表示の保持 |
-| MeCab + ipadic 辞書 | BSD License | ○ | 著作権表示の保持 |
-| MMDAgent Mei 音声モデル | Modified BSD License | ○（要確認） | mmdagent.jp 配布物同梱可否の最終確認 |
-| jtalkDLL | MIT（要確認） | ○（要確認） | GitHub リポジトリ LICENSE ファイルを確認 |
+| MeCab + ipadic 辞書 | Modified BSD License | ○ | 著作権表示の保持 |
+| hts_engine API | Modified BSD License | ○ | 著作権表示の保持 |
+| **HTS Voice "Mei"（MMDAgent）** | **CC BY 3.0** | **○** | **クレジット表示必須**（著作者名・ライセンス名・URL） |
+| PortAudio | MIT/PortAudio License | ○ | 著作権表示の保持 |
 
 > 参照: https://www.mmdagent.jp/ / https://open-jtalk.sourceforge.net/
+
+**CC BY 3.0 クレジット表示要件**（Mei ボイス）  
+アプリの About ダイアログまたは同梱ライセンスファイルに以下を含める必要がある。
+
+```
+HTS Voice "Mei" — Copyright (C) Nagoya Institute of Technology
+Licensed under Creative Commons Attribution 3.0 (CC BY 3.0)
+https://www.mmdagent.jp/
+```
+
+jtalkDLL は「オリジナル部分 MIT ＋ 各同梱物はそれぞれのライセンス」という構成のため、
+上記 6 コンポーネントすべての著作権表示を THIRD_PARTY_LICENSES.txt 等にまとめて同梱する。
 
 ---
 
@@ -940,35 +954,36 @@ Data/openjtalk/
 
 | フェーズ | バックログ # | 内容 |
 |---|---|---|
-| v0.4.0 | [#46] | jtalkDLL で WAV 生成・ライセンス最終確認・初期化時間実測 |
-| v0.4.1 | [#47] | `OpenJTalkEngine : ISpeechEngine` 実装・UI 統合 |
+| v0.4.0 | [#46] | jtalkDLL で WAV 生成・初期化時間実測・品質比較（ライセンス確認済み） |
+| v0.4.1 | [#47] | `OpenJTalkEngine : ISpeechEngine` 実装・UI 統合・クレジット表示追加 |
 
 ---
 
 ### 46. OpenJTalk 同梱 PoC — 技術検証フェーズ（v0.4.0）
 
 **目的**  
-`OpenJTalkEngine` を実装する前に、jtalkDLL + Mei モデルでテキスト → WAV が生成できることを最小コードで確認し、ライセンス・性能・品質の 3 点を実測する。
+`OpenJTalkEngine` を実装する前に、jtalkDLL + Mei モデルでテキスト → WAV が生成できることを最小コードで確認し、性能・品質を実測して #47 実装の前提を満たす。
+
+> ライセンス確認は完了済み（#33 参照）。技術検証に集中する。
 
 **検証項目**
 
-1. **ライセンス最終確認**
-   - jtalkDLL の GitHub LICENSE ファイルを確認し再配布可否を明記
-   - MMDAgent Mei ボイスの同梱再配布が許諾されるか確認
-2. **技術検証（最小コード）**
-   - jtalkDLL を参照した小さなコンソールプログラムでテキスト → WAV 生成
-   - 辞書読み込み時間（初期化コスト）を計測
-   - 読み上げ品質を SAPI / WinRT と比較
-3. **サイズ確認**
-   - 辞書 + モデル + DLL の実際のバイト数を記録
+1. **技術検証（最小コード）**
+   - jtalkDLL を参照したコンソールプロジェクトでテキスト → WAV 生成
+   - 辞書 + モデルの初期化時間を計測（目標: 5 秒以内）
+   - 読み上げ品質を SAPI / WinRT と聴き比べ
+2. **サイズ確認**
+   - 辞書 + モデル + DLL の実際のバイト数を記録し #33 概算と照合
+3. **PoC 結論の記録**
+   - 合否を improvement-proposals.md に追記し、#47 着手可否を判断
 
 **合否基準**
 
 | 項目 | 基準 |
 |---|---|
-| ライセンス | 同梱再配布に支障なし |
-| 初期化時間 | 5 秒以内（バックグラウンドで許容可） |
 | WAV 生成 | テキスト入力 → WAV ファイル出力が動作すること |
+| 初期化時間 | 5 秒以内（起動時バックグラウンド初期化で許容可） |
+| 品質 | SAPI より自然と判断できること（定性評価） |
 
 **関連ファイル**
 
@@ -992,6 +1007,18 @@ Data/openjtalk/
 4. `TxtToVoice/Dialogs/SettingsDialog.xaml` — エンジン選択肢に「OpenJTalk」を追加
 5. `TxtToVoice/TxtToVoice.csproj` — `Data/openjtalk/` をコンテンツとして同梱
 6. `TxtToVoice.Tests/Services/` — `OpenJTalkEngine` の基本テスト追加
+7. **サードパーティライセンス表示**（CC BY 3.0 義務対応）
+   - `THIRD_PARTY_LICENSES.txt` を同梱ファイルに追加
+   - jtalkDLL / Open JTalk / MeCab / hts_engine / **HTS Voice "Mei"（CC BY 3.0）** / PortAudio の著作権表示を記載
+   - About ダイアログに「サードパーティライセンス」リンクまたは表示欄を追加
+
+**必須クレジット表示文（HTS Voice "Mei"）**
+
+```
+HTS Voice "Mei" — Copyright (C) Nagoya Institute of Technology
+Licensed under Creative Commons Attribution 3.0 (CC BY 3.0)
+https://www.mmdagent.jp/
+```
 
 **関連ファイル**
 
@@ -1000,6 +1027,7 @@ Data/openjtalk/
 - `TxtToVoice/Services/SpeechEngineFactory.cs` — ケース追加
 - `TxtToVoice/Dialogs/SettingsDialog.xaml / .xaml.cs` — UI 追加
 - `TxtToVoice/TxtToVoice.csproj` — 同梱設定追加
+- `THIRD_PARTY_LICENSES.txt` — 新規追加（CC BY 3.0 等の著作権表示）
 
 ---
 
