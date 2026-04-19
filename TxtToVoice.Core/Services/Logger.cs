@@ -73,24 +73,30 @@ namespace TxtToVoice.Services
                 m =>
                 {
                     string inner = m.Value[1..^1];
-                    try   { return $"'{Path.GetFileName(inner)}'"; }
-                    catch { return m.Value; }
+                    return $"'{GetWindowsFileName(inner)}'";
                 });
             // 2. ダブルクォート付きパス（空白含む・UNC 両対応）
             message = Regex.Replace(message, @"""(?:[A-Za-z]:\\|\\\\)[^""]+""",
                 m =>
                 {
                     string inner = m.Value[1..^1];
-                    try   { return $"\"{Path.GetFileName(inner)}\""; }
-                    catch { return m.Value; }
+                    return $"\"{GetWindowsFileName(inner)}\"";
                 });
             // 3. クォートなしドライブレターパス（空白・コンマ・クォートで区切る）
             message = Regex.Replace(message, @"[A-Za-z]:\\[^\s,""']+",
-                m => { try { return Path.GetFileName(m.Value); } catch { return m.Value; } });
+                m => GetWindowsFileName(m.Value));
             // 4. クォートなし UNC パス（\\server\share\... 形式）
             message = Regex.Replace(message, @"\\\\[A-Za-z0-9._-]+\\[^\s,""']+",
-                m => { try { return Path.GetFileName(m.Value); } catch { return m.Value; } });
+                m => GetWindowsFileName(m.Value));
             return message;
+        }
+
+        // Path.GetFileName は Linux 環境で '\' を区切り文字として認識しないため
+        // Windows パスにも対応した独自ヘルパーを使用する
+        private static string GetWindowsFileName(string path)
+        {
+            int last = path.LastIndexOfAny(new[] { '\\', '/' });
+            return last >= 0 ? path[(last + 1)..] : path;
         }
 
         /// <summary>
