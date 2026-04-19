@@ -959,7 +959,7 @@ jtalkDLL は「オリジナル部分 MIT ＋ 各同梱物はそれぞれのラ�
 
 ---
 
-### 46. OpenJTalk 同梱 PoC — 技術検証フェーズ（v0.4.0）
+### 46. OpenJTalk 同梱 PoC — 技術検証フェーズ（v0.4.0） ✅
 
 **目的**  
 `OpenJTalkEngine` を実装する前に、jtalkDLL + Mei モデルでテキスト → WAV が生成できることを最小コードで確認し、性能・品質を実測して #47 実装の前提を満たす。
@@ -1216,6 +1216,7 @@ MP3/MP4 保存・D&D ファイル読み込み・最近使ったファイル・SS
 | v0.3.5 | BuildAppSettings テスト可能化・AppSettingsBuilder 新設（#36）・ログ匿名化強化（#38）・v0.3.4 テスト拡充（#39）・CSV 重複判定 HashSet 最適化（#40）・音声選択 VoiceId 保存（#41） |
 | v0.3.6 | テスト構成の分離・TxtToVoice.Core 新設（#29）・WinRT 保存の MemoryStream 廃止（#37） |
 | v0.3.7 | WinRT 一時ファイル残存バグ修正（#42）・WAV 保存の異ドライブ対応（#43）・README テスト手順/構成図更新（#44）・CI 2 レーン化（#45） |
+| v0.4.0 | OpenJTalk 同梱 PoC プロジェクト追加（#46） |
 
 ## v0.1.9 レビュー査読結果
 
@@ -1300,6 +1301,14 @@ MP3/MP4 保存・D&D ファイル読み込み・最近使ったファイル・SS
 | README のテスト手順・構成図を v0.3.6 対応に更新 | 中 | 妥当（ドキュメント不整合） | → 項目 #44 として追加 |
 | CI 2 レーン化（Core.Tests 必須 / Windows 依存テスト任意） | 中 | 妥当（品質改善） | → 項目 #45 として追加 |
 | backlog #33 を調査フェーズから PoC 計画フェーズへ昇格 | 中 | 妥当（方向性明確化） | #33 を中優先度へ移動・PoC 計画を追記 |
+
+---
+
+## v0.4.0 レビュー査読結果（実装時の判断記録）
+
+| 項目 | 対応内容 |
+|---|---|
+| #46 OpenJTalk PoC プロジェクト追加 | `poc/OpenJTalkPoC/` を新設。`NativeJTalk.cs`（P/Invoke ラッパー）・`Program.cs`（PoC ドライバ）・`SETUP.md`（セットアップ手順）を作成。jtalkDLL の U16 変種関数（`openjtalk_initializeU16` / `openjtalk_speakToFileU16`）を `CharSet.Unicode + CallingConvention.StdCall` でバインドし、初期化時間・WAV 生成・データサイズを計測する検証プログラムを実装。バイナリアセット（辞書・音声モデル・DLL）は `.gitignore` で除外 |
 
 ---
 
