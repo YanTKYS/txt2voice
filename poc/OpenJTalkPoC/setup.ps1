@@ -220,12 +220,15 @@ if (Test-Path $dllDest) {
     }
 
     # --- CMake 設定 ---
-    # CMake 4.x は前回の中途ビルドが残っていると pkgRedirects の再作成に失敗する。
-    # jtalk.dll 未生成の段階なのでビルドディレクトリを毎回クリーンにする。
     if (Test-Path $jtalkBld) {
         Write-Info "前回のビルドディレクトリをクリア ..."
         Remove-Item -Recurse -Force $jtalkBld
+        # Windows はディレクトリ削除を非同期で確定するため、
+        # 直後に同パスへ書き込むと cmake 4.x の pkgRedirects 作成が失敗する
+        Start-Sleep -Milliseconds 500
     }
+    # CMake 4.x が pkgRedirects を作成する前に親ディレクトリを事前作成して競合を回避
+    New-Item -ItemType Directory -Force -Path "$jtalkBld\CMakeFiles\pkgRedirects" | Out-Null
     Write-Info "CMake 設定中 ..."
     Invoke-Native { & $cmake -S $jtalkSrc -B $jtalkBld -G $cmakeGen -A x64 } "CMake の設定に失敗しました"
 
