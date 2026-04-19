@@ -179,8 +179,10 @@ Visual Studio インストーラ (vswhere.exe) が見つかりません。
   または: Visual Studio 2022 Community/Professional
 "@
 }
-$vsInstallPath = & $vsWhere -products * -latest -property installationPath
-$vsVersion     = & $vsWhere -products * -latest -property catalog_productLineVersion
+$vsInstallPath    = & $vsWhere -products * -latest -property installationPath
+# installationVersion (例: "17.8.3.0") はフル VS・Build Tools 両方で確実に取得できる
+# catalog_productLineVersion は Build Tools では不安定なため使わない
+$vsInstallVersion = & $vsWhere -products * -latest -property installationVersion
 if (-not $vsInstallPath) {
     Write-Fail @"
 MSVC C++ コンパイラが検出できませんでした。
@@ -188,10 +190,18 @@ Visual Studio Build Tools または Visual Studio 2019/2022 に
 「C++ によるデスクトップ開発」ワークロードを追加してください。
 "@
 }
-Write-OK "MSVC ($vsVersion): $vsInstallPath"
+$vsMajor = [int](($vsInstallVersion -split '\.')[0])
+Write-OK "MSVC $vsInstallVersion (major=$vsMajor): $vsInstallPath"
 
-# CMake ジェネレータ選択
-$cmakeGen = if ([int]$vsVersion -ge 2022) { "Visual Studio 17 2022" } else { "Visual Studio 16 2019" }
+# メジャーバージョンで cmake ジェネレータを決定
+# 16 = VS2019, 17 = VS2022, 18 = VS2025 (将来), それ以外は最新の 17 を仮定
+$cmakeGen = switch ($vsMajor) {
+    16      { "Visual Studio 16 2019" }
+    17      { "Visual Studio 17 2022" }
+    18      { "Visual Studio 18 2025" }
+    default { "Visual Studio 17 2022" }
+}
+Write-Info "CMake ジェネレータ: $cmakeGen"
 Write-Info "CMake ジェネレータ: $cmakeGen"
 
 # ============================================================================
