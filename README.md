@@ -58,9 +58,20 @@ dotnet build -c Release
 
 ### テスト
 
+テストプロジェクトは 2 つあります。
+
 ```powershell
-dotnet test TxtToVoice.Tests/TxtToVoice.Tests.csproj
+# 純ロジックテスト（OS 非依存・全環境で実行可）
+dotnet test TxtToVoice.Core.Tests/TxtToVoice.Core.Tests.csproj
+
+# Windows 依存テスト（音声エンジン系・エンジン不在の CI はフィルタ除外）
+dotnet test TxtToVoice.Tests/TxtToVoice.Tests.csproj --filter "Category!=RequiresEngine"
 ```
+
+| プロジェクト | 対象 | 実行環境 |
+|---|---|---|
+| `TxtToVoice.Core.Tests` | 辞書・CSV・設定・Logger 等の純ロジック | Windows / Linux / macOS |
+| `TxtToVoice.Tests` | 音声エンジン系（SAPI / WinRT） | Windows のみ |
 
 ### 実行
 
@@ -279,47 +290,60 @@ EXE フォルダへの書き込みができないため、保存先が `%LOCALAP
 ## ソースコード構成
 
 ```
-TxtToVoice/
-├── TxtToVoice.csproj           プロジェクト定義
-├── App.xaml / App.xaml.cs      アプリケーションエントリポイント
-├── MainWindow.xaml             メイン画面レイアウト（WPF XAML）
-├── MainWindow.xaml.cs          フィールド・初期化・共通ユーティリティ
-├── MainWindow.FileOperations.cs    ファイル開く・D&D・テキスト操作
-├── MainWindow.PlaybackOperations.cs  読み上げ・音声保存・パラメータ操作
+TxtToVoice.Core/                        OS 非依存の純ロジック層（net8.0）
+├── TxtToVoice.Core.csproj
+├── Models/
+│   ├── AppSettings.cs                  アプリ設定モデル
+│   └── DictionaryEntry.cs              辞書エントリのデータクラス
+└── Services/
+    ├── AppSettingsBuilder.cs           設定値の構築（UI → モデル変換）
+    ├── AppSettingsService.cs           設定 JSON 読み書き
+    ├── CsvService.cs                   CSV インポート / エクスポート
+    ├── DictionaryService.cs            辞書管理・テキスト置換ロジック
+    ├── JsonPersistenceService.cs       辞書 JSON 読み書き
+    ├── Logger.cs                       ファイルログ出力（INFO 抑制・終了時削除対応）
+    ├── PathConfig.cs                   データ保存先パス管理（通常/ポータブルモード切替）
+    ├── SpeechEngineTypes.cs            音声エンジン種別定数・検証
+    ├── SpeechPositionMap.cs            読み上げ位置マッピング
+    └── SsmlBuilder.cs                  テキスト → SSML 変換（ポーズ自動挿入）
+
+TxtToVoice/                             WPF アプリ本体（net8.0-windows10.0.19041.0）
+├── TxtToVoice.csproj                   ← TxtToVoice.Core を参照
+├── App.xaml / App.xaml.cs             アプリケーションエントリポイント
+├── MainWindow.xaml                     メイン画面レイアウト（WPF XAML）
+├── MainWindow.xaml.cs                  フィールド・初期化・共通ユーティリティ
+├── MainWindow.FileOperations.cs        ファイル開く・D&D・テキスト操作
+├── MainWindow.PlaybackOperations.cs    読み上げ・音声保存・パラメータ操作
 ├── MainWindow.DictionaryOperations.cs  辞書 CRUD・プレビュー・CSV 入出力
 ├── Dialogs/
-│   ├── DictionaryEntryDialog.xaml      辞書編集ダイアログ
-│   ├── DictionaryEntryDialog.xaml.cs
-│   ├── SaveProgressDialog.xaml         音声保存進捗ダイアログ（キャンセル対応）
-│   ├── SaveProgressDialog.xaml.cs
-│   ├── SettingsDialog.xaml             機微データ保存ポリシーダイアログ
-│   └── SettingsDialog.xaml.cs
-├── Models/
-│   ├── AppSettings.cs          アプリ設定モデル
-│   └── DictionaryEntry.cs      辞書エントリのデータクラス
+│   ├── DictionaryEntryDialog.xaml / .xaml.cs   辞書編集ダイアログ
+│   ├── SaveProgressDialog.xaml / .xaml.cs      音声保存進捗ダイアログ（キャンセル対応）
+│   └── SettingsDialog.xaml / .xaml.cs          機微データ保存ポリシーダイアログ
 ├── Services/
-│   ├── Logger.cs               ファイルログ出力（INFO 抑制・終了時削除対応）
-│   ├── PathConfig.cs           データ保存先パス管理（通常/ポータブルモード切替）
-│   ├── AppSettingsService.cs   設定 JSON 読み書き
-│   ├── JsonPersistenceService.cs  辞書 JSON 読み書き
-│   ├── DictionaryService.cs    辞書管理・テキスト置換ロジック
-│   ├── CsvService.cs           CSV インポート / エクスポート
-│   ├── ISpeechEngine.cs        音声エンジン抽象インターフェース
-│   ├── SystemSpeechEngine.cs   SAPI（System.Speech）エンジン実装
-│   ├── WinRtSpeechEngine.cs    WinRT（OneCore）エンジン実装
-│   ├── SpeechEngineFactory.cs  エンジン種別定数・生成・ラベル書式
-│   ├── SpeechService.cs        音声合成ラッパー（WAV/MP3/MP4 保存・キャンセル対応）
-│   └── SsmlBuilder.cs          テキスト → SSML 変換（ポーズ自動挿入）
+│   ├── ISpeechEngine.cs                音声エンジン抽象インターフェース
+│   ├── SystemSpeechEngine.cs           SAPI（System.Speech）エンジン実装
+│   ├── WinRtSpeechEngine.cs            WinRT（OneCore）エンジン実装
+│   ├── SpeechEngineFactory.cs          エンジン種別定数・生成・ラベル書式
+│   └── SpeechService.cs               音声合成ラッパー（WAV/MP3/MP4 保存・キャンセル対応）
 └── Data/
-    └── sample_dictionary.json  サンプル辞書（自治体業務向け）
+    └── sample_dictionary.json          サンプル辞書（自治体業務向け）
 
-TxtToVoice.Tests/
+TxtToVoice.Core.Tests/                  純ロジックテスト（net8.0・OS 非依存・全 PR 必須）
 └── Services/
-    ├── DictionaryServiceTests.cs       辞書ロジック・位置マッピングテスト
-    ├── DictionaryServicePerformanceTests.cs  大規模辞書のパフォーマンス回帰テスト（CI 除外可）
-    ├── SsmlBuilderTests.cs             SSML 変換テスト
-    ├── CsvServiceTests.cs              CSV インポート/エクスポートテスト
-    ├── AppSettingsServiceTests.cs      設定読み書きテスト
-    ├── PathConfigTests.cs              パス管理テスト（通常/ポータブルモード）
-    └── SpeechServiceCancelTests.cs     音声サービスキャンセルテスト（エンジン不要）
+    ├── DictionaryServiceTests.cs
+    ├── DictionaryServiceCacheTests.cs
+    ├── DictionaryServiceMergeTests.cs
+    ├── DictionaryServicePerformanceTests.cs    [Trait("Category","Performance")] で CI 除外可
+    ├── SsmlBuilderTests.cs
+    ├── CsvServiceTests.cs
+    ├── AppSettingsServiceTests.cs
+    ├── BuildAppSettingsTests.cs
+    ├── LoggerAnonymizeTests.cs
+    └── PathConfigTests.cs
+
+TxtToVoice.Tests/                       Windows 依存テスト（net8.0-windows・音声エンジン系）
+└── Services/
+    ├── SpeechEngineFactoryTests.cs
+    ├── SpeechProgressTests.cs          [Trait("Category","RequiresEngine")] で CI 除外可
+    └── SpeechServiceCancelTests.cs
 ```

@@ -297,7 +297,7 @@ TxtToVoice.Tests/Services/
 
 ## 優先度：中
 
-### 44. README のテスト手順・ソース構成図を v0.3.6 対応に更新
+### 44. README のテスト手順・ソース構成図を v0.3.6 対応に更新 ✅
 
 **課題**  
 v0.3.6 で `TxtToVoice.Core` / `TxtToVoice.Core.Tests` を新設したが、README のテスト手順とソース構成図は v0.3.5 以前のまま（`TxtToVoice.Tests` 単体）。  
@@ -316,7 +316,7 @@ v0.3.6 で `TxtToVoice.Core` / `TxtToVoice.Core.Tests` を新設したが、READ
 
 ---
 
-### 45. CI 2 レーン化（Core.Tests 必須 / Windows 依存テスト任意）
+### 45. CI 2 レーン化（Core.Tests 必須 / Windows 依存テスト任意） ✅
 
 **課題**  
 v0.3.6 でプロジェクト分離が完了しているが、CI ワークフローは変更しておらず、`TxtToVoice.Tests` を単体で実行している（あるいは CI 自体が未整備）。  
@@ -1094,7 +1094,7 @@ MP3/MP4 保存・D&D ファイル読み込み・最近使ったファイル・SS
 | v0.3.4 | 辞書ソートキャッシュ化（#26）・CSV 重複マージポリシー選択（#27）・保存進捗フェーズ表示（#28）・ログ匿名化（#30） |
 | v0.3.5 | BuildAppSettings テスト可能化・AppSettingsBuilder 新設（#36）・ログ匿名化強化（#38）・v0.3.4 テスト拡充（#39）・CSV 重複判定 HashSet 最適化（#40）・音声選択 VoiceId 保存（#41） |
 | v0.3.6 | テスト構成の分離・TxtToVoice.Core 新設（#29）・WinRT 保存の MemoryStream 廃止（#37） |
-| v0.3.7 | WinRT 一時ファイル残存バグ修正（#42）・WAV 保存の異ドライブ対応（#43） |
+| v0.3.7 | WinRT 一時ファイル残存バグ修正（#42）・WAV 保存の異ドライブ対応（#43）・README テスト手順/構成図更新（#44）・CI 2 レーン化（#45） |
 
 ## v0.1.9 レビュー査読結果
 
@@ -1188,6 +1188,8 @@ MP3/MP4 保存・D&D ファイル読み込み・最近使ったファイル・SS
 |---|---|
 | #42 WinRT 一時ファイル残存バグ | `Path.GetTempFileName()` → `Path.GetRandomFileName()` に変更。`GetTempFileName()` はファイルを実際に生成するため音声保存ごとに `%TEMP%` に空の `.tmp` ファイルが蓄積する問題を修正 |
 | #43 WAV 保存の異ドライブ対応 | `File.Move` → `File.Copy` に変更。`File.Move` は異なるボリューム間で `IOException` を投げるため、ネットワーク共有や別ドライブへの保存で失敗していた問題を修正。一時ファイルの削除は `finally` ブロックに委ねる設計のため `tempWavPath = string.Empty` フラグは不要になり削除 |
+| #44 README テスト手順・構成図更新 | テスト節を「Core.Tests（OS 非依存）」と「TxtToVoice.Tests（Windows 依存）」の 2 段構えで記述。ソース構成図に `TxtToVoice.Core`（net8.0）・`TxtToVoice.Core.Tests`・更新後の `TxtToVoice.Tests` を追記 |
+| #45 CI 2 レーン化 | `build.yml` に `test-core` ジョブ（ubuntu-latest / net8.0）を追加。既存 `build` ジョブは `--filter "Category!=RequiresEngine"` を追加して音声エンジン不在の CI でも安定実行できるよう修正 |
 
 ---
 
