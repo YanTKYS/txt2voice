@@ -44,7 +44,9 @@ $dataDir   = Join-Path $pocDir "Data\openjtalk"
 $dicDir    = Join-Path $dataDir "open_jtalk_dic_utf_8"
 $voiceDir  = Join-Path $dataDir "voice"
 $dllDest   = Join-Path $dataDir "jtalk.dll"
-$tmpDir    = Join-Path $env:TEMP "openjtalk-poc-setup"
+# %TEMP% は CMake 4.x の pkgRedirects 書き込みでアクセス拒否になる場合があるため
+# ユーザーホームディレクトリ配下（C:\Users\<name>\openjtalk-poc-setup）を使用する
+$tmpDir    = Join-Path $env:USERPROFILE "openjtalk-poc-setup"
 
 $csproj    = Join-Path $pocDir "OpenJTalkPoC.csproj"
 
