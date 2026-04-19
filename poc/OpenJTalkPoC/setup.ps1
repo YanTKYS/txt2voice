@@ -218,14 +218,10 @@ if (Test-Path $dllDest) {
     }
 
     # --- CMake 設定 ---
-    New-Item -ItemType Directory -Force -Path $jtalkBld | Out-Null
+    # -S/-B フラグでソース・ビルドディレクトリを直接指定する（CMake 3.13+）。
+    # ビルドディレクトリは CMake が自動作成するため Push-Location は不要。
     Write-Info "CMake 設定中 ..."
-    Push-Location $jtalkBld
-    try {
-        Invoke-Native { & $cmake .. -G $cmakeGen -A x64 } "CMake の設定に失敗しました"
-    } finally {
-        Pop-Location
-    }
+    Invoke-Native { & $cmake -S $jtalkSrc -B $jtalkBld -G $cmakeGen -A x64 } "CMake の設定に失敗しました"
 
     # --- ビルド ---
     Write-Info "ビルド中（Release / x64）..."
