@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- jtalk.dll は Windows x64 専用のネイティブ DLL -->
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <PlatformTarget>x64</PlatformTarget>
+    <RootNamespace>OpenJTalkPoC</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 辞書・音声モデルを出力ディレクトリにコピー（jtalk.dll は除く：ネイティブ DLL は手動配置） -->
+    <Content Include="Data\**\*"
+             Exclude="Data\openjtalk\jtalk.dll"
+             CopyToOutputDirectory="PreserveNewest" />
+    <!-- jtalk.dll は exe と同じ階層に置く必要があるため Link でフラット化 -->
+    <Content Include="Data\openjtalk\jtalk.dll"
+             CopyToOutputDirectory="PreserveNewest"
+             Link="jtalk.dll"
+             Condition="Exists('Data\openjtalk\jtalk.dll')" />
+  </ItemGroup>
+
+</Project>

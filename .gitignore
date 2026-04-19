@@ -33,3 +33,9 @@ desktop.ini
 ## JetBrains Rider
 .idea/
 *.sln.iml
+
+## OpenJTalk PoC — バイナリアセット（容量大・ライセンス上コミット対象外）
+poc/OpenJTalkPoC/Data/openjtalk/open_jtalk_dic_utf_8/
+poc/OpenJTalkPoC/Data/openjtalk/voice/
+poc/OpenJTalkPoC/Data/openjtalk/jtalk.dll
+poc/OpenJTalkPoC/output_*.wav
