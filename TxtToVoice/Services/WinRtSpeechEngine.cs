@@ -300,8 +300,9 @@ namespace TxtToVoice.Services
                 throw new InvalidOperationException($"WinRT 音声合成失敗: {ex.Message}", ex);
             }
 
-            // 一時 WAV ファイルに書き出してから加工する（MemoryStream を廃止し長文でのメモリ効率を改善）
-            string tempWavPath = Path.ChangeExtension(Path.GetTempFileName(), ".wav");
+            // GetTempFileName() はファイルを実際に生成するため GetRandomFileName() を使用する（#42）
+            string tempWavPath = Path.Combine(
+                Path.GetTempPath(), Path.ChangeExtension(Path.GetRandomFileName(), ".wav"));
             try
             {
                 using (stream)
@@ -317,8 +318,9 @@ namespace TxtToVoice.Services
 
                 if (format == AudioFormat.Wav)
                 {
-                    File.Move(tempWavPath, outputPath, overwrite: true);
-                    tempWavPath = string.Empty; // Move 済みのため後処理で削除しない
+                    // File.Move は異なるボリューム間で IOException を投げるため Copy+Delete にする（#43）
+                    // tempWavPath の削除は finally ブロックに委ねる
+                    File.Copy(tempWavPath, outputPath, overwrite: true);
                     Logger.Info($"WinRT WAV 保存完了: {outputPath}");
                 }
                 else

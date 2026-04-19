@@ -9,8 +9,7 @@
 
 | # | 概要 | 詳細 |
 |---|---|---|
-| 42 | WinRT 一時ファイル残存バグ修正 | `Path.GetTempFileName()` が生成した `.tmp` ファイルが `ChangeExtension` 後も残るため毎回蓄積する。`Path.GetRandomFileName()` に変更して解消する。 |
-| 43 | WAV 保存の `File.Move` 異ドライブ失敗耐性 | `File.Move` は異なるボリューム間で `IOException` を投げる。`File.Copy + File.Delete` に変更して共有フォルダ・別ドライブ保存を安定化させる。 |
+| — | *(現在なし)* | — |
 
 ---
 

@@ -7,7 +7,7 @@
 
 ## 優先度：高
 
-### 42. WinRT 一時ファイル（.tmp）残存バグ修正
+### 42. WinRT 一時ファイル（.tmp）残存バグ修正 ✅
 
 **課題**  
 v0.3.6 の `WinRtSpeechEngine.SaveToFile()` で使用している
@@ -34,7 +34,7 @@ string tempWavPath = Path.Combine(Path.GetTempPath(),
 
 ---
 
-### 43. WinRT WAV 保存の File.Move 異ドライブ失敗耐性を上げる
+### 43. WinRT WAV 保存の File.Move 異ドライブ失敗耐性を上げる ✅
 
 **課題**  
 v0.3.6 の `WinRtSpeechEngine.SaveToFile()` WAV パスは `File.Move` で一時ファイルを最終パスへ移動する。  
@@ -1094,6 +1094,7 @@ MP3/MP4 保存・D&D ファイル読み込み・最近使ったファイル・SS
 | v0.3.4 | 辞書ソートキャッシュ化（#26）・CSV 重複マージポリシー選択（#27）・保存進捗フェーズ表示（#28）・ログ匿名化（#30） |
 | v0.3.5 | BuildAppSettings テスト可能化・AppSettingsBuilder 新設（#36）・ログ匿名化強化（#38）・v0.3.4 テスト拡充（#39）・CSV 重複判定 HashSet 最適化（#40）・音声選択 VoiceId 保存（#41） |
 | v0.3.6 | テスト構成の分離・TxtToVoice.Core 新設（#29）・WinRT 保存の MemoryStream 廃止（#37） |
+| v0.3.7 | WinRT 一時ファイル残存バグ修正（#42）・WAV 保存の異ドライブ対応（#43） |
 
 ## v0.1.9 レビュー査読結果
 
@@ -1178,6 +1179,15 @@ MP3/MP4 保存・D&D ファイル読み込み・最近使ったファイル・SS
 | README のテスト手順・構成図を v0.3.6 対応に更新 | 中 | 妥当（ドキュメント不整合） | → 項目 #44 として追加 |
 | CI 2 レーン化（Core.Tests 必須 / Windows 依存テスト任意） | 中 | 妥当（品質改善） | → 項目 #45 として追加 |
 | backlog #33 を調査フェーズから PoC 計画フェーズへ昇格 | 中 | 妥当（方向性明確化） | #33 を中優先度へ移動・PoC 計画を追記 |
+
+---
+
+## v0.3.7 レビュー査読結果（実装時の判断記録）
+
+| 項目 | 対応内容 |
+|---|---|
+| #42 WinRT 一時ファイル残存バグ | `Path.GetTempFileName()` → `Path.GetRandomFileName()` に変更。`GetTempFileName()` はファイルを実際に生成するため音声保存ごとに `%TEMP%` に空の `.tmp` ファイルが蓄積する問題を修正 |
+| #43 WAV 保存の異ドライブ対応 | `File.Move` → `File.Copy` に変更。`File.Move` は異なるボリューム間で `IOException` を投げるため、ネットワーク共有や別ドライブへの保存で失敗していた問題を修正。一時ファイルの削除は `finally` ブロックに委ねる設計のため `tempWavPath = string.Empty` フラグは不要になり削除 |
 
 ---
 
