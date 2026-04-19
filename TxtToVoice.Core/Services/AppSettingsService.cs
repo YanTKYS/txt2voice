@@ -33,7 +33,7 @@ namespace TxtToVoice.Services
 
         /// <summary>
         /// 設定 JSON から <c>speechEngineType</c> フィールドのみを先読みする。
-        /// ファイル不在・読み込み失敗・JSON 解析エラーの場合は <see cref="SpeechEngineFactory.Default"/> を返す。
+        /// ファイル不在・読み込み失敗・JSON 解析エラーの場合は <see cref="SpeechEngineTypes.Default"/> を返す。
         /// MainWindow コンストラクタで音声エンジンを生成する前に呼び出す。
         /// </summary>
         public static string ReadEngineType()
@@ -41,23 +41,23 @@ namespace TxtToVoice.Services
             try
             {
                 string path = PathConfig.SettingsPath;
-                if (!File.Exists(path)) return SpeechEngineFactory.Default;
+                if (!File.Exists(path)) return SpeechEngineTypes.Default;
                 string json = File.ReadAllText(path, Encoding.UTF8);
                 var s = JsonSerializer.Deserialize<AppSettings>(json, Options);
-                if (s == null) return SpeechEngineFactory.Default;
+                if (s == null) return SpeechEngineTypes.Default;
 
                 // 未知値はデフォルトに正規化して即保存（自己修復）
-                if (!SpeechEngineFactory.IsKnown(s.SpeechEngineType))
+                if (!SpeechEngineTypes.IsKnown(s.SpeechEngineType))
                 {
-                    s.SpeechEngineType = SpeechEngineFactory.Default;
+                    s.SpeechEngineType = SpeechEngineTypes.Default;
                     new AppSettingsService().Save(s);
-                    return SpeechEngineFactory.Default;
+                    return SpeechEngineTypes.Default;
                 }
                 return s.SpeechEngineType;
             }
             catch
             {
-                return SpeechEngineFactory.Default;
+                return SpeechEngineTypes.Default;
             }
         }
 

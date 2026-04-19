@@ -10,7 +10,7 @@
     <AssemblyName>TxtToVoice</AssemblyName>
     <Company>声の広報 制作支援</Company>
     <Product>テキスト読み上げツール</Product>
-    <Version>0.3.5</Version>
+    <Version>0.3.6</Version>
     <ApplicationIcon></ApplicationIcon>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <Optimize>true</Optimize>
@@ -21,6 +21,11 @@
     <PackageReference Include="System.Speech" Version="8.0.0" />
     <!-- MP3 / MP4(AAC) エンコード（Windows Media Foundation 経由） -->
     <PackageReference Include="NAudio" Version="2.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- OS 非依存の純ロジック層（DictionaryService / CsvService / Logger 等） -->
+    <ProjectReference Include="../TxtToVoice.Core/TxtToVoice.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

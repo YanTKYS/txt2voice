@@ -653,7 +653,7 @@ MP3/MP4 保存ではエンコード中のキャンセルが「エンコード完
 
 ---
 
-### 37. WinRT 保存処理の長文メモリ効率改善
+### 37. WinRT 保存処理の長文メモリ効率改善 ✅
 
 **課題**  
 `WinRtSpeechEngine.SaveToFile()` は `SpeechSynthesisStream` を `MemoryStream` に全量読み込んでから NAudio でエンコードするため、長文合成では一時的に大量のメモリを消費する。
@@ -670,7 +670,7 @@ v0.3.3 で `using` による明示解放と `new MemoryStream((int)stream.Size)`
 
 ---
 
-### 29. テスト構成の分離（Windows 依存テストと純ロジックテストの分離）
+### 29. テスト構成の分離（Windows 依存テストと純ロジックテストの分離）✅
 
 **課題**  
 テストプロジェクトが `net8.0-windows` + `UseWPF` 前提のため、
@@ -985,6 +985,7 @@ MP3/MP4 保存・D&D ファイル読み込み・最近使ったファイル・SS
 | v0.3.3 | WinRT 読み上げ位置ハイライト対応（TimedMetadataTracks / SpeechCue）・エンジン設定値の正規化・自己修復（IsKnown）・WinRT 保存処理 using 解放・SpeechEngineFactoryTests 追加（#34/#35/#36 部分/#37 部分） |
 | v0.3.4 | 辞書ソートキャッシュ化（#26）・CSV 重複マージポリシー選択（#27）・保存進捗フェーズ表示（#28）・ログ匿名化（#30） |
 | v0.3.5 | BuildAppSettings テスト可能化・AppSettingsBuilder 新設（#36）・ログ匿名化強化（#38）・v0.3.4 テスト拡充（#39）・CSV 重複判定 HashSet 最適化（#40）・音声選択 VoiceId 保存（#41） |
+| v0.3.6 | テスト構成の分離・TxtToVoice.Core 新設（#29）・WinRT 保存の MemoryStream 廃止（#37） |
 
 ## v0.1.9 レビュー査読結果
 
@@ -1057,6 +1058,16 @@ MP3/MP4 保存・D&D ファイル読み込み・最近使ったファイル・SS
 | #39 v0.3.4 テスト追加 | DictionaryService キャッシュ/マージ・LoggerAnonymize・SpeechProgress の 4 テストクラスを追加。SpeechProgress は `[Trait("Category", "RequiresEngine")]` で CI 除外可 |
 | #40 CSV 重複判定最適化 | `HashSet<string>` + 1 パスに変更。`HasDisplay()` / `UpdateByDisplay()` は他の呼び出し元（UI ボタン等）向けに残存 |
 | #41 音声選択 ID 保存 | `voiceId` を `AppSettings` / `ISpeechEngine` / 両エンジンに追加。ロード時は ID 検索 → DisplayName フォールバックの 2 段構え |
+
+---
+
+## v0.3.6 レビュー査読結果（実装時の判断記録）
+
+| 項目 | 対応内容 |
+|---|---|
+| #29(A) テスト構成の分離 | `TxtToVoice.Core`（net8.0）を新設。`DictionaryService` / `CsvService` / `Logger` / `PathConfig` 等の純ロジック層を移動。`TxtToVoice` は Core を参照し、`SpeechEngineFactory` は `SpeechEngineTypes`（Core）に定数・検証を委譲 |
+| #29(B) 中間キャンセルテスト | `TxtToVoice.Core.Tests`（net8.0）を新設して純ロジックテストを移動。エンジン依存テストは引き続き `TxtToVoice.Tests`（net8.0-windows）に残置。`SpeechServiceCancelTests` に `CancelAfter` 遅延キャンセルテストを 2 件追加（`[Trait("Category", "RequiresEngine")]` で CI 除外） |
+| #37 WinRT MemoryStream 廃止 | `WinRtSpeechEngine.SaveToFile()` を一時 WAV ファイル経由に変更。`SpeechSynthesisStream → tempWavPath → 出力` の流れで長文合成時のピークメモリ使用量を削減。WAV の場合は `File.Move`、MP3/MP4 の場合は `WaveFileReader(tempWavPath)` でエンコード後に一時ファイルを削除 |
 
 ---
 

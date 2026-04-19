@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- net8.0: OS 非依存（Windows / Linux / macOS いずれでもビルド・テスト可能）-->
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <RootNamespace>TxtToVoice</RootNamespace>
+    <AssemblyName>TxtToVoice.Core</AssemblyName>
+  </PropertyGroup>
+
+</Project>

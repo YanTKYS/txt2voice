@@ -6,22 +6,24 @@ namespace TxtToVoice.Services
     /// 各呼び出し元に文字列リテラル（"SystemSpeech" / "WinRT"）や
     /// エンジンラベル（"SAPI (System.Speech)" 等）が散在しないようにするためのもの。
     /// OSS TTS エンジン（backlog #33）追加時はここに定数と Create 分岐を足すだけで済む。
+    ///
+    /// エンジン種別の文字列定数・検証ロジックは <see cref="SpeechEngineTypes"/>（Core 層）に置き、
+    /// 後方互換のために本クラスからも公開する。
     /// </summary>
     public static class SpeechEngineFactory
     {
         // ----------------------------------------------------------------
-        // エンジン種別定数（settings.json の speechEngineType フィールド値と一致）
+        // エンジン種別定数（SpeechEngineTypes に委譲）
         // ----------------------------------------------------------------
 
-        public const string SystemSpeech = "SystemSpeech";
-        public const string WinRt        = "WinRT";
+        public const string SystemSpeech = SpeechEngineTypes.SystemSpeech;
+        public const string WinRt        = SpeechEngineTypes.WinRt;
 
         /// <summary>未知の値を受け取ったときの既定種別。</summary>
-        public const string Default = SystemSpeech;
+        public const string Default = SpeechEngineTypes.Default;
 
         /// <summary>指定した文字列が既知の有効なエンジン種別かどうかを返す。</summary>
-        public static bool IsKnown(string? engineType)
-            => engineType == SystemSpeech || engineType == WinRt;
+        public static bool IsKnown(string? engineType) => SpeechEngineTypes.IsKnown(engineType);
 
         // ----------------------------------------------------------------
         // 生成

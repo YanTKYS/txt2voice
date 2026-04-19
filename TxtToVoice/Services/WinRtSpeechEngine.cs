@@ -300,31 +300,32 @@ namespace TxtToVoice.Services
                 throw new InvalidOperationException($"WinRT 音声合成失敗: {ex.Message}", ex);
             }
 
-            // SpeechSynthesisStream を確実に解放する
-            using (stream)
+            // 一時 WAV ファイルに書き出してから加工する（MemoryStream を廃止し長文でのメモリ効率を改善）
+            string tempWavPath = Path.ChangeExtension(Path.GetTempFileName(), ".wav");
+            try
             {
-                ct.ThrowIfCancellationRequested();
+                using (stream)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    stream.Seek(0);
+                    using var netStream = stream.AsStreamForRead();
+                    using var tempFs = new FileStream(tempWavPath, FileMode.Create, FileAccess.Write);
+                    netStream.CopyTo(tempFs);
+                }
 
-                // MemoryStream にコピー（WaveFileReader はシーク可能なストリームを必要とする）
-                // stream.Size で事前確保してコピー時の再アロケーションを抑制する
-                using var ms = new MemoryStream((int)stream.Size);
-                stream.Seek(0);
-                using (var netStream = stream.AsStreamForRead())
-                    netStream.CopyTo(ms);
-                ms.Seek(0, SeekOrigin.Begin);
+                ct.ThrowIfCancellationRequested();
 
                 if (format == AudioFormat.Wav)
                 {
-                    using var fs = new FileStream(outputPath, FileMode.Create, FileAccess.Write);
-                    ms.CopyTo(fs);
-                    ct.ThrowIfCancellationRequested();
+                    File.Move(tempWavPath, outputPath, overwrite: true);
+                    tempWavPath = string.Empty; // Move 済みのため後処理で削除しない
                     Logger.Info($"WinRT WAV 保存完了: {outputPath}");
                 }
                 else
                 {
                     string encLabel = format == AudioFormat.Mp3 ? "MP3" : "MP4";
                     progress?.Report($"{encLabel} にエンコードしています...");
-                    using var reader = new WaveFileReader(ms);
+                    using var reader = new WaveFileReader(tempWavPath);
                     if (format == AudioFormat.Mp3)
                     {
                         MediaFoundationEncoder.EncodeToMp3(reader, outputPath, desiredBitRate: 128_000);
@@ -338,6 +339,11 @@ namespace TxtToVoice.Services
                         Logger.Info($"WinRT MP4(AAC) 保存完了: {outputPath}");
                     }
                 }
+            }
+            finally
+            {
+                if (!string.IsNullOrEmpty(tempWavPath))
+                    try { File.Delete(tempWavPath); } catch { /* 無視 */ }
             }
         }
 
