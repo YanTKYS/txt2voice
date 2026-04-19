@@ -193,15 +193,22 @@ Visual Studio Build Tools または Visual Studio 2019/2022 に
 $vsMajor = [int](($vsInstallVersion -split '\.')[0])
 Write-OK "MSVC $vsInstallVersion (major=$vsMajor): $vsInstallPath"
 
-# メジャーバージョンで cmake ジェネレータを決定
-# 16 = VS2019, 17 = VS2022, 18 = VS2025 (将来), それ以外は最新の 17 を仮定
-$cmakeGen = switch ($vsMajor) {
-    16      { "Visual Studio 16 2019" }
-    17      { "Visual Studio 17 2022" }
-    18      { "Visual Studio 18 2025" }
-    default { "Visual Studio 17 2022" }
+# cmake --help のジェネレータ一覧から "Visual Studio {major} YYYY" を動的に取得する。
+# 年号（2019/2022/2026...）は cmake バージョンごとに変わるためハードコードしない。
+$savedEap = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+$cmakeHelp = (& $cmake --help 2>&1) -join "`n"
+$ErrorActionPreference = $savedEap
+
+if ($cmakeHelp -match "Visual Studio $vsMajor (\d{4})") {
+    $cmakeGen = "Visual Studio $vsMajor $($matches[1])"
+} else {
+    Write-Fail @"
+cmake に対応するジェネレータ (Visual Studio $vsMajor) が見つかりません。
+cmake --help で表示される Visual Studio 行を確認してください。
+インストール済み Build Tools のバージョンと cmake のバージョンが合っていない可能性があります。
+"@
 }
-Write-Info "CMake ジェネレータ: $cmakeGen"
 Write-Info "CMake ジェネレータ: $cmakeGen"
 
 # ============================================================================
