@@ -247,7 +247,12 @@ if (Test-Path $dllDest) {
     # CMake 4.x が pkgRedirects を作成する前に親ディレクトリを事前作成して競合を回避
     New-Item -ItemType Directory -Force -Path "$jtalkBld\CMakeFiles\pkgRedirects" | Out-Null
     Write-Info "CMake 設定中 ..."
-    Invoke-Native { & $cmake -S $jtalkSrc -B $jtalkBld -G $cmakeGen -A x64 } "CMake の設定に失敗しました"
+    # -DCMAKE_POLICY_VERSION_MINIMUM=3.5:
+    #   jtalkdll に同梱の portaudio が cmake_minimum_required に 3.5 未満を指定しており
+    #   CMake 4.x ではそのバージョンサポートが削除されたためエラーになる。
+    #   このフラグで 3.5 以上として扱うよう指示し回避する。
+    Invoke-Native { & $cmake -S $jtalkSrc -B $jtalkBld -G $cmakeGen -A x64 `
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 } "CMake の設定に失敗しました"
 
     # --- ビルド ---
     Write-Info "ビルド中（Release / x64）..."
