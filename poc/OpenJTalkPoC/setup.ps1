@@ -18,7 +18,12 @@
       - Git
       - .NET 8 SDK
       - CMake 3.15 以上
-      - Visual Studio 2019 または 2022（C++ によるデスクトップ開発 ワークロード）
+      - MSVC C++ コンパイラ（以下のいずれか）
+          * Visual Studio Build Tools 2019/2022（推奨・IDE 不要・軽量）
+            インストーラ: https://visualstudio.microsoft.com/visual-cpp-build-tools/
+            ワークロード: 「C++ によるデスクトップ開発」にチェック
+          * Visual Studio 2019/2022（C++ によるデスクトップ開発 ワークロード）
+        ※ VS Code 単体は C++ コンパイラを含まないため不可
 
     実行場所: リポジトリ内どこからでも可（スクリプトが自身の場所を検出）
 
@@ -111,17 +116,28 @@ if (-not (Get-Command cmake -ErrorAction SilentlyContinue)) {
 }
 Write-OK "cmake $(cmake --version | Select-Object -First 1)"
 
-# Visual Studio（vswhere 経由）
+# MSVC コンパイラ（Visual Studio または Build Tools）を vswhere で検出
+# -products * を付けることで Build Tools（IDE なし軽量版）も対象に含める
 $vsWhere = Get-VsWhere
 if (-not $vsWhere) {
-    Write-Fail "Visual Studio インストーラが見つかりません。`n  Visual Studio 2019/2022 の「C++ によるデスクトップ開発」ワークロードをインストールしてください。"
+    Write-Fail @"
+Visual Studio インストーラ (vswhere.exe) が見つかりません。
+以下のいずれかをインストールしてください（「C++ によるデスクトップ開発」ワークロード必須）:
+  推奨: Visual Studio Build Tools 2022（IDE 不要・軽量）
+        https://visualstudio.microsoft.com/visual-cpp-build-tools/
+  または: Visual Studio 2022 Community/Professional
+"@
 }
-$vsInstallPath = & $vsWhere -latest -property installationPath
-$vsVersion     = & $vsWhere -latest -property catalog_productLineVersion
+$vsInstallPath = & $vsWhere -products * -latest -property installationPath
+$vsVersion     = & $vsWhere -products * -latest -property catalog_productLineVersion
 if (-not $vsInstallPath) {
-    Write-Fail "Visual Studio が検出できませんでした。`n  C++ ワークロード付きで Visual Studio 2019/2022 をインストールしてください。"
+    Write-Fail @"
+MSVC C++ コンパイラが検出できませんでした。
+Visual Studio Build Tools または Visual Studio 2019/2022 に
+「C++ によるデスクトップ開発」ワークロードを追加してください。
+"@
 }
-Write-OK "Visual Studio $vsVersion: $vsInstallPath"
+Write-OK "MSVC ($vsVersion): $vsInstallPath"
 
 # CMake ジェネレータ選択
 $cmakeGen = if ([int]$vsVersion -ge 2022) { "Visual Studio 17 2022" } else { "Visual Studio 16 2019" }
