@@ -74,6 +74,31 @@ function Get-VsWhere {
     return $null
 }
 
+function Find-Cmake {
+    # 1. PATH に cmake があれば優先
+    $cmd = Get-Command cmake -ErrorAction SilentlyContinue
+    if ($cmd) { return $cmd.Source }
+
+    # 2. スタンドアロン CMake インストール先（インストーラ既定パス）
+    $candidates = [System.Collections.Generic.List[string]]@(
+        "$env:ProgramFiles\CMake\bin\cmake.exe",
+        "${env:ProgramFiles(x86)}\CMake\bin\cmake.exe"
+    )
+
+    # 3. Visual Studio / Build Tools にバンドルされた CMake
+    $vsw = Get-VsWhere
+    if ($vsw) {
+        $roots = & $vsw -products * -all -property installationPath 2>$null
+        foreach ($root in @($roots)) {
+            $bundled = Join-Path $root "Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe"
+            $candidates.Add($bundled)
+        }
+    }
+
+    foreach ($c in $candidates) { if (Test-Path $c) { return $c } }
+    return $null
+}
+
 function Invoke-Download([string]$url, [string]$dest) {
     if (Test-Path $dest) {
         Write-OK "既存ファイルを使用: $(Split-Path -Leaf $dest)"
@@ -110,11 +135,20 @@ if ($dotnetVer -notmatch "^8\.") {
     Write-Warn ".NET $dotnetVer を検出しました。本プロジェクトは net8.0-windows が対象です。"
 }
 
-# CMake
-if (-not (Get-Command cmake -ErrorAction SilentlyContinue)) {
-    Write-Fail "cmake が見つかりません。CMake 3.15 以上をインストールしてください: https://cmake.org/"
+# CMake（PATH 未登録でも定番インストール先・VSバンドル版を探す）
+$cmake = Find-Cmake
+if (-not $cmake) {
+    Write-Fail @"
+cmake が見つかりません。以下のいずれかを確認してください:
+  - CMake 3.15 以上をインストール済みの場合は PATH に追加されているか確認
+    （CMake インストーラの「Add CMake to the system PATH」を選ぶか
+      システム環境変数 PATH に cmake.exe のフォルダを追加）
+  - 未インストールの場合: https://cmake.org/download/
+"@
 }
-Write-OK "cmake $(cmake --version | Select-Object -First 1)"
+$cmakeVer = & $cmake --version | Select-Object -First 1
+Write-OK "$cmakeVer"
+Write-Info "  $cmake"
 
 # MSVC コンパイラ（Visual Studio または Build Tools）を vswhere で検出
 # -products * を付けることで Build Tools（IDE なし軽量版）も対象に含める
@@ -173,14 +207,14 @@ if (Test-Path $dllDest) {
     Write-Info "CMake 設定中 ..."
     Push-Location $jtalkBld
     try {
-        cmake .. -G $cmakeGen -A x64
+        & $cmake .. -G $cmakeGen -A x64
     } finally {
         Pop-Location
     }
 
     # --- ビルド ---
     Write-Info "ビルド中（Release / x64）..."
-    cmake --build $jtalkBld --config Release
+    & $cmake --build $jtalkBld --config Release
 
     # --- DLL 検索 ---
     # Release ディレクトリ内の DLL を列挙
