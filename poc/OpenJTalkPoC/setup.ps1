@@ -251,8 +251,10 @@ if (Test-Path $dllDest) {
     #   jtalkdll に同梱の portaudio が cmake_minimum_required に 3.5 未満を指定しており
     #   CMake 4.x ではそのバージョンサポートが削除されたためエラーになる。
     #   このフラグで 3.5 以上として扱うよう指示し回避する。
-    Invoke-Native { & $cmake -S $jtalkSrc -B $jtalkBld -G $cmakeGen -A x64 `
-        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 } "CMake の設定に失敗しました"
+    # ※ 変数に格納して渡す（リテラルのまま書くと PowerShell が "=3.5" を再トークン化し
+    #   CMAKE_POLICY_VERSION_MINIMUM が "3" のみとして渡される問題を回避）
+    $policyArg = '-DCMAKE_POLICY_VERSION_MINIMUM=3.5'
+    Invoke-Native { & $cmake -S $jtalkSrc -B $jtalkBld -G $cmakeGen -A x64 $policyArg } "CMake の設定に失敗しました"
 
     # --- ビルド ---
     Write-Info "ビルド中（Release / x64）..."
