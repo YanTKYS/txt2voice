@@ -860,53 +860,146 @@ private static string Sanitize(string message)
 
 ---
 
-### 33. OSS 日本語 TTS エンジン同梱（OpenJTalk / VOICEVOX 系）【PoC 計画フェーズへ昇格】
+### 33. OSS 日本語 TTS エンジン同梱（OpenJTalk 同梱）【v0.4.0 系 計画フェーズ】
 
-**前提**: 項目 #31（ISpeechEngine 抽象化）が完了していること。
+**前提**: 項目 #31（ISpeechEngine 抽象化）が完了していること。✅
 
 **概要**  
-OSS の日本語 TTS エンジンをアプリに同梱しローカル実行する。
-読みルールや辞書のカスタマイズ自由度が高く、読み上げ品質の大幅改善が期待できる。
+OSS の日本語 TTS エンジン OpenJTalk をアプリに同梱しローカル実行する。
+既存の SAPI / WinRT と並ぶ第 3 の音声エンジン選択肢として追加する。
 
-**候補エンジン**
+---
 
-| エンジン | 特徴 | ライセンス（参考） |
+**統合方式の検討結果**
+
+| 方式 | 概要 | 採否 |
 |---|---|---|
-| OpenJTalk + HTS Engine | 軽量・辞書カスタム可・実績あり | MIT 系（音声モデルに要確認） |
-| VOICEVOX エンジン（ローカル） | 自然さ高・HTTP/IPC 連携 | LGPL 系（要確認） |
+| **jtalkDLL（C++/CLI）** | rosmarinus 製 .NET 向け管理 DLL。Windows x64 ビルド済み | **採用** |
+| open_jtalk.exe プロセス起動 | `Process.Start` で WAV 生成 | 不採用（プロセスごとに辞書再読み込みで低速） |
+| P/Invoke（ネイティブ DLL 直接） | 最速だが C API ラッパーを自前で実装する必要あり | 将来検討 |
+
+jtalkDLL は .NET 向けに設計された C++/CLI 管理 DLL であり、P/Invoke を自前で書かずに利用できる。最初の PoC に適している。
+
+---
+
+**同梱ファイル構成（概算）**
+
+```
+Data/openjtalk/
+├── open_jtalk_dic_utf_8/   MeCab UTF-8 辞書      約 20 MB
+├── mei/                    MMDAgent Mei 音声モデル 約  7 MB
+└── jtalk.dll               jtalkDLL               約  1 MB
+                                              合計 約 28 MB
+```
+
+現行スタンドアロン EXE の配布サイズへの影響は許容範囲と判断済み。
+
+---
+
+**ライセンス確認状況**
+
+| コンポーネント | ライセンス | 再配布 | 要確認事項 |
+|---|---|---|---|
+| Open JTalk 本体 | Modified BSD License | ○ | 著作権表示の保持 |
+| MeCab + ipadic 辞書 | BSD License | ○ | 著作権表示の保持 |
+| MMDAgent Mei 音声モデル | Modified BSD License | ○（要確認） | mmdagent.jp 配布物同梱可否の最終確認 |
+| jtalkDLL | MIT（要確認） | ○（要確認） | GitHub リポジトリ LICENSE ファイルを確認 |
+
+> 参照: https://www.mmdagent.jp/ / https://open-jtalk.sourceforge.net/
+
+---
+
+**既存 DictionaryService との連携**
+
+既存の読み替え辞書（`DictionaryService`）と OpenJTalk の MeCab 辞書は役割が異なり、両立できる。
+
+```
+入力テキスト
+   ↓ DictionaryService.ApplyDictionary()  ← 既存の読み替え（例: 市長→しちょう）
+   ↓ OpenJTalkEngine.SpeakAsync()         ← MeCab 形態素解析 → HTS 音声合成
+```
+
+既存辞書はテキスト段階の前処理として引き続き有効。OpenJTalk の MeCab 辞書とは独立。
+
+---
 
 **メリット**
 
-- 完全オフライン・端末依存なし
+- 完全オフライン・端末依存なし（SAPI / WinRT の音声パック不要）
+- 日本語に特化した形態素解析による自然な読み上げ
 - 読みルール・辞書カスタマイズの自由度が高い
 
 **デメリット・懸念点**
 
-- 配布物が大きくなる（音声モデル含め数十〜数百 MB）
-- ライセンス確認・更新追従・サポートのメンテコスト増
-- VOICEVOX 型は別プロセス起動が必要（CPU/メモリ消費・監視運用）
-- UI 操作への応答性調整が必要（初期化遅延等）
+- 同梱サイズ +28 MB（許容済み）
+- 辞書 + 音声モデルの初期化に 1〜5 秒かかる可能性 → 起動時バックグラウンド初期化が必要
+- jtalkDLL のメンテ状況・将来互換性は継続監視が必要
+- SSML ポーズ（既存機能）との統合方法は実装時に検討
 
-**適合度**: 中〜高（品質重視かつ端末スペックが十分な場合に有力）
+**実装フェーズ分割**
 
-**PoC 計画（v0.3.6 レビューで昇格）**
+| フェーズ | バックログ # | 内容 |
+|---|---|---|
+| v0.4.0 | [#46] | jtalkDLL で WAV 生成・ライセンス最終確認・初期化時間実測 |
+| v0.4.1 | [#47] | `OpenJTalkEngine : ISpeechEngine` 実装・UI 統合 |
 
-v0.3.6 でバックログ未着手が #33 のみになったため、調査フェーズから PoC 計画フェーズへ移行する。
+---
 
-1. **OpenJTalk 最小同梱 PoC**: 容量・辞書変換互換性・起動時間を実測
-   - バイナリ同梱方法（NuGet / 手動配置）の選定
-   - 既存 `DictionaryService` の読みデータとの互換性確認
-2. **VOICEVOX 比較評価**: 同条件（品質・容量・ライセンス運用コスト）で比較
-   - HTTP/IPC 連携方式の実装コスト
-   - 別プロセス起動・監視の安定性評価
+### 46. OpenJTalk 同梱 PoC — 技術検証フェーズ（v0.4.0）
 
-**推奨導入順序**  
-まず #32（WinRT）評価結果と現場フィードバックを踏まえ、品質改善ニーズが高い場合に本 PoC を実施する。
+**目的**  
+`OpenJTalkEngine` を実装する前に、jtalkDLL + Mei モデルでテキスト → WAV が生成できることを最小コードで確認し、ライセンス・性能・品質の 3 点を実測する。
+
+**検証項目**
+
+1. **ライセンス最終確認**
+   - jtalkDLL の GitHub LICENSE ファイルを確認し再配布可否を明記
+   - MMDAgent Mei ボイスの同梱再配布が許諾されるか確認
+2. **技術検証（最小コード）**
+   - jtalkDLL を参照した小さなコンソールプログラムでテキスト → WAV 生成
+   - 辞書読み込み時間（初期化コスト）を計測
+   - 読み上げ品質を SAPI / WinRT と比較
+3. **サイズ確認**
+   - 辞書 + モデル + DLL の実際のバイト数を記録
+
+**合否基準**
+
+| 項目 | 基準 |
+|---|---|
+| ライセンス | 同梱再配布に支障なし |
+| 初期化時間 | 5 秒以内（バックグラウンドで許容可） |
+| WAV 生成 | テキスト入力 → WAV ファイル出力が動作すること |
 
 **関連ファイル**
 
-- `TxtToVoice/Services/OpenJTalkEngine.cs` or `VoicevoxEngine.cs` — 新規追加
-- `TxtToVoice.csproj` — エンジンバイナリの同梱設定を追加
+- `poc/OpenJTalkPoC/` — PoC 用コンソールプロジェクト（メインプロジェクトには含めない）
+
+---
+
+### 47. OpenJTalkEngine 実装・UI 統合（v0.4.1）
+
+**前提**: #46 の PoC 検証が合格していること。
+
+**実装内容**
+
+1. `TxtToVoice/Services/OpenJTalkEngine.cs` — `ISpeechEngine` 実装
+   - jtalkDLL をラップ
+   - 起動時バックグラウンド初期化（辞書 + モデル読み込み）
+   - `SpeakAsync` / `SpeakSsmlAsync` / `SaveToFile` を実装
+   - `SpeakProgress` イベント（単語境界）の対応可否を検討
+2. `TxtToVoice.Core/Services/SpeechEngineTypes.cs` — `OpenJTalk` 定数を追加
+3. `TxtToVoice/Services/SpeechEngineFactory.cs` — `OpenJTalk` ケースを追加
+4. `TxtToVoice/Dialogs/SettingsDialog.xaml` — エンジン選択肢に「OpenJTalk」を追加
+5. `TxtToVoice/TxtToVoice.csproj` — `Data/openjtalk/` をコンテンツとして同梱
+6. `TxtToVoice.Tests/Services/` — `OpenJTalkEngine` の基本テスト追加
+
+**関連ファイル**
+
+- `TxtToVoice/Services/OpenJTalkEngine.cs` — 新規追加
+- `TxtToVoice.Core/Services/SpeechEngineTypes.cs` — 定数追加
+- `TxtToVoice/Services/SpeechEngineFactory.cs` — ケース追加
+- `TxtToVoice/Dialogs/SettingsDialog.xaml / .xaml.cs` — UI 追加
+- `TxtToVoice/TxtToVoice.csproj` — 同梱設定追加
 
 ---
 

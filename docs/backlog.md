@@ -17,7 +17,8 @@
 
 | # | 概要 | 詳細 |
 |---|---|---|
-| 33 | OSS 日本語 TTS エンジン同梱（OpenJTalk / VOICEVOX 系）— PoC 計画フェーズ | バックログ未着手が本項目のみになったため調査フェーズから昇格。まず OpenJTalk 最小同梱 PoC（容量・辞書変換・起動時間）、次に VOICEVOX 比較評価を実施する。 |
+| 46 | OpenJTalk 同梱 PoC — 技術検証（v0.4.0） | jtalkDLL + MMDAgent Mei ボイスで WAV 生成を最小コードで確認。ライセンス最終確認・初期化時間実測・品質比較を行い #47 実装の前提を満たす。詳細は #33 を参照。 |
+| 47 | OpenJTalkEngine 実装・UI 統合（v0.4.1） | #46 PoC 合格後に `OpenJTalkEngine : ISpeechEngine` を実装し、設定 UI にエンジン選択肢を追加。`Data/openjtalk/` をスタンドアロン配布に同梱。詳細は #33 を参照。 |
 
 ---
 
