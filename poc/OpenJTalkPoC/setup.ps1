@@ -218,8 +218,12 @@ if (Test-Path $dllDest) {
     }
 
     # --- CMake 設定 ---
-    # -S/-B フラグでソース・ビルドディレクトリを直接指定する（CMake 3.13+）。
-    # ビルドディレクトリは CMake が自動作成するため Push-Location は不要。
+    # CMake 4.x は前回の中途ビルドが残っていると pkgRedirects の再作成に失敗する。
+    # jtalk.dll 未生成の段階なのでビルドディレクトリを毎回クリーンにする。
+    if (Test-Path $jtalkBld) {
+        Write-Info "前回のビルドディレクトリをクリア ..."
+        Remove-Item -Recurse -Force $jtalkBld
+    }
     Write-Info "CMake 設定中 ..."
     Invoke-Native { & $cmake -S $jtalkSrc -B $jtalkBld -G $cmakeGen -A x64 } "CMake の設定に失敗しました"
 
