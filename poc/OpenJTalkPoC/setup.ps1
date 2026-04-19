@@ -113,6 +113,21 @@ function Invoke-Download([string]$url, [string]$dest) {
     }
 }
 
+# git / cmake / tar / dotnet は進捗を stderr に書くため、
+# $ErrorActionPreference = "Stop" 下では NativeCommandError が発生する。
+# このラッパー内では一時的に "Continue" に切り替え、終了コードで成否を判定する。
+function Invoke-Native {
+    param(
+        [Parameter(Mandatory)][scriptblock]$ScriptBlock,
+        [string]$ErrorMessage = "コマンドが失敗しました"
+    )
+    $local:ErrorActionPreference = "Continue"
+    & $ScriptBlock
+    if ($LASTEXITCODE -ne 0) {
+        Write-Fail "$ErrorMessage (exit code: $LASTEXITCODE)"
+    }
+}
+
 # ============================================================================
 # [0] 前提ツール確認
 # ============================================================================
@@ -198,7 +213,7 @@ if (Test-Path $dllDest) {
         Write-OK "既存クローンを使用: $jtalkSrc"
     } else {
         Write-Info "jtalkdll をクローン中 ..."
-        git clone --recursive $jtalkRepo $jtalkSrc
+        Invoke-Native { git clone --recursive $jtalkRepo $jtalkSrc } "git clone に失敗しました"
         Write-OK "クローン完了"
     }
 
@@ -207,14 +222,14 @@ if (Test-Path $dllDest) {
     Write-Info "CMake 設定中 ..."
     Push-Location $jtalkBld
     try {
-        & $cmake .. -G $cmakeGen -A x64
+        Invoke-Native { & $cmake .. -G $cmakeGen -A x64 } "CMake の設定に失敗しました"
     } finally {
         Pop-Location
     }
 
     # --- ビルド ---
     Write-Info "ビルド中（Release / x64）..."
-    & $cmake --build $jtalkBld --config Release
+    Invoke-Native { & $cmake --build $jtalkBld --config Release } "jtalk.dll のビルドに失敗しました"
 
     # --- DLL 検索 ---
     # Release ディレクトリ内の DLL を列挙
@@ -268,7 +283,7 @@ if (Test-Path $dicDir) {
         Write-Info "展開中 ..."
         Push-Location $tmpDir
         try {
-            tar -xzf $dicTar
+            Invoke-Native { tar -xzf $dicTar } "辞書の展開に失敗しました（tar）"
         } finally {
             Pop-Location
         }
@@ -336,7 +351,7 @@ if (-not (Test-Path $dllDest)) {
     Write-Warn "jtalk.dll が $dataDir に見つかりません。ビルドはされますが DLL が欠如します。"
 }
 
-dotnet build $csproj -c Release
+Invoke-Native { dotnet build $csproj -c Release } "dotnet build に失敗しました"
 Write-OK "ビルド完了"
 
 # ============================================================================
@@ -345,7 +360,7 @@ Write-OK "ビルド完了"
 
 Write-Step "5/5 PoC 実行"
 
-dotnet run --project $csproj -c Release --no-build
+Invoke-Native { dotnet run --project $csproj -c Release --no-build } "PoC の実行に失敗しました"
 
 # ============================================================================
 # 完了メッセージ
