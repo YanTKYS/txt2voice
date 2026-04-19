@@ -7,6 +7,59 @@
 
 ## 優先度：高
 
+### 42. WinRT 一時ファイル（.tmp）残存バグ修正
+
+**課題**  
+v0.3.6 の `WinRtSpeechEngine.SaveToFile()` で使用している
+
+```csharp
+string tempWavPath = Path.ChangeExtension(Path.GetTempFileName(), ".wav");
+```
+
+は、`Path.GetTempFileName()` が内部で空の `.tmp` ファイルを OS 上に実際に作成したのち、`ChangeExtension` で返す文字列を `.wav` に変えるだけ。元の `.tmp` ファイルは削除されないため、音声保存のたびに `%TEMP%` に空の `.tmp` ファイルが蓄積する。
+
+**実装方針**
+
+`Path.GetRandomFileName()` はファイルを生成しないため、こちらを使う。
+
+```csharp
+// 修正後: ファイルを生成しない GetRandomFileName を使用
+string tempWavPath = Path.Combine(Path.GetTempPath(),
+    Path.ChangeExtension(Path.GetRandomFileName(), ".wav"));
+```
+
+**関連ファイル**
+
+- `TxtToVoice/Services/WinRtSpeechEngine.cs` — `SaveToFile()` のテンポラリパス生成部分を修正
+
+---
+
+### 43. WinRT WAV 保存の File.Move 異ドライブ失敗耐性を上げる
+
+**課題**  
+v0.3.6 の `WinRtSpeechEngine.SaveToFile()` WAV パスは `File.Move` で一時ファイルを最終パスへ移動する。  
+.NET の `File.Move` は **同一ボリューム間はアトミック移動、異なるボリューム間は `IOException`** を投げる。  
+ユーザーがネットワーク共有フォルダや D ドライブへ保存するケースで保存が失敗し、一時ファイルが `%TEMP%` に残る。
+
+**実装方針**
+
+`File.Copy` + `File.Delete` に変更する（コスト: 追加のディスク読み書きが発生するが、短い WAV ファイルでは許容範囲）。
+
+```csharp
+// 修正後: 異なるボリュームでも確実に動作
+File.Copy(tempWavPath, outputPath, overwrite: true);
+// finally ブロックで tempWavPath を削除（既存の処理で対応済み）
+tempWavPath = string.Empty; // 明示移動完了フラグ
+```
+
+ただし `tempWavPath = string.Empty` を設定する位置に注意（finally での削除ロジックと整合させる）。
+
+**関連ファイル**
+
+- `TxtToVoice/Services/WinRtSpeechEngine.cs` — WAV 分岐の `File.Move` → `File.Copy` + `File.Delete`
+
+---
+
 ### 17. Shift_JIS コードページ登録の一本化 ✅
 
 **課題**  
@@ -243,6 +296,50 @@ TxtToVoice.Tests/Services/
 ---
 
 ## 優先度：中
+
+### 44. README のテスト手順・ソース構成図を v0.3.6 対応に更新
+
+**課題**  
+v0.3.6 で `TxtToVoice.Core` / `TxtToVoice.Core.Tests` を新設したが、README のテスト手順とソース構成図は v0.3.5 以前のまま（`TxtToVoice.Tests` 単体）。  
+新規参加者がリポジトリを見たときに構成を誤認する。
+
+**実装方針**
+
+1. **テスト節の更新**: 「Core.Tests（常時・全 PR）」と「TxtToVoice.Tests（Windows 実機 / エンジン依存）」に分離して記述。
+   - Core.Tests 実行コマンド例: `dotnet test TxtToVoice.Core.Tests`
+   - TxtToVoice.Tests エンジン除外例: `dotnet test TxtToVoice.Tests --filter "Category!=RequiresEngine"`
+2. **ソース構成図の更新**: `TxtToVoice.Core`（net8.0）と `TxtToVoice.Core.Tests`（net8.0）を追記し、依存関係の矢印を示す。
+
+**関連ファイル**
+
+- `README.md` — テスト節・ソース構成図を更新
+
+---
+
+### 45. CI 2 レーン化（Core.Tests 必須 / Windows 依存テスト任意）
+
+**課題**  
+v0.3.6 でプロジェクト分離が完了しているが、CI ワークフローは変更しておらず、`TxtToVoice.Tests` を単体で実行している（あるいは CI 自体が未整備）。  
+`TxtToVoice.Core.Tests` が net8.0 で OS 非依存のため、Linux runner でも実行できるにもかかわらず活用されていない。
+
+**実装方針**
+
+```
+レーンA（必須 / 全 PR / Linux or Windows）:
+  dotnet test TxtToVoice.Core.Tests
+
+レーンB（任意 / Windows runner / PR または定期実行）:
+  dotnet test TxtToVoice.Tests --filter "Category!=RequiresEngine"
+```
+
+- レーンA: 純ロジックテストを全 PR で必須実行し、回帰を早期検知する。
+- レーンB: エンジン非依存部分を Windows runner で確認。RequiresEngine は週次等の定期実行に分離。
+
+**関連ファイル**
+
+- `.github/workflows/ci.yml`（またはそれに相当する CI 設定ファイル）— ジョブを 2 レーンに分割
+
+---
 
 ### 40. CSV 重複判定の計算量最適化 ✅
 
@@ -763,7 +860,7 @@ private static string Sanitize(string message)
 
 ---
 
-### 33. OSS 日本語 TTS エンジン同梱（OpenJTalk / VOICEVOX 系）
+### 33. OSS 日本語 TTS エンジン同梱（OpenJTalk / VOICEVOX 系）【PoC 計画フェーズへ昇格】
 
 **前提**: 項目 #31（ISpeechEngine 抽象化）が完了していること。
 
@@ -792,8 +889,19 @@ OSS の日本語 TTS エンジンをアプリに同梱しローカル実行す�
 
 **適合度**: 中〜高（品質重視かつ端末スペックが十分な場合に有力）
 
+**PoC 計画（v0.3.6 レビューで昇格）**
+
+v0.3.6 でバックログ未着手が #33 のみになったため、調査フェーズから PoC 計画フェーズへ移行する。
+
+1. **OpenJTalk 最小同梱 PoC**: 容量・辞書変換互換性・起動時間を実測
+   - バイナリ同梱方法（NuGet / 手動配置）の選定
+   - 既存 `DictionaryService` の読みデータとの互換性確認
+2. **VOICEVOX 比較評価**: 同条件（品質・容量・ライセンス運用コスト）で比較
+   - HTTP/IPC 連携方式の実装コスト
+   - 別プロセス起動・監視の安定性評価
+
 **推奨導入順序**  
-まず #32（WinRT）で品質・互換性を検証し、不十分な場合に本エンジンを評価する二段階戦略が安全。
+まず #32（WinRT）評価結果と現場フィードバックを踏まえ、品質改善ニーズが高い場合に本 PoC を実施する。
 
 **関連ファイル**
 
@@ -1058,6 +1166,18 @@ MP3/MP4 保存・D&D ファイル読み込み・最近使ったファイル・SS
 | #39 v0.3.4 テスト追加 | DictionaryService キャッシュ/マージ・LoggerAnonymize・SpeechProgress の 4 テストクラスを追加。SpeechProgress は `[Trait("Category", "RequiresEngine")]` で CI 除外可 |
 | #40 CSV 重複判定最適化 | `HashSet<string>` + 1 パスに変更。`HasDisplay()` / `UpdateByDisplay()` は他の呼び出し元（UI ボタン等）向けに残存 |
 | #41 音声選択 ID 保存 | `voiceId` を `AppSettings` / `ISpeechEngine` / 両エンジンに追加。ロード時は ID 検索 → DisplayName フォールバックの 2 段構え |
+
+---
+
+## v0.3.6 レビュー査読結果
+
+| 指摘 | 優先度 | 妥当性 | 対応状況 |
+|---|---|---|---|
+| WinRT 一時ファイル残存バグ（`Path.GetTempFileName()` → `.tmp` が残る） | 高 | **妥当（実バグ）** | → 項目 #42 として追加 |
+| WAV 保存の `File.Move` 異ドライブ失敗耐性 | 高 | **妥当（実バグ）** | → 項目 #43 として追加 |
+| README のテスト手順・構成図を v0.3.6 対応に更新 | 中 | 妥当（ドキュメント不整合） | → 項目 #44 として追加 |
+| CI 2 レーン化（Core.Tests 必須 / Windows 依存テスト任意） | 中 | 妥当（品質改善） | → 項目 #45 として追加 |
+| backlog #33 を調査フェーズから PoC 計画フェーズへ昇格 | 中 | 妥当（方向性明確化） | #33 を中優先度へ移動・PoC 計画を追記 |
 
 ---
 
