@@ -8,11 +8,12 @@ namespace TxtToVoice.Services
     {
         public const string SystemSpeech = "SystemSpeech";
         public const string WinRt        = "WinRT";
+        public const string OpenJTalk    = "OpenJTalk";
 
         /// <summary>未知の値を受け取ったときの既定種別。</summary>
         public const string Default = SystemSpeech;
 
         /// <summary>指定した文字列が既知の有効なエンジン種別かどうかを返す。</summary>
-        public static bool IsKnown(string? type) => type == SystemSpeech || type == WinRt;
+        public static bool IsKnown(string? type) => type == SystemSpeech || type == WinRt || type == OpenJTalk;
     }
 }

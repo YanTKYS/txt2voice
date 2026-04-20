@@ -18,6 +18,7 @@ namespace TxtToVoice.Services
 
         public const string SystemSpeech = SpeechEngineTypes.SystemSpeech;
         public const string WinRt        = SpeechEngineTypes.WinRt;
+        public const string OpenJTalk    = SpeechEngineTypes.OpenJTalk;
 
         /// <summary>未知の値を受け取ったときの既定種別。</summary>
         public const string Default = SpeechEngineTypes.Default;
@@ -33,6 +34,7 @@ namespace TxtToVoice.Services
         public static ISpeechEngine Create(string? engineType) => engineType switch
         {
             WinRt        => new WinRtSpeechEngine(),
+            OpenJTalk    => new OpenJTalkEngine(),
             SystemSpeech => new SystemSpeechEngine(),
             _            => new SystemSpeechEngine(),
         };
@@ -47,6 +49,7 @@ namespace TxtToVoice.Services
         /// </summary>
         public static string GetLabel(string? engineType, bool prefixWindows = false)
         {
+            if (engineType == OpenJTalk) return "OpenJTalk (日本語 TTS)";
             string core = engineType == WinRt
                 ? "WinRT (OneCore)"
                 : "SAPI (System.Speech)";

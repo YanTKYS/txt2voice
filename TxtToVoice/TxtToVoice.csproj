@@ -33,6 +33,32 @@
     <Content Include="Data\sample_dictionary.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!-- THIRD_PARTY_LICENSES.txt（同梱必須: CC BY 3.0 等のライセンス義務） -->
+    <Content Include="THIRD_PARTY_LICENSES.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- OpenJTalk ランタイムファイル（setup.ps1 実行後に Data\openjtalk\ に配置）-->
+    <!-- jtalk.dll は exe と同じ階層に置く必要があるため Link でフラット化 -->
+    <Content Include="Data\openjtalk\jtalk.dll"
+             CopyToOutputDirectory="PreserveNewest"
+             Link="jtalk.dll"
+             Condition="Exists('Data\openjtalk\jtalk.dll')" />
+    <!-- 依存 DLL（jtalkdll ビルドで生成された追加 DLL） -->
+    <Content Include="Data\openjtalk\*.dll"
+             Exclude="Data\openjtalk\jtalk.dll"
+             CopyToOutputDirectory="PreserveNewest"
+             Link="%(Filename)%(Extension)"
+             Condition="Exists('Data\openjtalk')" />
+    <!-- MeCab 辞書・音声モデル（Data\openjtalk\ 以下の構造を保ったままコピー） -->
+    <Content Include="Data\openjtalk\open_jtalk_dic_utf_8\**"
+             CopyToOutputDirectory="PreserveNewest"
+             Condition="Exists('Data\openjtalk\open_jtalk_dic_utf_8')" />
+    <Content Include="Data\openjtalk\voice\**"
+             CopyToOutputDirectory="PreserveNewest"
+             Condition="Exists('Data\openjtalk\voice')" />
   </ItemGroup>
 
 </Project>

@@ -32,9 +32,10 @@ namespace TxtToVoice.Dialogs
             ChkSaveRecentFiles.IsChecked           = saveRecentFiles;
             ChkClearSensitiveDataOnExit.IsChecked  = clearSensitiveDataOnExit;
             ChkDeleteLogOnExit.IsChecked           = deleteLogOnExit;
-            bool isWinRt = speechEngineType == SpeechEngineFactory.WinRt;
-            RbWinRt.IsChecked       = isWinRt;
-            RbSystemSpeech.IsChecked = !isWinRt;
+            RbWinRt.IsChecked        = speechEngineType == SpeechEngineFactory.WinRt;
+            RbOpenJTalk.IsChecked    = speechEngineType == SpeechEngineFactory.OpenJTalk;
+            RbSystemSpeech.IsChecked = speechEngineType != SpeechEngineFactory.WinRt
+                                    && speechEngineType != SpeechEngineFactory.OpenJTalk;
         }
 
         private void BtnOk_Click(object sender, RoutedEventArgs e)
@@ -43,9 +44,9 @@ namespace TxtToVoice.Dialogs
             SaveRecentFiles          = ChkSaveRecentFiles.IsChecked           == true;
             ClearSensitiveDataOnExit = ChkClearSensitiveDataOnExit.IsChecked  == true;
             DeleteLogOnExit          = ChkDeleteLogOnExit.IsChecked           == true;
-            SpeechEngineType         = RbWinRt.IsChecked == true
-                                         ? SpeechEngineFactory.WinRt
-                                         : SpeechEngineFactory.SystemSpeech;
+            SpeechEngineType         = RbWinRt.IsChecked    == true ? SpeechEngineFactory.WinRt
+                                     : RbOpenJTalk.IsChecked == true ? SpeechEngineFactory.OpenJTalk
+                                     : SpeechEngineFactory.SystemSpeech;
             DialogResult = true;
         }
 

@@ -226,13 +226,22 @@ namespace TxtToVoice
                                 : PathConfig.PortableFallbackApplied ? "\n動作モード: 通常モード（ポータブル要求→書込不可→自動切替）"
                                 : string.Empty;
             string engineLabel = SpeechEngineFactory.GetLabel(_speechEngineType, prefixWindows: true);
+            string creditNote  = _speechEngineType == SpeechEngineFactory.OpenJTalk
+                ? "\n\n[オープンソース使用許諾]\n" +
+                  "OpenJTalk エンジンには以下のコンポーネントを使用しています:\n" +
+                  "  jtalkdll (MIT License)\n" +
+                  "  Open JTalk / MeCab (Modified BSD License)\n" +
+                  "  HTS Voice \"Mei\" © 2009-2015 名古屋工業大学 (CC BY 3.0)\n" +
+                  "詳細: THIRD_PARTY_LICENSES.txt"
+                : string.Empty;
             MessageBox.Show(
                 $"声の広報 テキスト読み上げツール  v{version}\n\n" +
                 "自治体職員向けの読み上げ補助ツールです。\n" +
                 $"音声エンジン: {engineLabel}\n" +
                 portableNote + "\n\n" +
                 "辞書ファイル: " + PathConfig.DictionaryPath + "\n" +
-                "ログファイル: " + PathConfig.LogDirectory,
+                "ログファイル: " + PathConfig.LogDirectory +
+                creditNote,
                 "バージョン情報",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
