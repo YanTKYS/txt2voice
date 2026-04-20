@@ -347,30 +347,41 @@ if (Test-Path $dicDir) {
     Write-Info "  $dicDir"
 } else {
     New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null
-
-    $dicTar  = Join-Path $tmpDir "open_jtalk_dic_utf_8-1.11.tar.gz"
-    $dicWork = Join-Path $tmpDir "open_jtalk_dic_utf_8-1.11"
-
-    Invoke-Download $dicUrl $dicTar
-
-    if (-not (Test-Path $dicWork)) {
-        Write-Info "展開中 ..."
-        Push-Location $tmpDir
-        try {
-            Invoke-Native { tar -xzf $dicTar } "辞書の展開に失敗しました（tar）"
-        } finally {
-            Pop-Location
-        }
-    }
-
-    if (-not (Test-Path $dicWork)) {
-        Write-Fail "辞書の展開に失敗しました。手動で $dicTar を $tmpDir に展開してください。"
-    }
-
     New-Item -ItemType Directory -Force -Path $dataDir | Out-Null
-    Move-Item $dicWork $dicDir
-    $dicFileCount = (Get-ChildItem -Path $dicDir -File).Count
-    Write-OK "辞書を配置: $dicDir ($dicFileCount ファイル)"
+
+    # jtalkdll ビルド時に dic/ が生成されていればそれを流用（SourceForge 不要）
+    $jtalkDicBuilt = Join-Path $tmpDir "jtalkdll\build\dic"
+    if (Test-Path (Join-Path $jtalkDicBuilt "sys.dic")) {
+        Write-Info "jtalkdll ビルド済み辞書を使用 ..."
+        Copy-Item -Path $jtalkDicBuilt -Destination $dicDir -Recurse -Force
+        $dicFileCount = (Get-ChildItem -Path $dicDir -File).Count
+        Write-OK "辞書を配置（jtalkdll ビルドから）: $dicDir ($dicFileCount ファイル)"
+    } else {
+        # ビルド済み辞書がない場合のみ SourceForge からダウンロード
+        # ※ SourceForge は Cloudflare JS チャレンジのため自動ダウンロードに失敗する場合がある
+        $dicTar  = Join-Path $tmpDir "open_jtalk_dic_utf_8-1.11.tar.gz"
+        $dicWork = Join-Path $tmpDir "open_jtalk_dic_utf_8-1.11"
+
+        Invoke-Download $dicUrl $dicTar
+
+        if (-not (Test-Path $dicWork)) {
+            Write-Info "展開中 ..."
+            Push-Location $tmpDir
+            try {
+                Invoke-Native { tar -xzf $dicTar } "辞書の展開に失敗しました（tar）"
+            } finally {
+                Pop-Location
+            }
+        }
+
+        if (-not (Test-Path $dicWork)) {
+            Write-Fail "辞書の展開に失敗しました。手動で $dicTar を $tmpDir に展開してください。"
+        }
+
+        Move-Item $dicWork $dicDir
+        $dicFileCount = (Get-ChildItem -Path $dicDir -File).Count
+        Write-OK "辞書を配置: $dicDir ($dicFileCount ファイル)"
+    }
 }
 
 # ============================================================================
