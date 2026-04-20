@@ -397,24 +397,57 @@ if (Test-Path $meiVoice) {
     Write-Info "  $meiVoice"
 } else {
     New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null
+    New-Item -ItemType Directory -Force -Path $voiceDir | Out-Null
 
-    $mmdZip     = Join-Path $tmpDir "MMDAgent_Example-1.8.zip"
-    $mmdWork    = Join-Path $tmpDir "MMDAgent_Example-1.8"
+    $mmdZip  = Join-Path $tmpDir "MMDAgent_Example-1.8.zip"
+    $mmdWork = Join-Path $tmpDir "MMDAgent_Example-1.8"
 
-    Invoke-Download $mmdUrl $mmdZip
+    # 既存の有効な ZIP があればダウンロードをスキップ
+    if (-not (Test-ArchiveFile $mmdZip)) {
+        if (Test-Path $mmdZip) { Remove-Item $mmdZip -Force }
+        Write-Info "ダウンロード試行中: MMDAgent_Example-1.8.zip ..."
+        $dlOk = $false
+        try {
+            $headers = @{ 'User-Agent' = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
+            Invoke-WebRequest -Uri $mmdUrl -OutFile $mmdZip -UseBasicParsing -MaximumRedirection 10 -Headers $headers
+            $dlOk = Test-ArchiveFile $mmdZip
+        } catch { }
+        if (-not $dlOk) {
+            if (Test-Path $mmdZip) { Remove-Item $mmdZip -Force }
+            Write-Host ""
+            Write-Host "  [!!] SourceForge が Cloudflare JS チャレンジで保護されており自動ダウンロードできません。" -ForegroundColor Yellow
+            Write-Host "       以下の手順で手動ダウンロードして再実行してください:" -ForegroundColor Yellow
+            Write-Host ""
+            Write-Host "  [手順 A] ZIP をダウンロードして tmpDir に配置する場合:" -ForegroundColor Cyan
+            Write-Host "    1. ブラウザで以下を開いてダウンロード:" -ForegroundColor White
+            Write-Host "       $mmdUrl" -ForegroundColor White
+            Write-Host "    2. ダウンロードした ZIP を以下のパスに配置:" -ForegroundColor White
+            Write-Host "       $mmdZip" -ForegroundColor White
+            Write-Host "    3. このスクリプトを再実行" -ForegroundColor White
+            Write-Host ""
+            Write-Host "  [手順 B] htsvoice を直接配置する場合:" -ForegroundColor Cyan
+            Write-Host "    1. ZIP から Voice\mei\mei_normal.htsvoice を取り出す" -ForegroundColor White
+            Write-Host "    2. 以下のパスに配置:" -ForegroundColor White
+            Write-Host "       $meiVoice" -ForegroundColor White
+            Write-Host "    3. このスクリプトを再実行" -ForegroundColor White
+            Write-Host ""
+            exit 1
+        }
+        Write-OK "ダウンロード完了: MMDAgent_Example-1.8.zip"
+    } else {
+        Write-OK "既存 ZIP を使用: $mmdZip"
+    }
 
     if (-not (Test-Path $mmdWork)) {
-        Write-Info "展開中（ZIP 約 30 MB）..."
+        Write-Info "展開中（ZIP 約 200 MB）..."
         Expand-Archive -Path $mmdZip -DestinationPath $tmpDir
     }
 
-    # Voice ディレクトリを探す（フォルダ構成が変わった場合を考慮）
     $htsVoices = Get-ChildItem -Path $mmdWork -Recurse -Filter "*.htsvoice" -ErrorAction SilentlyContinue
     if (-not $htsVoices) {
         Write-Fail ".htsvoice ファイルが見つかりません: $mmdWork`n  ZIP の展開内容を確認してください。"
     }
 
-    New-Item -ItemType Directory -Force -Path $voiceDir | Out-Null
     foreach ($v in $htsVoices) {
         Copy-Item $v.FullName (Join-Path $voiceDir $v.Name) -Force
         Write-OK "音声モデルを配置: $($v.Name)"
