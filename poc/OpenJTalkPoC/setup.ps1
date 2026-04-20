@@ -461,7 +461,28 @@ if (Test-Path $meiVoice) {
 Write-Step "4/5 PoC ビルド（Release / x64）"
 
 if (-not (Test-Path $csproj)) {
-    Write-Fail "OpenJTalkPoC.csproj が見つかりません: $csproj`n  このスクリプトは poc\OpenJTalkPoC\ に置いてください。"
+    Write-Host ""
+    Write-Host "  [NG] OpenJTalkPoC.csproj が見つかりません: $csproj" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "  このスクリプトはプロジェクトファイルと同じディレクトリに置いてください。" -ForegroundColor Yellow
+    Write-Host "  必要なファイル（同一ディレクトリに存在すること）:" -ForegroundColor Yellow
+    Write-Host "    - OpenJTalkPoC.csproj" -ForegroundColor White
+    Write-Host "    - NativeJTalk.cs" -ForegroundColor White
+    Write-Host "    - Program.cs" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  解決方法:" -ForegroundColor Cyan
+    Write-Host "  [A] リポジトリ内から実行する場合（推奨）:" -ForegroundColor Cyan
+    Write-Host "    1. リポジトリをクローン: git clone <repo-url>" -ForegroundColor White
+    Write-Host "    2. スクリプトを実行:" -ForegroundColor White
+    Write-Host "       powershell -ExecutionPolicy Bypass -File poc\OpenJTalkPoC\setup.ps1" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  [B] ファイルを個別にコピーした場合:" -ForegroundColor Cyan
+    Write-Host "    setup.ps1 と同じディレクトリに以下をコピーしてください:" -ForegroundColor White
+    Write-Host "      poc\OpenJTalkPoC\OpenJTalkPoC.csproj" -ForegroundColor White
+    Write-Host "      poc\OpenJTalkPoC\NativeJTalk.cs" -ForegroundColor White
+    Write-Host "      poc\OpenJTalkPoC\Program.cs" -ForegroundColor White
+    Write-Host ""
+    exit 1
 }
 
 # jtalk.dll の存在を最終確認（Condition="Exists(...)" がビルド時に参照される）
