@@ -236,6 +236,26 @@ if (Test-Path $dllDest) {
         Write-OK "クローン完了"
     }
 
+    # --- VS 2026 / MSVC 19.5x 互換パッチ ---
+    # open_jtalk-1.11/mecab が std::binary_function を使用しており、
+    # C++17 以降では削除済みのため error C2039/C2504 が発生する。
+    # cmake の CXX_FLAGS や CXX_STANDARD では VS ジェネレータ経由で確実に届かないため、
+    # クローン後にソースを直接修正する。
+    $mecabSrcDir = Join-Path $jtalkSrc "open_jtalk-1.11\mecab\src"
+    foreach ($fname in @("dictionary.cpp")) {
+        $fpath = Join-Path $mecabSrcDir $fname
+        if (-not (Test-Path $fpath)) { Write-Warn "パッチ対象が見つかりません: $fname"; continue }
+        $original = [System.IO.File]::ReadAllText($fpath)
+        # ": public std::binary_function<...>" を除去（C++17 で削除されたクラス）
+        $patched = $original -replace ':\s*public\s+std::binary_function<[^{]+>', ''
+        if ($original -ne $patched) {
+            [System.IO.File]::WriteAllText($fpath, $patched)
+            Write-OK "パッチ適用: $fname (std::binary_function 除去)"
+        } else {
+            Write-Info "パッチ不要: $fname (既に修正済みか対象コードなし)"
+        }
+    }
+
     # --- CMake 設定 ---
     if (Test-Path $jtalkBld) {
         Write-Info "前回のビルドディレクトリをクリア ..."
@@ -251,16 +271,10 @@ if (Test-Path $dllDest) {
     #   jtalkdll に同梱の portaudio が cmake_minimum_required に 3.5 未満を指定しており
     #   CMake 4.x ではそのバージョンサポートが削除されたためエラーになる。
     #   このフラグで 3.5 以上として扱うよう指示し回避する。
-    # -DCMAKE_CXX_FLAGS=/D_HAS_AUTO_PTR_ETC=1:
-    #   open_jtalk-1.11/mecab が std::binary_function を使用。
-    #   MSVC 19.5x (VS 2026) のデフォルト C++17 では削除済みのため error C2039/C2504 が発生する。
-    #   CMAKE_CXX_STANDARD=14 だけでは jtalkdll が per-target で標準を上書きするため効かない。
-    #   プリプロセッサマクロを直接 CXXFLAGS に注入して binary_function を強制的に有効化する。
     # ※ 変数に格納して渡す（リテラルのまま書くと PowerShell が "=3.5" などを再トークン化し
     #   cmake に誤った値が渡される問題を回避）
     $policyArg = '-DCMAKE_POLICY_VERSION_MINIMUM=3.5'
-    $cxxFlags  = '-DCMAKE_CXX_FLAGS=/D_HAS_AUTO_PTR_ETC=1'
-    Invoke-Native { & $cmake -S $jtalkSrc -B $jtalkBld -G $cmakeGen -A x64 $policyArg $cxxFlags } "CMake の設定に失敗しました"
+    Invoke-Native { & $cmake -S $jtalkSrc -B $jtalkBld -G $cmakeGen -A x64 $policyArg } "CMake の設定に失敗しました"
 
     # --- ビルド ---
     Write-Info "ビルド中（Release / x64）..."
