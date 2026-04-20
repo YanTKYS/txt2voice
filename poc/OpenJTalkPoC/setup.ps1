@@ -251,15 +251,16 @@ if (Test-Path $dllDest) {
     #   jtalkdll に同梱の portaudio が cmake_minimum_required に 3.5 未満を指定しており
     #   CMake 4.x ではそのバージョンサポートが削除されたためエラーになる。
     #   このフラグで 3.5 以上として扱うよう指示し回避する。
-    # -DCMAKE_CXX_STANDARD=14:
-    #   open_jtalk-1.11/mecab の実装が std::binary_function を使用しており、
-    #   C++17 以降では削除済みのため MSVC 19.5x (VS 2026) でコンパイルエラーになる。
-    #   C++14 標準で _HAS_AUTO_PTR_ETC=1 が有効になり binary_function が復活する。
+    # -DCMAKE_CXX_FLAGS=/D_HAS_AUTO_PTR_ETC=1:
+    #   open_jtalk-1.11/mecab が std::binary_function を使用。
+    #   MSVC 19.5x (VS 2026) のデフォルト C++17 では削除済みのため error C2039/C2504 が発生する。
+    #   CMAKE_CXX_STANDARD=14 だけでは jtalkdll が per-target で標準を上書きするため効かない。
+    #   プリプロセッサマクロを直接 CXXFLAGS に注入して binary_function を強制的に有効化する。
     # ※ 変数に格納して渡す（リテラルのまま書くと PowerShell が "=3.5" などを再トークン化し
     #   cmake に誤った値が渡される問題を回避）
     $policyArg = '-DCMAKE_POLICY_VERSION_MINIMUM=3.5'
-    $cxxStd    = '-DCMAKE_CXX_STANDARD=14'
-    Invoke-Native { & $cmake -S $jtalkSrc -B $jtalkBld -G $cmakeGen -A x64 $policyArg $cxxStd } "CMake の設定に失敗しました"
+    $cxxFlags  = '-DCMAKE_CXX_FLAGS=/D_HAS_AUTO_PTR_ETC=1'
+    Invoke-Native { & $cmake -S $jtalkSrc -B $jtalkBld -G $cmakeGen -A x64 $policyArg $cxxFlags } "CMake の設定に失敗しました"
 
     # --- ビルド ---
     Write-Info "ビルド中（Release / x64）..."
