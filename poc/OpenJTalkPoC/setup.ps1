@@ -67,6 +67,14 @@ function Write-Info([string]$msg) { Write-Host "  [..] $msg" -ForegroundColor Gr
 function Write-Warn([string]$msg) { Write-Host "  [!!] $msg" -ForegroundColor Yellow }
 function Write-Fail([string]$msg) { Write-Host "  [NG] $msg" -ForegroundColor Red; exit 1 }
 
+function Test-ArchiveFile([string]$path) {
+    # gzip (1F 8B) または zip (PK = 50 4B) のマジックバイトを確認
+    if (-not (Test-Path $path)) { return $false }
+    $b = [System.IO.File]::ReadAllBytes($path)
+    if ($b.Length -lt 2) { return $false }
+    return ($b[0] -eq 0x1F -and $b[1] -eq 0x8B) -or ($b[0] -eq 0x50 -and $b[1] -eq 0x4B)
+}
+
 function Get-VsWhere {
     $paths = @(
         "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe",
@@ -102,15 +110,32 @@ function Find-Cmake {
 }
 
 function Invoke-Download([string]$url, [string]$dest) {
+    $leaf = Split-Path -Leaf $dest
+    $isArchive = $dest -match '\.(gz|zip|tar)$'
+
     if (Test-Path $dest) {
-        Write-OK "既存ファイルを使用: $(Split-Path -Leaf $dest)"
-        return
+        if ($isArchive -and -not (Test-ArchiveFile $dest)) {
+            Write-Warn "キャッシュが壊れています（gzip/zip ではありません）。再ダウンロードします: $leaf"
+            Remove-Item $dest -Force
+        } else {
+            Write-OK "既存ファイルを使用: $leaf"
+            return
+        }
     }
-    Write-Info "ダウンロード中: $(Split-Path -Leaf $dest) ..."
+
+    Write-Info "ダウンロード中: $leaf ..."
     try {
-        Invoke-WebRequest -Uri $url -OutFile $dest -UseBasicParsing -MaximumRedirection 10
-        Write-OK "ダウンロード完了: $(Split-Path -Leaf $dest)"
+        # SourceForge 等は Bot-like UA をブロックしてHTMLを返すため Browser UA を使用する
+        $headers = @{ 'User-Agent' = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
+        Invoke-WebRequest -Uri $url -OutFile $dest -UseBasicParsing -MaximumRedirection 10 -Headers $headers
+
+        if ($isArchive -and -not (Test-ArchiveFile $dest)) {
+            Remove-Item $dest -Force
+            Write-Fail "ダウンロードが HTML 等の不正データを返しました（SourceForge のアクセス制限の可能性）。`n  手動でダウンロードして以下に配置してください:`n  $dest"
+        }
+        Write-OK "ダウンロード完了: $leaf"
     } catch {
+        if (Test-Path $dest) { Remove-Item $dest -Force }
         Write-Fail "ダウンロード失敗: $url`n  エラー: $_"
     }
 }
