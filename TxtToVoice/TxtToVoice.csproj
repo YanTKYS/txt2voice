@@ -64,7 +64,7 @@
   <!-- OpenJTalk ランタイム欠落時のビルド警告（Release ビルド時のみ） -->
   <Target Name="WarnOpenJTalkMissing" AfterTargets="Build"
           Condition="'$(Configuration)' == 'Release'">
-    <Warning Text="OpenJTalk: jtalk.dll が見つかりません。配布前に poc\OpenJTalkPoC\setup.ps1 を実行して Data\openjtalk\ を配置してください。"
+    <Warning Text="OpenJTalk: jtalk.dll が見つかりません。配布前に setup_openjtalk.ps1 を実行して Data\openjtalk\ を配置してください。"
              Condition="!Exists('$(MSBuildProjectDirectory)\Data\openjtalk\jtalk.dll')" />
     <Warning Text="OpenJTalk: MeCab 辞書が見つかりません。Data\openjtalk\open_jtalk_dic_utf_8\ を配置してください。"
              Condition="!Exists('$(MSBuildProjectDirectory)\Data\openjtalk\open_jtalk_dic_utf_8')" />

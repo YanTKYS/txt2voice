@@ -11,7 +11,7 @@ namespace TxtToVoice.Tests.Services
     ///
     /// [Trait("Category", "RequiresEngine")] が付いているテストは jtalk.dll・辞書・音声モデルが
     /// 揃った環境でのみ実行される。ファイルが存在しない場合（CI 等）は
-    /// Assert.Skip によりスキップ扱いとなり、理由がテスト出力とワークフローサマリーに表示される。
+    /// Skip.IfNot によりスキップ扱いとなり、理由がテスト出力とワークフローサマリーに表示される。
     ///
     /// RequiresEngine 以外のテストはファイル欠落状態を意図的に検証するため、
     /// jtalk.dll が存在しない環境でも必ず Pass する。
@@ -83,34 +83,34 @@ namespace TxtToVoice.Tests.Services
         // 正常系（RequiresEngine: jtalk.dll・辞書・音声モデルが必要）
         // ================================================================
 
-        [Fact]
+        [SkippableFact]
         [Trait("Category", "RequiresEngine")]
         public void Initialize_ファイルが揃っていればIsAvailableがtrueになる()
         {
             using var engine = new OpenJTalkEngine();
-            if (!engine.IsAvailable) Assert.Skip(SkipReason);
+            Skip.IfNot(engine.IsAvailable, SkipReason);
 
             Assert.True(engine.IsAvailable);
             Assert.Null(engine.InitializationError);
             Assert.False(string.IsNullOrEmpty(engine.CurrentVoiceName));
         }
 
-        [Fact]
+        [SkippableFact]
         [Trait("Category", "RequiresEngine")]
         public void GetAvailableVoices_初期化成功時は1件以上返す()
         {
             using var engine = new OpenJTalkEngine();
-            if (!engine.IsAvailable) Assert.Skip(SkipReason);
+            Skip.IfNot(engine.IsAvailable, SkipReason);
 
             Assert.NotEmpty(engine.GetAvailableVoices());
         }
 
-        [Fact]
+        [SkippableFact]
         [Trait("Category", "RequiresEngine")]
         public void SaveToFile_WAV_正常にファイルが生成される()
         {
             using var engine = new OpenJTalkEngine();
-            if (!engine.IsAvailable) Assert.Skip(SkipReason);
+            Skip.IfNot(engine.IsAvailable, SkipReason);
 
             string path = Path.ChangeExtension(Path.GetTempFileName(), ".wav");
             try
@@ -122,12 +122,12 @@ namespace TxtToVoice.Tests.Services
             finally { try { File.Delete(path); } catch { /* 無視 */ } }
         }
 
-        [Fact]
+        [SkippableFact]
         [Trait("Category", "RequiresEngine")]
         public void SaveToFile_WAV_キャンセル後に一時ファイルが残らない()
         {
             using var engine = new OpenJTalkEngine();
-            if (!engine.IsAvailable) Assert.Skip(SkipReason);
+            Skip.IfNot(engine.IsAvailable, SkipReason);
 
             string path = Path.ChangeExtension(Path.GetTempFileName(), ".wav");
             using var cts = new CancellationTokenSource();
@@ -140,12 +140,12 @@ namespace TxtToVoice.Tests.Services
             finally { try { File.Delete(path); } catch { /* 無視 */ } }
         }
 
-        [Fact]
+        [SkippableFact]
         [Trait("Category", "RequiresEngine")]
         public void SaveToFile_SSML_タグを除去してWAVが生成される()
         {
             using var engine = new OpenJTalkEngine();
-            if (!engine.IsAvailable) Assert.Skip(SkipReason);
+            Skip.IfNot(engine.IsAvailable, SkipReason);
 
             string path = Path.ChangeExtension(Path.GetTempFileName(), ".wav");
             try
@@ -159,12 +159,12 @@ namespace TxtToVoice.Tests.Services
             finally { try { File.Delete(path); } catch { /* 無視 */ } }
         }
 
-        [Fact]
+        [SkippableFact]
         [Trait("Category", "RequiresEngine")]
         public void SaveToFile_MP3_正常にファイルが生成される()
         {
             using var engine = new OpenJTalkEngine();
-            if (!engine.IsAvailable) Assert.Skip(SkipReason);
+            Skip.IfNot(engine.IsAvailable, SkipReason);
 
             string path = Path.ChangeExtension(Path.GetTempFileName(), ".mp3");
             try
@@ -180,12 +180,12 @@ namespace TxtToVoice.Tests.Services
             finally { try { File.Delete(path); } catch { /* 無視 */ } }
         }
 
-        [Fact]
+        [SkippableFact]
         [Trait("Category", "RequiresEngine")]
         public void SaveToFile_MP4_正常にファイルが生成される()
         {
             using var engine = new OpenJTalkEngine();
-            if (!engine.IsAvailable) Assert.Skip(SkipReason);
+            Skip.IfNot(engine.IsAvailable, SkipReason);
 
             string path = Path.ChangeExtension(Path.GetTempFileName(), ".mp4");
             try
@@ -201,12 +201,12 @@ namespace TxtToVoice.Tests.Services
             finally { try { File.Delete(path); } catch { /* 無視 */ } }
         }
 
-        [Fact]
+        [SkippableFact]
         [Trait("Category", "RequiresEngine")]
         public void SaveToFile_MP3_合成フェーズとエンコードフェーズを報告する()
         {
             using var engine = new OpenJTalkEngine();
-            if (!engine.IsAvailable) Assert.Skip(SkipReason);
+            Skip.IfNot(engine.IsAvailable, SkipReason);
 
             var reported = new System.Collections.Generic.List<string>();
             var progress = new System.Progress<string>(msg => reported.Add(msg));
