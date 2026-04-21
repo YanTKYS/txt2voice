@@ -3,10 +3,10 @@ name: OpenJTalk Engine Tests
 # RequiresEngine テストは jtalk.dll・辞書・音声モデルの実ファイルが必要なため
 # 通常の build.yml とは分離して手動トリガー + 週次スケジュールで実行する。
 #
-# 注意: SourceForge の Cloudflare 制限により音声モデルの自動ダウンロードが
-# 失敗する場合がある。その際は setup ステップが exit 1 となりワークフローが
-# スキップ扱いになる（テスト失敗ではなく「セットアップ未完了」として記録される）。
-# 自動ダウンロードが失敗した場合の対処は backlog #49 を参照。
+# セットアップは tools/setup_openjtalk.ps1 を使用する（配布向けスクリプトと共通）。
+# SourceForge の Cloudflare 制限により音声モデルの自動ダウンロードが
+# 失敗する場合がある。その際はテストがスキップ扱いになる（失敗ではない）。
+# 対処は backlog #49 を参照。
 
 on:
   workflow_dispatch:
@@ -33,14 +33,24 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      # jtalkdll ビルドは時間がかかるため USERPROFILE 配下のビルド成果物をキャッシュする
+      # jtalkdll ビルド成果物をキャッシュ（キーを tools/setup_openjtalk.ps1 のハッシュに統一）
       - name: jtalkdll ビルドキャッシュ復元
         id: cache-jtalk
         uses: actions/cache@v4
         if: ${{ !inputs.skip_cache }}
         with:
-          path: ~/openjtalk-poc-setup
-          key: jtalkdll-build-${{ runner.os }}-${{ hashFiles('poc/OpenJTalkPoC/setup.ps1') }}
+          path: ~/openjtalk-setup
+          key: jtalkdll-build-${{ runner.os }}-${{ hashFiles('tools/setup_openjtalk.ps1') }}
+
+      # 音声モデル（MMDAgent zip）をキャッシュ
+      # SourceForge ダウンロードに成功した場合のみキャッシュが作成される
+      - name: 音声モデルキャッシュ復元
+        id: cache-voice
+        uses: actions/cache@v4
+        if: ${{ !inputs.skip_cache }}
+        with:
+          path: ~/openjtalk-setup/MMDAgent_Example-1.8.zip
+          key: mmdagent-zip-1.8
 
       - name: OpenJTalk セットアップ（jtalk.dll・辞書・音声モデル）
         id: setup
@@ -48,34 +58,34 @@ jobs:
         continue-on-error: true
         run: |
           Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-          .\poc\OpenJTalkPoC\setup.ps1
+          .\tools\setup_openjtalk.ps1
         # SourceForge Cloudflare ブロックで音声モデルダウンロードに失敗した場合は
         # continue-on-error により後続のファイル存在確認ステップで判定する
 
       - name: セットアップ成果物を TxtToVoice/Data/openjtalk にコピー
         shell: pwsh
         run: |
-          $pocData = "poc\OpenJTalkPoC\Data\openjtalk"
+          $srcData = "tools\Data\openjtalk"
           $dest    = "TxtToVoice\Data\openjtalk"
 
           New-Item -ItemType Directory -Force -Path $dest | Out-Null
 
-          # jtalk.dll（exe と同階層に配置するため Link="jtalk.dll" の Content 経由でコピーされる）
-          if (Test-Path "$pocData\jtalk.dll") {
-            Copy-Item "$pocData\jtalk.dll" "$dest\jtalk.dll" -Force
+          # jtalk.dll
+          if (Test-Path "$srcData\jtalk.dll") {
+            Copy-Item "$srcData\jtalk.dll" "$dest\jtalk.dll" -Force
             Write-Host "[OK] jtalk.dll"
           }
           # 依存 DLL
-          Get-ChildItem "$pocData\*.dll" -Exclude "jtalk.dll" -ErrorAction SilentlyContinue |
+          Get-ChildItem "$srcData\*.dll" -Exclude "jtalk.dll" -ErrorAction SilentlyContinue |
             ForEach-Object { Copy-Item $_ "$dest\$($_.Name)" -Force; Write-Host "[OK] $($_.Name)" }
           # MeCab 辞書
-          if (Test-Path "$pocData\open_jtalk_dic_utf_8") {
-            Copy-Item "$pocData\open_jtalk_dic_utf_8" $dest -Recurse -Force
+          if (Test-Path "$srcData\open_jtalk_dic_utf_8") {
+            Copy-Item "$srcData\open_jtalk_dic_utf_8" $dest -Recurse -Force
             Write-Host "[OK] open_jtalk_dic_utf_8"
           }
           # HTS Voice
-          if (Test-Path "$pocData\voice") {
-            Copy-Item "$pocData\voice" $dest -Recurse -Force
+          if (Test-Path "$srcData\voice") {
+            Copy-Item "$srcData\voice" $dest -Recurse -Force
             Write-Host "[OK] voice"
           }
 
@@ -107,23 +117,52 @@ jobs:
           dotnet build   TxtToVoice.Tests/TxtToVoice.Tests.csproj -c Release --no-restore
 
       - name: RequiresEngine テスト実行（OpenJTalk 実機）
+        id: run-tests
         if: steps.check-files.outputs.files_ok == 'true'
+        shell: pwsh
         run: |
-          dotnet test TxtToVoice.Tests/TxtToVoice.Tests.csproj `
+          $result = dotnet test TxtToVoice.Tests/TxtToVoice.Tests.csproj `
             -c Release --no-restore --no-build `
             --filter "Category=RequiresEngine" `
-            --logger "console;verbosity=normal"
+            --logger "console;verbosity=normal" `
+            2>&1
+          $result | Write-Host
+
+          # 実行件数・スキップ件数をワークフローサマリーに出力
+          $passed  = ($result | Select-String -Pattern "Passed:\s*(\d+)"  | Select-Object -Last 1)
+          $failed  = ($result | Select-String -Pattern "Failed:\s*(\d+)"  | Select-Object -Last 1)
+          $skipped = ($result | Select-String -Pattern "Skipped:\s*(\d+)" | Select-Object -Last 1)
+
+          $pCount = if ($passed)  { ($passed.Matches.Groups[1].Value)  } else { "?" }
+          $fCount = if ($failed)  { ($failed.Matches.Groups[1].Value)  } else { "?" }
+          $sCount = if ($skipped) { ($skipped.Matches.Groups[1].Value) } else { "?" }
+
+          $summary = @"
+          ## RequiresEngine テスト結果
+          | 結果 | 件数 |
+          |------|------|
+          | Passed  | $pCount |
+          | Failed  | $fCount |
+          | Skipped | $sCount |
+          "@
+          $summary >> $env:GITHUB_STEP_SUMMARY
+
+          # dotnet test が失敗していたらジョブを失敗扱いにする
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: セットアップ失敗時のサマリー
         if: steps.check-files.outputs.files_ok != 'true'
+        shell: bash
         run: |
-          echo "## OpenJTalk セットアップ未完了" >> $env:GITHUB_STEP_SUMMARY
-          echo "" >> $env:GITHUB_STEP_SUMMARY
-          echo "RequiresEngine テストはスキップされました。" >> $env:GITHUB_STEP_SUMMARY
-          echo "" >> $env:GITHUB_STEP_SUMMARY
-          echo "### 原因の可能性" >> $env:GITHUB_STEP_SUMMARY
-          echo "- SourceForge の Cloudflare JS チャレンジにより音声モデルのダウンロードが失敗した" >> $env:GITHUB_STEP_SUMMARY
-          echo "" >> $env:GITHUB_STEP_SUMMARY
-          echo "### 対処" >> $env:GITHUB_STEP_SUMMARY
-          echo "backlog #49 の配布自動化が完了するまでは、事前に voice ファイルを" >> $env:GITHUB_STEP_SUMMARY
-          echo "\`poc/OpenJTalkPoC/Data/openjtalk/voice/\` に手動配置してから再実行してください。" >> $env:GITHUB_STEP_SUMMARY
+          cat >> $GITHUB_STEP_SUMMARY <<'EOF'
+          ## OpenJTalk セットアップ未完了
+
+          RequiresEngine テストはスキップされました。
+
+          ### 原因の可能性
+          - SourceForge の Cloudflare JS チャレンジにより音声モデルのダウンロードが失敗した
+
+          ### 対処
+          backlog #49 の代替ホスト対応が完了するまでは、事前に voice ファイルを
+          `tools/Data/openjtalk/voice/` に手動配置してから再実行してください。
+          EOF

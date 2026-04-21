@@ -19,7 +19,7 @@ namespace TxtToVoice.Services
     ///   Data\openjtalk\voice\*.htsvoice        — HTS Voice（Mei 等）
     ///
     /// ファイルが揃っていない場合は IsAvailable = false で初期化失敗扱いになる。
-    /// setup.ps1 を poc\OpenJTalkPoC\ で実行し、生成物を Data\openjtalk\ に配置すること。
+    /// リリース ZIP に同梱の setup_openjtalk.ps1 を TxtToVoice.exe と同じフォルダで実行すること。
     ///
     /// HTS Voice "Mei": (C) 2009-2015 Nagoya Institute of Technology, CC BY 3.0
     /// THIRD_PARTY_LICENSES.txt を参照。

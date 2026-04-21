@@ -136,23 +136,19 @@ dotnet publish -c Release -r win-x64 --self-contained true ^
 
    #### OpenJTalk 利用前セットアップ（初回のみ）
 
-   OpenJTalk エンジンは外部バイナリが必要です。初回のみ以下の手順で準備してください。
+   OpenJTalk エンジンは外部バイナリが必要です。リリース ZIP に同梱の `setup_openjtalk.ps1` を実行してください。
 
    ```powershell
-   # 1. リポジトリの poc\OpenJTalkPoC\setup.ps1 を実行
+   # TxtToVoice.exe と同じフォルダで実行
    Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-   .\poc\OpenJTalkPoC\setup.ps1
+   .\setup_openjtalk.ps1
    ```
 
-   ```
-   # 2. 生成物を TxtToVoice.exe と同じフォルダにコピー
-   jtalk.dll
-   Data\openjtalk\open_jtalk_dic_utf_8\  （MeCab 辞書）
-   Data\openjtalk\voice\                  （HTS 音声モデル）
-   ```
+   スクリプトが `jtalk.dll`・MeCab 辞書・HTS 音声モデルを自動取得・配置します。
 
    ```
-   # 3. 設定ダイアログで「OpenJTalk」を選択して再起動
+   # セットアップ後の設定
+   設定ダイアログ → 「OpenJTalk」を選択 → 再起動
    ```
 
    > ファイルが揃っていない場合は起動時にエラーメッセージで案内します。
