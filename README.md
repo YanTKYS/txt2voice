@@ -34,7 +34,7 @@
 |------|------|
 | OS | Windows 10 / 11 |
 | ランタイム | .NET 8 Desktop Runtime（スタンドアロン版は不要） |
-| 音声合成 | Windows 標準音声エンジン（SAPI / WinRT OneCore、追加インストール不要） |
+| 音声合成 | Windows 標準音声エンジン（SAPI / WinRT OneCore、追加インストール不要）または OpenJTalk（要セットアップ） |
 | インターネット | 不要（完全オフライン動作） |
 
 ---
@@ -71,7 +71,7 @@ dotnet test TxtToVoice.Tests/TxtToVoice.Tests.csproj --filter "Category!=Require
 | プロジェクト | 対象 | 実行環境 |
 |---|---|---|
 | `TxtToVoice.Core.Tests` | 辞書・CSV・設定・Logger 等の純ロジック | Windows / Linux / macOS |
-| `TxtToVoice.Tests` | 音声エンジン系（SAPI / WinRT） | Windows のみ |
+| `TxtToVoice.Tests` | 音声エンジン系（SAPI / WinRT / OpenJTalk） | Windows のみ |
 
 ### 実行
 
@@ -123,17 +123,41 @@ dotnet publish -c Release -r win-x64 --self-contained true ^
    - 読み上げ中はステータスバーに進捗が表示されます（例: 読み上げ中... 45/200 文字）
 
 4. **音声エンジンを切り替える（オプション）**
-   - 「ファイル」→「設定」ダイアログの「音声エンジン」で **SAPI（System.Speech）** と
-     **WinRT（OneCore）** を切り替えられます
+   - 「ファイル」→「設定」ダイアログの「音声エンジン」で切り替えられます
    - 変更は**次回起動時**に適用されます
 
-   | エンジン | 特徴 | 推奨用途 |
-   |---------|------|---------|
-   | SAPI（既定） | 読み上げ箇所ハイライト対応。安定動作 | 通常の読み上げ・位置確認 |
-   | WinRT（OneCore） | OneCore 系音声を使用。発音が自然になる場合あり | 音声品質を優先したい場合 |
+   | エンジン | 特徴 | ハイライト | 推奨用途 |
+   |---------|------|-----------|---------|
+   | SAPI（既定） | Windows 標準。安定動作 | ✅ 対応 | 通常の読み上げ・位置確認 |
+   | WinRT（OneCore） | OneCore 系音声。発音が自然になる場合あり | ❌ 非対応 | 音声品質を優先したい場合 |
+   | OpenJTalk | 日本語専用 TTS。要セットアップ（後述） | ❌ 非対応 | 日本語特化の読み上げ品質を試したい場合 |
 
-   > **WinRT の制限**: 読み上げ箇所ハイライトは現時点で非対応です（WinRT 選択時はハイライトが動作しません）。
-   > また、音声の表示名が SAPI と異なるため、エンジン切り替え後に音声を再選択してください。
+   > **WinRT の制限**: 読み上げ箇所ハイライトは非対応です。エンジン切り替え後に音声を再選択してください。
+
+   #### OpenJTalk 利用前セットアップ（初回のみ）
+
+   OpenJTalk エンジンは外部バイナリが必要です。初回のみ以下の手順で準備してください。
+
+   ```powershell
+   # 1. リポジトリの poc\OpenJTalkPoC\setup.ps1 を実行
+   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+   .\poc\OpenJTalkPoC\setup.ps1
+   ```
+
+   ```
+   # 2. 生成物を TxtToVoice.exe と同じフォルダにコピー
+   jtalk.dll
+   Data\openjtalk\open_jtalk_dic_utf_8\  （MeCab 辞書）
+   Data\openjtalk\voice\                  （HTS 音声モデル）
+   ```
+
+   ```
+   # 3. 設定ダイアログで「OpenJTalk」を選択して再起動
+   ```
+
+   > ファイルが揃っていない場合は起動時にエラーメッセージで案内します。
+   > HTS Voice "Mei" は CC BY 3.0 ライセンスです（クレジット: 名古屋工業大学）。
+   > `THIRD_PARTY_LICENSES.txt` を参照してください。
 
 5. **音声ファイルとして保存する**
    - 「音声保存」ボタン（または Ctrl+S）を押します

@@ -4,8 +4,8 @@ using Xunit;
 namespace TxtToVoice.Tests.Services
 {
     /// <summary>
-    /// SpeechEngineFactory の定数・IsKnown・GetLabel を検証するテスト。
-    /// Create() は OS リソース（WinRT ランタイム / SAPI）を必要とするため本ファイルでは対象外とする。
+    /// SpeechEngineFactory の定数・IsKnown・GetLabel・Create を検証するテスト。
+    /// Create(WinRt/SystemSpeech) は OS リソースを必要とするため、型確認のみ行う。
     /// </summary>
     public class SpeechEngineFactoryTests
     {
@@ -26,6 +26,7 @@ namespace TxtToVoice.Tests.Services
         [Theory]
         [InlineData("SystemSpeech")]
         [InlineData("WinRT")]
+        [InlineData("OpenJTalk")]
         public void IsKnown_既知値はtrueを返す(string engineType)
         {
             Assert.True(SpeechEngineFactory.IsKnown(engineType));
@@ -86,10 +87,44 @@ namespace TxtToVoice.Tests.Services
         [InlineData("SystemSpeech", true,  "Windows SAPI (System.Speech)")]
         [InlineData("WinRT",        false, "WinRT (OneCore)")]
         [InlineData("WinRT",        true,  "Windows WinRT (OneCore)")]
+        [InlineData("OpenJTalk",    false, "OpenJTalk (日本語 TTS)")]
+        [InlineData("OpenJTalk",    true,  "OpenJTalk (日本語 TTS)")]  // Windows プレフィクスなし
         public void GetLabel_組み合わせパターンが期待値と一致する(
             string engineType, bool prefix, string expected)
         {
             Assert.Equal(expected, SpeechEngineFactory.GetLabel(engineType, prefix));
+        }
+
+        [Fact]
+        public void GetLabel_OpenJTalkは日本語TTS表記を返す()
+        {
+            Assert.Equal("OpenJTalk (日本語 TTS)", SpeechEngineFactory.GetLabel(SpeechEngineFactory.OpenJTalk));
+        }
+
+        [Fact]
+        public void GetLabel_OpenJTalkはprefixWindowsを無視する()
+        {
+            string withPrefix    = SpeechEngineFactory.GetLabel(SpeechEngineFactory.OpenJTalk, prefixWindows: true);
+            string withoutPrefix = SpeechEngineFactory.GetLabel(SpeechEngineFactory.OpenJTalk, prefixWindows: false);
+            Assert.Equal(withoutPrefix, withPrefix);
+        }
+
+        // ================================================================
+        // Create
+        // ================================================================
+
+        [Fact]
+        public void Create_OpenJTalkでOpenJTalkEngineが生成される()
+        {
+            using var engine = SpeechEngineFactory.Create(SpeechEngineFactory.OpenJTalk);
+            Assert.IsType<OpenJTalkEngine>(engine);
+        }
+
+        [Fact]
+        public void Create_未知値でSystemSpeechEngineが生成される()
+        {
+            using var engine = SpeechEngineFactory.Create("unknown");
+            Assert.IsType<SystemSpeechEngine>(engine);
         }
     }
 }

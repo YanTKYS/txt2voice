@@ -31,6 +31,8 @@ namespace TxtToVoice.Services
         private string _currentVoicePath = string.Empty;
         private readonly string _dicPath;
         private readonly string _voiceDir;
+        // 表示名 → フルパス の辞書（サブディレクトリ含む再帰検索結果を保持）
+        private readonly IReadOnlyDictionary<string, string> _voiceMap;
         private double _speed    = 1.0;
         private double _volumeDb = 0.0;
         private WaveOutEvent? _waveOut;
@@ -53,6 +55,7 @@ namespace TxtToVoice.Services
             string baseDir = AppContext.BaseDirectory;
             _dicPath  = Path.Combine(baseDir, "Data", "openjtalk", "open_jtalk_dic_utf_8");
             _voiceDir = Path.Combine(baseDir, "Data", "openjtalk", "voice");
+            _voiceMap = BuildVoiceMap(_voiceDir);
 
             if (!NativeJTalk.IsDllPresent())
             {
@@ -101,13 +104,22 @@ namespace TxtToVoice.Services
             Logger.Error($"OpenJTalkEngine 初期化失敗: {message}");
         }
 
+        // 表示名 → フルパス の辞書を構築（サブディレクトリも含む再帰検索）
+        private static IReadOnlyDictionary<string, string> BuildVoiceMap(string voiceDir)
+        {
+            if (!Directory.Exists(voiceDir)) return new Dictionary<string, string>();
+            return Directory.GetFiles(voiceDir, "*.htsvoice", SearchOption.AllDirectories)
+                            .ToDictionary(
+                                p => Path.GetFileNameWithoutExtension(p),
+                                p => p,
+                                StringComparer.OrdinalIgnoreCase);
+        }
+
         private string FindDefaultVoice()
         {
-            if (!Directory.Exists(_voiceDir)) return string.Empty;
-            string mei = Path.Combine(_voiceDir, "mei_normal.htsvoice");
-            if (File.Exists(mei)) return mei;
-            return Directory.GetFiles(_voiceDir, "*.htsvoice", SearchOption.AllDirectories)
-                            .FirstOrDefault() ?? string.Empty;
+            // 優先: mei_normal
+            if (_voiceMap.TryGetValue("mei_normal", out string? mei)) return mei;
+            return _voiceMap.Values.FirstOrDefault() ?? string.Empty;
         }
 
         // ----------------------------------------------------------------
@@ -115,19 +127,16 @@ namespace TxtToVoice.Services
         // ----------------------------------------------------------------
 
         public IReadOnlyList<string> GetAvailableVoices()
-        {
-            if (!Directory.Exists(_voiceDir)) return Array.Empty<string>();
-            return Directory.GetFiles(_voiceDir, "*.htsvoice", SearchOption.AllDirectories)
-                            .Select(p => Path.GetFileNameWithoutExtension(p))
-                            .OrderBy(n => n)
-                            .ToList();
-        }
+            => _voiceMap.Keys.OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
 
         public void SetVoice(string voiceName)
         {
             if (string.IsNullOrEmpty(voiceName)) return;
-            string path = Path.Combine(_voiceDir, voiceName + ".htsvoice");
-            if (!File.Exists(path)) { Logger.Warn($"OpenJTalkEngine: 音声モデルが見つかりません: {path}"); return; }
+            if (!_voiceMap.TryGetValue(voiceName, out string? path))
+            {
+                Logger.Warn($"OpenJTalkEngine: 音声モデルが見つかりません: {voiceName}");
+                return;
+            }
 
             IntPtr newHandle = NativeJTalk.Initialize(path, _dicPath);
             if (newHandle == IntPtr.Zero) { Logger.Warn($"OpenJTalkEngine: voice 変更の再初期化失敗: {voiceName}"); return; }
@@ -147,8 +156,7 @@ namespace TxtToVoice.Services
         {
             if (string.IsNullOrEmpty(voiceId)) return null;
             string name = Path.GetFileNameWithoutExtension(voiceId);
-            var voices = GetAvailableVoices();
-            return voices.Contains(name) ? name : null;
+            return _voiceMap.ContainsKey(name) ? name : null;
         }
 
         public void SetRate(int rate)
@@ -213,11 +221,10 @@ namespace TxtToVoice.Services
                     return;
                 }
 
-                byte[] wav = File.ReadAllBytes(tmpWav);
-                try { File.Delete(tmpWav); } catch { }
-
                 SpeakStarted?.Invoke(this, EventArgs.Empty);
-                PlayWavBytes(wav, ct);
+                // WaveFileReader でストリーミング再生（ReadAllBytes によるメモリピーク回避）
+                // 再生完了後に finally ブロックで一時ファイルを削除する
+                PlayWavFile(tmpWav, ct);
             }
             catch (OperationCanceledException) { }
             catch (Exception ex)
@@ -232,10 +239,9 @@ namespace TxtToVoice.Services
             }
         }
 
-        private void PlayWavBytes(byte[] wav, CancellationToken ct)
+        private void PlayWavFile(string wavPath, CancellationToken ct)
         {
-            using var ms = new MemoryStream(wav);
-            using var reader = new WaveFileReader(ms);
+            using var reader  = new WaveFileReader(wavPath);
             using var waveOut = new WaveOutEvent();
             _waveOut = waveOut;
 
@@ -246,7 +252,7 @@ namespace TxtToVoice.Services
             done.Wait();    // Stop() が waveOut.Stop() を呼ぶと PlaybackStopped が発火して抜ける
 
             _waveOut = null;
-        }
+        }   // using で reader / waveOut が Dispose → ファイルハンドル解放 → finally で削除可能
 
         public void Pause()  => _waveOut?.Pause();
         public void Resume() => _waveOut?.Play();
@@ -291,7 +297,7 @@ namespace TxtToVoice.Services
                 return;
             }
 
-            // MP3 / MP4: WAV に合成してからエンコード
+            // MP3 / MP4: WAV に合成してからエンコード（temp ファイルをストリーミングで読む）
             string tmpWav = Path.Combine(Path.GetTempPath(), $"txtvoice_jtalk_{Guid.NewGuid():N}.wav");
             try
             {
