@@ -164,5 +164,5 @@ jobs:
 
           ### 対処
           backlog #49 の代替ホスト対応が完了するまでは、事前に voice ファイルを
-          `tools/Data/openjtalk/voice/` に手動配置してから再実行してください。
+          `TxtToVoice/Data/openjtalk/voice/` に手動配置してから再実行してください。
           EOF

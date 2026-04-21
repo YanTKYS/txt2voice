@@ -209,12 +209,12 @@ namespace TxtToVoice.Services
             CancelCurrent();
             _cts = new CancellationTokenSource();
             var cts = _cts;
-            Task.Run(() => SpeakCore(text, cts.Token));
+            Task.Run(() => SpeakCore(TextPreprocessor.Apply(text), cts.Token));
         }
 
         public void SpeakSsmlAsync(string ssml)
         {
-            // OpenJTalk は SSML 非対応 — タグを除去してプレーンテキストとして読む
+            // OpenJTalk は SSML 非対応 — タグを除去してからテキスト前処理を適用して読む
             SpeakAsync(StripSsmlTags(ssml));
         }
 
@@ -299,7 +299,7 @@ namespace TxtToVoice.Services
             if (_handle == IntPtr.Zero)
                 throw new InvalidOperationException("音声エンジンが利用できません。\n" + InitializationError);
 
-            string text = isSsml ? StripSsmlTags(content) : content;
+            string text = TextPreprocessor.Apply(isSsml ? StripSsmlTags(content) : content);
             if (string.IsNullOrWhiteSpace(text))
                 throw new ArgumentException("読み上げるテキストがありません。");
 
