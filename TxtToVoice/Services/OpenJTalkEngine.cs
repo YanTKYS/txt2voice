@@ -105,14 +105,23 @@ namespace TxtToVoice.Services
         }
 
         // 表示名 → フルパス の辞書を構築（サブディレクトリも含む再帰検索）
+        // 同名ファイルが複数存在する場合は先勝ちとし WARN ログを残す
         private static IReadOnlyDictionary<string, string> BuildVoiceMap(string voiceDir)
         {
             if (!Directory.Exists(voiceDir)) return new Dictionary<string, string>();
-            return Directory.GetFiles(voiceDir, "*.htsvoice", SearchOption.AllDirectories)
-                            .ToDictionary(
-                                p => Path.GetFileNameWithoutExtension(p),
-                                p => p,
-                                StringComparer.OrdinalIgnoreCase);
+            var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (string path in Directory.GetFiles(voiceDir, "*.htsvoice", SearchOption.AllDirectories))
+            {
+                string name = Path.GetFileNameWithoutExtension(path);
+                if (map.ContainsKey(name))
+                {
+                    Logger.Warn($"OpenJTalkEngine: 重複する音声モデル名を検出（先勝ち）: {name}" +
+                                $"\n  使用: {map[name]}\n  無視: {path}");
+                    continue;
+                }
+                map[name] = path;
+            }
+            return map;
         }
 
         private string FindDefaultVoice()
@@ -249,10 +258,20 @@ namespace TxtToVoice.Services
             waveOut.PlaybackStopped += (_, _) => done.Set();
             waveOut.Init(reader);
             waveOut.Play();
-            done.Wait();    // Stop() が waveOut.Stop() を呼ぶと PlaybackStopped が発火して抜ける
-
-            _waveOut = null;
-        }   // using で reader / waveOut が Dispose → ファイルハンドル解放 → finally で削除可能
+            try
+            {
+                done.Wait(ct);  // ct キャンセルで即時離脱（Stop() も waveOut.Stop() 経由で抜ける）
+            }
+            catch (OperationCanceledException)
+            {
+                try { waveOut.Stop(); } catch { }
+                throw;  // SpeakCore の catch (OperationCanceledException) で吸収
+            }
+            finally
+            {
+                _waveOut = null;
+            }
+        }   // using で reader / waveOut が Dispose → ファイルハンドル解放 → SpeakCore finally で削除
 
         public void Pause()  => _waveOut?.Pause();
         public void Resume() => _waveOut?.Play();

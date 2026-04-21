@@ -9,8 +9,8 @@
 
 | # | 概要 | 詳細 |
 |---|---|---|
-| 48 | OpenJTalk 回帰テスト充実 | `RequiresEngine` テストを jtalk.dll 有環境で実行・CI パイプライン整備。IsAvailable=false 時のメッセージ検証は jtalk.dll 不在環境で常時パスすることを確認済み。 |
-| 49 | OpenJTalk 配布自動化 | setup.ps1 で生成した Data\openjtalk\ を TxtToVoice の配布 ZIP に含める手順またはインストーラ統合（SourceForge Cloudflare 問題の恒久対応含む）。 |
+| 48 | OpenJTalk 実機テスト CI 化 | RequiresEngine テストを jtalk.dll/辞書/voice 配置済み専用ランナーで定期実行するジョブを整備。現状は実行環境依存で実質スキップが多い。 |
+| 49 | OpenJTalk 配布自動化 | setup.ps1 生成物を配布 ZIP に含める手順またはインストーラ統合。SourceForge Cloudflare 問題の恒久対応含む。Release ビルド時の MSBuild 警告は実装済み（v0.4.1 後）。 |
 
 ---
 
@@ -18,8 +18,8 @@
 
 | # | 概要 | 詳細 |
 |---|---|---|
-| 50 | OpenJTalk 辞書連携 | アプリ内ユーザー辞書（DictionaryService）をテキスト前処理として OpenJTalk 読み上げにも適用する（現状は SAPI / WinRT のみ SSML 経由で適用）。 |
-| 51 | OpenJTalk 音声品質評価・レポート | SAPI / WinRT との音質比較（自然さ・明瞭度）を `docs/improvement-proposals.md` にまとめ、推奨エンジンの指針を策定する。 |
+| 50 | OpenJTalk 辞書連携 | ユーザー辞書（DictionaryService）の読み替えを OpenJTalk 読み上げにも適用。数値・記号の読み最適化ルール追加で体感品質向上。 |
+| 51 | OpenJTalk 音声品質評価・レポート | SAPI / WinRT との音質比較（自然さ・明瞭度）を `docs/improvement-proposals.md` にまとめ、推奨エンジンの指針を策定。 |
 
 ---
 
