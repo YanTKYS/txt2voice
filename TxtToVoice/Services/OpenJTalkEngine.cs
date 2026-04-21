@@ -59,19 +59,22 @@ namespace TxtToVoice.Services
 
             if (!NativeJTalk.IsDllPresent())
             {
-                Fail($"jtalk.dll が見つかりません: {Path.Combine(baseDir, "jtalk.dll")}\n  setup.ps1 を実行してください。");
+                Fail($"jtalk.dll が見つかりません: {Path.Combine(baseDir, "jtalk.dll")}\n" +
+                     "  setup_openjtalk.ps1 を実行するか、THIRD_PARTY_LICENSES.txt を参照してセットアップしてください。");
                 return;
             }
             if (!Directory.Exists(_dicPath))
             {
-                Fail($"MeCab 辞書が見つかりません: {_dicPath}\n  setup.ps1 を実行してください。");
+                Fail($"MeCab 辞書が見つかりません: {_dicPath}\n" +
+                     "  setup_openjtalk.ps1 を実行してください。");
                 return;
             }
 
             _currentVoicePath = FindDefaultVoice();
             if (string.IsNullOrEmpty(_currentVoicePath))
             {
-                Fail($"音声モデル (.htsvoice) が見つかりません: {_voiceDir}\n  setup.ps1 を実行してください。");
+                Fail($"音声モデル (.htsvoice) が見つかりません: {_voiceDir}\n" +
+                     "  setup_openjtalk.ps1 を実行してください。");
                 return;
             }
             _currentVoiceName = Path.GetFileNameWithoutExtension(_currentVoicePath);

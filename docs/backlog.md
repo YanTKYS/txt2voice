@@ -9,8 +9,8 @@
 
 | # | 概要 | 詳細 |
 |---|---|---|
-| 48 | OpenJTalk 実機テスト CI 化 | RequiresEngine テストを jtalk.dll/辞書/voice 配置済み専用ランナーで定期実行するジョブを整備。現状は実行環境依存で実質スキップが多い。 |
-| 49 | OpenJTalk 配布自動化 | setup.ps1 生成物を配布 ZIP に含める手順またはインストーラ統合。SourceForge Cloudflare 問題の恒久対応含む。Release ビルド時の MSBuild 警告は実装済み（v0.4.1 後）。 |
+| 48 | OpenJTalk 実機テスト CI 化 | `.github/workflows/openjtalk-engine-test.yml` を追加済み（手動 + 週次スケジュール）。SourceForge Cloudflare 制限により音声モデルのダウンロードが失敗する場合があり、その際はテストがスキップ扱いになる。信頼性確保は #49 の配布自動化に依存。 |
+| 49 | OpenJTalk 配布自動化 | `tools/setup_openjtalk.ps1`（配布向けスタンドアロン版）を追加済み。リリース ZIP に同梱。SourceForge Cloudflare の恒久対応（代替ホスト・事前同梱）は未解決。 |
 
 ---
 
@@ -18,8 +18,8 @@
 
 | # | 概要 | 詳細 |
 |---|---|---|
-| 50 | OpenJTalk 辞書連携 | ユーザー辞書（DictionaryService）の読み替えを OpenJTalk 読み上げにも適用。数値・記号の読み最適化ルール追加で体感品質向上。 |
-| 51 | OpenJTalk 音声品質評価・レポート | SAPI / WinRT との音質比較（自然さ・明瞭度）を `docs/improvement-proposals.md` にまとめ、推奨エンジンの指針を策定。 |
+| 50 | OpenJTalk 向け数値・記号読み最適化 | ユーザー辞書による基本置換は StartSpeech() で共通適用済み。本項目は「TextPreprocessor」として数値（例: 3月→さんがつ）・記号（例: %→パーセント）の OpenJTalk 向け変換ルールを追加し体感品質を向上させること。 |
+| 51 | OpenJTalk 音声品質評価・レポート | SAPI / WinRT との音質比較（自然さ・明瞭度）を `docs/improvement-proposals.md` にまとめる。評価セット（原稿・評価軸・採点表）を先に固定してから実施する。 |
 
 ---
 
