@@ -10,6 +10,27 @@ using NAudio.Wave;
 
 namespace TxtToVoice.Services
 {
+    /// <summary>OpenJTalk 3 コンポーネントの存在チェック結果</summary>
+    public sealed record OpenJTalkDiagnostics(
+        bool DllPresent,        string DllPath,
+        bool DictionaryPresent, string DictionaryPath,
+        bool VoicePresent,      string VoiceDirectory)
+    {
+        public bool AllPresent => DllPresent && DictionaryPresent && VoicePresent;
+
+        /// <summary>[OK]/[NG] チェックリスト文字列を返す（MessageBox 表示用）</summary>
+        public string FormatChecklist()
+        {
+            static string Mark(bool ok) => ok ? "[OK]" : "[NG]";
+            return $"{Mark(DllPresent)}  jtalk.dll\n" +
+                   $"       {DllPath}\n" +
+                   $"{Mark(DictionaryPresent)}  MeCab 辞書 (open_jtalk_dic_utf_8)\n" +
+                   $"       {DictionaryPath}\n" +
+                   $"{Mark(VoicePresent)}  音声モデル (*.htsvoice)\n" +
+                   $"       {VoiceDirectory}";
+        }
+    }
+
     /// <summary>
     /// OpenJTalk (jtalkdll) を使う日本語音声エンジン。
     ///
@@ -47,6 +68,7 @@ namespace TxtToVoice.Services
 
         public bool IsAvailable { get; private set; }
         public string? InitializationError { get; private set; }
+        public OpenJTalkDiagnostics? Diagnostics { get; private set; }
         public string CurrentVoiceName => _currentVoiceName;
         public string? CurrentVoiceId   => _currentVoicePath;
 
@@ -57,13 +79,21 @@ namespace TxtToVoice.Services
             _voiceDir = Path.Combine(baseDir, "Data", "openjtalk", "voice");
             _voiceMap = BuildVoiceMap(_voiceDir);
 
-            if (!NativeJTalk.IsDllPresent())
+            bool dllPresent   = NativeJTalk.IsDllPresent();
+            bool dicPresent   = Directory.Exists(_dicPath);
+            bool voicePresent = _voiceMap.Count > 0;
+            Diagnostics = new OpenJTalkDiagnostics(
+                dllPresent,   Path.Combine(baseDir, "jtalk.dll"),
+                dicPresent,   _dicPath,
+                voicePresent, _voiceDir);
+
+            if (!dllPresent)
             {
                 Fail($"jtalk.dll が見つかりません: {Path.Combine(baseDir, "jtalk.dll")}\n" +
                      "  setup_openjtalk.ps1 を実行するか、THIRD_PARTY_LICENSES.txt を参照してセットアップしてください。");
                 return;
             }
-            if (!Directory.Exists(_dicPath))
+            if (!dicPresent)
             {
                 Fail($"MeCab 辞書が見つかりません: {_dicPath}\n" +
                      "  setup_openjtalk.ps1 を実行してください。");

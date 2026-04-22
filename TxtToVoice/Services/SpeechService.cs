@@ -74,6 +74,10 @@ namespace TxtToVoice.Services
         public string? CurrentVoiceId    => _engine.CurrentVoiceId;
         public string? FindVoiceNameById(string voiceId) => _engine.FindVoiceNameById(voiceId);
 
+        /// <summary>エンジンが OpenJTalk の場合に診断結果を返す。他エンジンでは null。</summary>
+        public OpenJTalkDiagnostics? GetOpenJTalkDiagnostics()
+            => (_engine as OpenJTalkEngine)?.Diagnostics;
+
         // ----------------------------------------------------------------
         // 音声・パラメータ設定
         // ----------------------------------------------------------------

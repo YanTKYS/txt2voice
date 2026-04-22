@@ -11,6 +11,10 @@
 
     このスクリプトは TxtToVoice.exe と同じフォルダに置いて実行してください。
 
+.PARAMETER VerifyOnly
+    セットアップを実行せず、現在のファイル配置状態を [OK]/[NG] で確認して終了します。
+    終了コード: 0 = 全コンポーネント OK、1 = 不足あり
+
 .NOTES
     前提ツール:
       - Git
@@ -30,7 +34,14 @@
 .EXAMPLE
     Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
     .\setup_openjtalk.ps1
+
+.EXAMPLE
+    .\setup_openjtalk.ps1 -VerifyOnly
+    # ファイルが揃っているか確認だけしたい場合
 #>
+param(
+    [switch]$VerifyOnly
+)
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
@@ -47,6 +58,39 @@ $tmpDir    = Join-Path $env:USERPROFILE "openjtalk-setup"
 
 $jtalkRepo = "https://github.com/rosmarinus/jtalkdll.git"
 $mmdUrl    = "https://downloads.sourceforge.net/project/mmdagent/MMDAgent_Example/MMDAgent_Example-1.8/MMDAgent_Example-1.8.zip"
+
+# ---- -VerifyOnly モード -------------------------------------------------------
+
+if ($VerifyOnly) {
+    $dllOk   = Test-Path $dllDest
+    $dicOk   = Test-Path (Join-Path $dicDir "sys.dic")
+    $htsFiles = @(Get-ChildItem $voiceDir -Filter "*.htsvoice" -Recurse -ErrorAction SilentlyContinue)
+    $voiceOk  = $htsFiles.Count -gt 0
+
+    function Write-Check([bool]$ok, [string]$label, [string]$path) {
+        $mark  = if ($ok) { "[OK]" } else { "[NG]" }
+        $color = if ($ok) { "Green" } else { "Red" }
+        Write-Host "$mark  $label" -ForegroundColor $color
+        Write-Host "       $path"  -ForegroundColor Gray
+    }
+
+    Write-Host ""
+    Write-Host "==[ OpenJTalk セットアップ状態確認 ]" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Check $dllOk   "jtalk.dll"                          $dllDest
+    Write-Check $dicOk   "MeCab 辞書 (open_jtalk_dic_utf_8)" $dicDir
+    Write-Check $voiceOk "音声モデル (.htsvoice)"             $voiceDir
+    Write-Host ""
+
+    if ($dllOk -and $dicOk -and $voiceOk) {
+        Write-Host "すべてのコンポーネントが揃っています。OpenJTalk は使用可能です。" -ForegroundColor Green
+        exit 0
+    } else {
+        Write-Host "不足コンポーネントがあります。以下を実行してセットアップしてください:" -ForegroundColor Yellow
+        Write-Host "  .\setup_openjtalk.ps1" -ForegroundColor White
+        exit 1
+    }
+}
 
 # ---- ユーティリティ関数 ------------------------------------------------------
 

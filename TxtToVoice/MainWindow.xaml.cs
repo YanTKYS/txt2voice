@@ -105,12 +105,12 @@ namespace TxtToVoice
                 string engineLabel = SpeechEngineFactory.GetLabel(_speechEngineType);
                 SetStatus($"警告: 音声エンジン（{engineLabel}）を初期化できませんでした。テキスト編集・辞書管理は利用できます。");
                 DisableSpeechControls();
+
+                string detail = BuildEngineErrorDetail();
                 MessageBox.Show(
                     $"音声エンジン（{engineLabel}）を初期化できませんでした。\n\n" +
-                    $"詳細: {_speechService.InitializationError}\n\n" +
-                    "テキスト編集・辞書管理は引き続き利用できます。\n" +
-                    "音声機能を使うには、Windowsの「設定 → 時刻と言語 → 音声認識」から\n" +
-                    "日本語音声パッケージを追加してください。",
+                    $"{detail}\n\n" +
+                    "テキスト編集・辞書管理は引き続き利用できます。",
                     "音声エンジン初期化エラー",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
@@ -321,6 +321,22 @@ namespace TxtToVoice
         {
             TxtStatus.Text = message;
             Logger.Info($"[ステータス] {message}");
+        }
+
+        private string BuildEngineErrorDetail()
+        {
+            if (_speechEngineType == SpeechEngineFactory.OpenJTalk)
+            {
+                var diag = _speechService.GetOpenJTalkDiagnostics();
+                if (diag != null)
+                    return "OpenJTalk セットアップ状態:\n\n" +
+                           diag.FormatChecklist() + "\n\n" +
+                           "不足コンポーネントがあります。\n" +
+                           "setup_openjtalk.ps1 を TxtToVoice.exe と同じフォルダで実行してください。";
+            }
+            return $"詳細: {_speechService.InitializationError}\n\n" +
+                   "音声機能を使うには、Windows の「設定 → 時刻と言語 → 音声認識」から\n" +
+                   "日本語音声パッケージを追加してください。";
         }
 
         // ----------------------------------------------------------------
