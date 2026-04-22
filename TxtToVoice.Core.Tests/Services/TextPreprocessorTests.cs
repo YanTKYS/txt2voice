@@ -105,6 +105,62 @@ namespace TxtToVoice.Tests.Services
         }
 
         // ================================================================
+        // Xか月（フェーズ3）
+        // ================================================================
+
+        [Theory]
+        [InlineData("3か月",   "さんかげつ")]
+        [InlineData("1ヶ月",   "いちかげつ")]
+        [InlineData("12ヵ月",  "じゅうにかげつ")]
+        [InlineData("6か月後", "ろくかげつ後")]
+        public void Apply_かげつ_読み仮名に変換する(string input, string expected)
+        {
+            Assert.Equal(expected, TextPreprocessor.Apply(input));
+        }
+
+        [Theory]
+        [InlineData("0か月",  "0か月")]   // 範囲外はそのまま
+        [InlineData("25か月", "25か月")]  // 範囲外はそのまま
+        public void Apply_かげつ_範囲外はそのまま(string input, string expected)
+        {
+            Assert.Equal(expected, TextPreprocessor.Apply(input));
+        }
+
+        // ================================================================
+        // 第X回（フェーズ3）
+        // ================================================================
+
+        [Theory]
+        [InlineData("第1回",   "だいいちかい")]
+        [InlineData("第3回",   "だいさんかい")]
+        [InlineData("第10回",  "だいじゅうかい")]
+        [InlineData("第20回大会", "だいにじゅうかい大会")]
+        public void Apply_第X回_読み仮名に変換する(string input, string expected)
+        {
+            Assert.Equal(expected, TextPreprocessor.Apply(input));
+        }
+
+        // ================================================================
+        // 電話番号ハイフン（フェーズ3）
+        // ================================================================
+
+        [Theory]
+        [InlineData("0120-123-4567",  "0120の123の4567")]
+        [InlineData("03-1234-5678",   "03の1234の5678")]
+        [InlineData("090-1234-5678",  "090の1234の5678")]
+        public void Apply_電話番号_ハイフンをのに変換する(string input, string expected)
+        {
+            Assert.Equal(expected, TextPreprocessor.Apply(input));
+        }
+
+        [Theory]
+        [InlineData("2024-01-01", "2024-01-01")]  // 日付はそのまま（除外ケース）
+        public void Apply_電話番号_日付形式は変換しない(string input, string expected)
+        {
+            Assert.Equal(expected, TextPreprocessor.Apply(input));
+        }
+
+        // ================================================================
         // 無変換ケース（副作用なし確認）
         // ================================================================
 

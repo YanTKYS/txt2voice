@@ -186,36 +186,43 @@ namespace TxtToVoice.Services
         private void SaveEncoded(string content, string outputPath, AudioFormat format, bool isSsml,
             IProgress<string>? progress, CancellationToken ct)
         {
-            using var ms = new MemoryStream();
-            using var wavSynth = BuildSynthClone();
-            using var done = new ManualResetEventSlim(false);
-            wavSynth.SpeakCompleted += (_, _) => { try { done.Set(); } catch (ObjectDisposedException) { } };
-            using var reg = ct.Register(() => wavSynth.SpeakAsyncCancelAll());
-            progress?.Report("音声を合成しています...");
+            string tmpWav = Path.Combine(Path.GetTempPath(), $"txtvoice_sapi_{Guid.NewGuid():N}.wav");
             try
             {
-                wavSynth.SetOutputToWaveStream(ms);
-                if (isSsml) wavSynth.SpeakSsmlAsync(content);
-                else        wavSynth.SpeakAsync(content);
-                done.Wait(ct);
-                ct.ThrowIfCancellationRequested();
+                using var wavSynth = BuildSynthClone();
+                using var done = new ManualResetEventSlim(false);
+                wavSynth.SpeakCompleted += (_, _) => { try { done.Set(); } catch (ObjectDisposedException) { } };
+                using var reg = ct.Register(() => wavSynth.SpeakAsyncCancelAll());
+                progress?.Report("音声を合成しています...");
+                try
+                {
+                    wavSynth.SetOutputToWaveFile(tmpWav);
+                    if (isSsml) wavSynth.SpeakSsmlAsync(content);
+                    else        wavSynth.SpeakAsync(content);
+                    done.Wait(ct);
+                    ct.ThrowIfCancellationRequested();
+                }
+                finally { try { wavSynth.SetOutputToDefaultAudioDevice(); } catch { /* 無視 */ } }
+
+                string encLabel = format == AudioFormat.Mp3 ? "MP3" : "MP4";
+                progress?.Report($"{encLabel} にエンコードしています...");
+                using var reader = new WaveFileReader(tmpWav);
+                if (format == AudioFormat.Mp3)
+                {
+                    MediaFoundationEncoder.EncodeToMp3(reader, outputPath, desiredBitRate: 128_000);
+                    ct.ThrowIfCancellationRequested();
+                    Logger.Info($"MP3 保存完了: {outputPath}");
+                }
+                else
+                {
+                    MediaFoundationEncoder.EncodeToAac(reader, outputPath, desiredBitRate: 128_000);
+                    ct.ThrowIfCancellationRequested();
+                    Logger.Info($"MP4(AAC) 保存完了: {outputPath}");
+                }
             }
-            finally { try { wavSynth.SetOutputToDefaultAudioDevice(); } catch { /* 無視 */ } }
-            ms.Seek(0, SeekOrigin.Begin);
-            string encLabel = format == AudioFormat.Mp3 ? "MP3" : "MP4";
-            progress?.Report($"{encLabel} にエンコードしています...");
-            using var reader = new WaveFileReader(ms);
-            if (format == AudioFormat.Mp3)
+            finally
             {
-                MediaFoundationEncoder.EncodeToMp3(reader, outputPath, desiredBitRate: 128_000);
-                ct.ThrowIfCancellationRequested();
-                Logger.Info($"MP3 保存完了: {outputPath}");
-            }
-            else
-            {
-                MediaFoundationEncoder.EncodeToAac(reader, outputPath, desiredBitRate: 128_000);
-                ct.ThrowIfCancellationRequested();
-                Logger.Info($"MP4(AAC) 保存完了: {outputPath}");
+                try { if (File.Exists(tmpWav)) File.Delete(tmpWav); } catch { }
             }
         }
 
