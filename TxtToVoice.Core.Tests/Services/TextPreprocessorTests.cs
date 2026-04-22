@@ -6,6 +6,7 @@ namespace TxtToVoice.Tests.Services
     /// <summary>
     /// TextPreprocessor のゴールデンサンプルテスト。
     /// 入力 → 期待読み仮名の変換を回帰テストとして固定する。
+    /// OS 非依存テスト（net8.0 で常時実行可能）。
     /// </summary>
     public class TextPreprocessorTests
     {
@@ -54,14 +55,50 @@ namespace TxtToVoice.Tests.Services
         }
 
         // ================================================================
+        // 全角数字・全角パーセント正規化（フェーズ2）
+        // ================================================================
+
+        [Theory]
+        [InlineData("３月",  "さんがつ")]   // 全角数字 + 月
+        [InlineData("１２月", "じゅうにがつ")]
+        [InlineData("１０月", "じゅうがつ")]
+        public void Apply_全角月_読み仮名に変換する(string input, string expected)
+        {
+            Assert.Equal(expected, TextPreprocessor.Apply(input));
+        }
+
+        [Theory]
+        [InlineData("１０％", "10パーセント")]  // 全角数字 + 全角パーセント
+        [InlineData("５０％", "50パーセント")]
+        public void Apply_全角パーセント_カタカナに変換する(string input, string expected)
+        {
+            Assert.Equal(expected, TextPreprocessor.Apply(input));
+        }
+
+        // ================================================================
+        // 記号読み（フェーズ2）
+        // ================================================================
+
+        [Theory]
+        [InlineData("〒123-4567",    "ゆうびんばんごう123-4567")]
+        [InlineData("気温は25℃です", "気温は25どです")]
+        [InlineData("50㎡の部屋",   "50へいほうめーとるの部屋")]
+        public void Apply_記号_読み仮名に変換する(string input, string expected)
+        {
+            Assert.Equal(expected, TextPreprocessor.Apply(input));
+        }
+
+        // ================================================================
         // 複合ケース
         // ================================================================
 
         [Theory]
-        [InlineData("令和5年3月15日", "令和5年さんがつ15日")]
-        [InlineData("消費税は10%です", "消費税は10パーセントです")]
-        [InlineData("4月から10%値上げ", "しがつから10パーセント値上げ")]
-        [InlineData("前年比120%で3月に達成", "前年比120パーセントでさんがつに達成")]
+        [InlineData("令和5年3月15日",          "令和5年さんがつ15日")]
+        [InlineData("消費税は10%です",         "消費税は10パーセントです")]
+        [InlineData("4月から10%値上げ",        "しがつから10パーセント値上げ")]
+        [InlineData("前年比120%で3月に達成",   "前年比120パーセントでさんがつに達成")]
+        [InlineData("〒100-0001の25℃、50㎡",  "ゆうびんばんごう100-0001の25ど、50へいほうめーとる")]
+        [InlineData("３月の気温は１０℃",       "さんがつの気温は10ど")]
         public void Apply_複合ケース_正しく変換される(string input, string expected)
         {
             Assert.Equal(expected, TextPreprocessor.Apply(input));
