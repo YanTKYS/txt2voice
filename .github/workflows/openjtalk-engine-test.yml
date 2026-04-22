@@ -98,14 +98,26 @@ jobs:
           $htsVoices = Get-ChildItem "TxtToVoice\Data\openjtalk\voice\*.htsvoice" -Recurse -ErrorAction SilentlyContinue
           $voiceOk = $htsVoices.Count -gt 0
 
+          $dllMark   = if ($dllOk)   { "✅" } else { "❌" }
+          $dicMark   = if ($dicOk)   { "✅" } else { "❌" }
+          $voiceMark = if ($voiceOk) { "✅ ($($htsVoices.Count) 件)" } else { "❌" }
+
           Write-Host "jtalk.dll : $dllOk"
           Write-Host "辞書      : $dicOk"
           Write-Host "音声モデル: $voiceOk ($($htsVoices.Count) ファイル)"
 
           if (-not ($dllOk -and $dicOk -and $voiceOk)) {
             Write-Host "::warning::OpenJTalk ランタイムファイルが不足しています。RequiresEngine テストをスキップします。"
-            Write-Host "::warning::音声モデルのダウンロード失敗は SourceForge Cloudflare 制限が原因の可能性があります（backlog #49 参照）。"
+            if (-not $dllOk)   { Write-Host "::warning::jtalk.dll が見つかりません。jtalkdll のビルドが失敗した可能性があります。" }
+            if (-not $dicOk)   { Write-Host "::warning::MeCab 辞書が見つかりません。jtalkdll ビルド成果物の辞書コピーが失敗した可能性があります。" }
+            if (-not $voiceOk) { Write-Host "::warning::音声モデルが見つかりません。SourceForge Cloudflare 制限によるダウンロード失敗の可能性があります（backlog #49b 参照）。" }
             echo "files_ok=false" >> $env:GITHUB_OUTPUT
+            echo "dll_ok=$($dllOk.ToString().ToLower())" >> $env:GITHUB_OUTPUT
+            echo "dic_ok=$($dicOk.ToString().ToLower())" >> $env:GITHUB_OUTPUT
+            echo "voice_ok=$($voiceOk.ToString().ToLower())" >> $env:GITHUB_OUTPUT
+            echo "dll_mark=$dllMark" >> $env:GITHUB_OUTPUT
+            echo "dic_mark=$dicMark" >> $env:GITHUB_OUTPUT
+            echo "voice_mark=$voiceMark" >> $env:GITHUB_OUTPUT
           } else {
             echo "files_ok=true" >> $env:GITHUB_OUTPUT
           }
@@ -152,17 +164,26 @@ jobs:
 
       - name: セットアップ失敗時のサマリー
         if: steps.check-files.outputs.files_ok != 'true'
-        shell: bash
+        shell: pwsh
         run: |
-          cat >> $GITHUB_STEP_SUMMARY <<'EOF'
+          $dllMark   = "${{ steps.check-files.outputs.dll_mark }}"
+          $dicMark   = "${{ steps.check-files.outputs.dic_mark }}"
+          $voiceMark = "${{ steps.check-files.outputs.voice_mark }}"
+
+          $summary = @"
           ## OpenJTalk セットアップ未完了
 
           RequiresEngine テストはスキップされました。
 
-          ### 原因の可能性
-          - SourceForge の Cloudflare JS チャレンジにより音声モデルのダウンロードが失敗した
+          ### 前提ファイル状況
 
-          ### 対処
-          backlog #49 の代替ホスト対応が完了するまでは、事前に voice ファイルを
-          `TxtToVoice/Data/openjtalk/voice/` に手動配置してから再実行してください。
-          EOF
+          | ファイル | 状況 | 復旧ヒント |
+          |----------|------|-----------|
+          | jtalk.dll | $dllMark | jtalkdll のビルドログを確認（CMake / MSVC エラー） |
+          | MeCab 辞書 | $dicMark | jtalkdll ビルド成果物の dic/ を確認 |
+          | 音声モデル (.htsvoice) | $voiceMark | SourceForge Cloudflare 制限の可能性（backlog #49b 参照） |
+
+          ### 手動復旧手順
+          事前に voice ファイルを `TxtToVoice/Data/openjtalk/voice/` に配置してから再実行してください。
+          "@
+          $summary >> $env:GITHUB_STEP_SUMMARY
