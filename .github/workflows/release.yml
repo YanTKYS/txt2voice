@@ -127,6 +127,77 @@ jobs:
       #
       # release-notes/<tag>.md があれば本文に使用、なければ自動生成。
       # -------------------------------------------------------
+      # -------------------------------------------------------
+      # 音声モデルを Release asset として取得・保持
+      # 優先順位: 前バージョンの asset 転用 > SourceForge ダウンロード
+      # continue-on-error: true — 失敗しても release 本体はブロックしない
+      # CC BY 3.0: THIRD_PARTY_LICENSES.txt 同梱によりクレジット義務対応済み
+      # -------------------------------------------------------
+      - name: 音声モデル (mei_normal.htsvoice) を取得
+        id: get-voice
+        continue-on-error: true
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $meiFile = "mei_normal.htsvoice"
+
+          # --- 方針1: 前バージョンの release asset を転用（最も確実）---
+          $found = $false
+          try {
+            $releases = gh release list --limit 10 --json tagName,assets 2>$null | ConvertFrom-Json
+            foreach ($rel in $releases) {
+              if ($rel.tagName -eq "${{ env.RELEASE_TAG }}") { continue }
+              $asset = $rel.assets | Where-Object { $_.name -eq $meiFile }
+              if ($asset) {
+                Write-Host "前バージョン $($rel.tagName) から転用します"
+                gh release download $rel.tagName --asset $meiFile -D . --clobber 2>$null
+                if ((Test-Path $meiFile) -and (Get-Item $meiFile).Length -gt 100000) {
+                  $found = $true
+                  Write-Host "[OK] 転用完了: $($rel.tagName) -> $meiFile"
+                  break
+                }
+              }
+            }
+          } catch { Write-Host "[!!] 前バージョン asset 取得失敗: $_" }
+
+          # --- 方針2: SourceForge からダウンロード（初回リリース時）---
+          if (-not $found) {
+            $tmpDir = Join-Path $env:USERPROFILE "voice-dl"
+            New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null
+            $mmdZip  = Join-Path $tmpDir "MMDAgent_Example-1.8.zip"
+            $mmdWork = Join-Path $tmpDir "MMDAgent_Example-1.8"
+            $headers = @{ 'User-Agent' = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
+
+            foreach ($url in @(
+              "https://jaist.dl.sourceforge.net/project/mmdagent/MMDAgent_Example/MMDAgent_Example-1.8/MMDAgent_Example-1.8.zip",
+              "https://downloads.sourceforge.net/project/mmdagent/MMDAgent_Example/MMDAgent_Example-1.8/MMDAgent_Example-1.8.zip",
+              "https://umnmirror.dl.sourceforge.net/project/mmdagent/MMDAgent_Example/MMDAgent_Example-1.8/MMDAgent_Example-1.8.zip"
+            )) {
+              try {
+                Write-Host "SourceForge ダウンロード試行: $url"
+                Invoke-WebRequest -Uri $url -OutFile $mmdZip -UseBasicParsing -MaximumRedirection 10 -Headers $headers
+                if ((Test-Path $mmdZip) -and (Get-Item $mmdZip).Length -gt 1MB) { break }
+              } catch { Write-Host "  失敗: $_" }
+            }
+
+            if ((Test-Path $mmdZip) -and (Get-Item $mmdZip).Length -gt 1MB) {
+              Expand-Archive -Path $mmdZip -DestinationPath $tmpDir -Force
+              $hts = Get-ChildItem $mmdWork -Filter $meiFile -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+              if ($hts) {
+                Copy-Item $hts.FullName $meiFile -Force
+                $found = $true
+                Write-Host "[OK] SourceForge から取得: $meiFile"
+              }
+            }
+          }
+
+          if ($found -and (Test-Path $meiFile)) {
+            echo "MEI_VOICE_READY=true" >> $env:GITHUB_ENV
+          } else {
+            Write-Host "::warning::$meiFile の取得に失敗。release asset には含まれません。"
+          }
+
       - name: GitHub Release を作成
         shell: bash
         env:
@@ -148,15 +219,22 @@ jobs:
             EXTRA_FLAGS="--prerelease"
           fi
 
+          # mei_normal.htsvoice が取得済みなら ZIP と一緒に添付
+          EXTRA_ASSETS=""
+          if [ "$MEI_VOICE_READY" = "true" ] && [ -f "mei_normal.htsvoice" ]; then
+            EXTRA_ASSETS="mei_normal.htsvoice"
+            echo "mei_normal.htsvoice を release asset として添付します"
+          fi
+
           if [ -f "$NOTES_FILE" ]; then
             echo "リリースノートファイルを使用: $NOTES_FILE"
-            gh release create "$TAG" "$ZIP" \
+            gh release create "$TAG" "$ZIP" $EXTRA_ASSETS \
               --title "$TITLE" \
               --notes-file "$NOTES_FILE" \
               $EXTRA_FLAGS
           else
             echo "リリースノートを自動生成します"
-            gh release create "$TAG" "$ZIP" \
+            gh release create "$TAG" "$ZIP" $EXTRA_ASSETS \
               --title "$TITLE" \
               --generate-notes \
               $EXTRA_FLAGS

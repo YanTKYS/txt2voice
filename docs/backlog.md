@@ -5,20 +5,11 @@
 
 ---
 
-## 優先度：高
-
-| # | 概要 | 詳細 |
-|---|---|---|
-| 49b | SourceForge Cloudflare 恒久対応 | `setup_openjtalk.ps1` / CI ともに MMDAgent 音声モデルのダウンロードが Cloudflare JS チャレンジで失敗する場合がある。**方針候補**: A) GitHub Release Asset への音声ファイル再配布（ライセンス確認要: CC BY 3.0 は再配布可だがクレジット義務あり）、B) ZIP に `mei_normal.htsvoice` を事前同梱（配布サイズ増加 +25MB）。実装コストは A が低い。ライセンス確認後に方針決定。 |
-
----
-
 ## 優先度：中
 
 | # | 概要 | 詳細 |
 |---|---|---|
 | 51 | OpenJTalk 音声品質評価・レポート | 評価セット（S1〜S4）・採点表は `docs/improvement-proposals.md` に固定済み。実施は v0.5.x で予定。 |
-| 62 | 運用品質テストセット整備 | `tests/golden/` に行政文書スニペットを用意し TextPreprocessor + 辞書適用出力をリグレッションテスト化。v0.5.x で #51 と合わせて整備。詳細 #62。 |
 
 ---
 
@@ -65,3 +56,4 @@
 | 56-b | PlaybackState sealed record 導入（_isSpeaking / _isPaused 置き換え） | v0.5.0 |
 | 62 | 行政文書ゴールデンテスト（TextPreprocessorGoldenTests） | v0.5.0 |
 | 66 | TextPreprocessor フェーズ5（コロン時刻 HH:MM → X時X分展開） | v0.5.0 |
+| 49b | SourceForge Cloudflare 恒久対応（GitHub Release asset 方針A） | v0.5.1 |

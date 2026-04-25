@@ -5,6 +5,32 @@
 
 ---
 
+## v0.5.1 実装済み提案（#49b）
+
+### 49b. SourceForge Cloudflare 恒久対応（GitHub Release 方針A）✅ v0.5.1
+
+**課題**: MMDAgent 音声モデルのダウンロードが SourceForge の Cloudflare JS チャレンジで失敗する場合があり、`setup_openjtalk.ps1` と CI（openjtalk-engine-test.yml）の信頼性を損なっていた。  
+**解決**: CC BY 3.0 は再配布可（クレジット義務あり）のため、`mei_normal.htsvoice` を本プロジェクトの GitHub Release asset として配布し、スクリプト・CI がこれを最優先ダウンロード先とする。
+
+**v0.5.1 実装内容**:
+- **`tools/setup_openjtalk.ps1`**:
+  - `$githubVoiceUrl = "https://github.com/YanTKYS/txt2voice/releases/latest/download/mei_normal.htsvoice"` 変数を追加
+  - voice ダウンロード優先順位を更新:
+    1. 同梱 `bundled\mei_normal.htsvoice`（既存）
+    2. **GitHub Release 直接ダウンロード**（~25MB・新規）
+    3. SourceForge ZIP ミラー 4 候補（~200MB・フォールバック）
+  - 失敗時メッセージに GitHub Release の手動ダウンロード手順（手順A）を追加
+- **`.github/workflows/release.yml`**:
+  - 「音声モデルを取得」ステップを追加（`continue-on-error: true`）
+    - 方針1: 前バージョンの release asset を転用（最も確実）
+    - 方針2: SourceForge からダウンロード（初回リリース時）
+  - release 作成ステップで `mei_normal.htsvoice` を ZIP と並べて添付
+- **`.github/workflows/openjtalk-engine-test.yml`**:
+  - `mei_normal.htsvoice` 直接キャッシュ（~25MB）を追加（ZIP キャッシュとの 2 段構え）
+  - コメントを更新してダウンロード優先順位を明記
+
+---
+
 ## v0.5.0 実装済み提案（#56-b, #62, #66）
 
 ### 56-b. PlaybackState sealed record 導入 ✅ v0.5.0

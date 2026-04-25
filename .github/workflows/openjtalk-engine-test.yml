@@ -4,9 +4,11 @@ name: OpenJTalk Engine Tests
 # 通常の build.yml とは分離して手動トリガー + 週次スケジュールで実行する。
 #
 # セットアップは tools/setup_openjtalk.ps1 を使用する（配布向けスクリプトと共通）。
-# SourceForge の Cloudflare 制限により音声モデルの自動ダウンロードが
-# 失敗する場合がある。その際はテストがスキップ扱いになる（失敗ではない）。
-# 対処は backlog #49 を参照。
+# 音声モデル取得の優先順位（v0.5.1 以降）:
+#   1. 同梱 bundled\mei_normal.htsvoice（存在する場合）
+#   2. GitHub Release asset の直接ダウンロード（~25MB、最も信頼性が高い）
+#   3. SourceForge ZIP ミラー 4 候補（~200MB、Cloudflare JS チャレンジで失敗する場合あり）
+# いずれも失敗した場合はテストがスキップ扱いになる（失敗ではない）。
 
 on:
   workflow_dispatch:
@@ -42,9 +44,19 @@ jobs:
           path: ~/openjtalk-setup
           key: jtalkdll-build-${{ runner.os }}-${{ hashFiles('tools/setup_openjtalk.ps1') }}
 
-      # 音声モデル（MMDAgent zip）をキャッシュ
+      # 音声モデル直接キャッシュ（~25MB、GitHub Release から取得した場合）
+      # ZIPキャッシュ（~200MB）より軽量。GitHub Release asset が存在すれば自動的に作成される。
+      - name: 音声モデル直接キャッシュ復元
+        id: cache-voice-direct
+        uses: actions/cache@v4
+        if: ${{ !inputs.skip_cache }}
+        with:
+          path: ~/openjtalk-setup/voice/mei_normal.htsvoice
+          key: mei-htsvoice-direct-v1
+
+      # 音声モデル（MMDAgent zip）をキャッシュ（SourceForge フォールバック用）
       # SourceForge ダウンロードに成功した場合のみキャッシュが作成される
-      - name: 音声モデルキャッシュ復元
+      - name: 音声モデル ZIP キャッシュ復元
         id: cache-voice
         uses: actions/cache@v4
         if: ${{ !inputs.skip_cache }}

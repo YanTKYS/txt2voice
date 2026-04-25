@@ -7,7 +7,7 @@
     OpenJTalk エンジンの動作に必要な以下のファイルを自動取得・配置します。
       [1] jtalk.dll    — GitHub (jtalkdll) からビルド
       [2] MeCab 辞書  — jtalkdll ビルド成果物から取得
-      [3] Mei 音声モデル — MMDAgent (SourceForge) からダウンロード
+      [3] Mei 音声モデル — GitHub Release（優先）または MMDAgent (SourceForge) からダウンロード
 
     このスクリプトは TxtToVoice.exe と同じフォルダに置いて実行してください。
 
@@ -58,7 +58,12 @@ $tmpDir    = Join-Path $env:USERPROFILE "openjtalk-setup"
 
 $jtalkRepo = "https://github.com/rosmarinus/jtalkdll.git"
 
-# MMDAgent 音声モデルのダウンロード候補 URL（順に試行、失敗したら次へ）
+# 音声モデル直接ダウンロード URL（GitHub Release — 優先）
+# CC BY 3.0 再配布ライセンス済み（THIRD_PARTY_LICENSES.txt 同梱によりクレジット義務対応）
+# v0.5.1 以降の release に mei_normal.htsvoice が asset として同梱されている
+$githubVoiceUrl = "https://github.com/YanTKYS/txt2voice/releases/latest/download/mei_normal.htsvoice"
+
+# MMDAgent 音声モデルのダウンロード候補 URL（フォールバック: GitHub Release 失敗時に試行）
 $mmdUrl    = "https://downloads.sourceforge.net/project/mmdagent/MMDAgent_Example/MMDAgent_Example-1.8/MMDAgent_Example-1.8.zip"
 $mmdUrlCandidates = @(
     "https://jaist.dl.sourceforge.net/project/mmdagent/MMDAgent_Example/MMDAgent_Example-1.8/MMDAgent_Example-1.8.zip",
@@ -293,6 +298,26 @@ if (Test-Path $meiVoice) {
         Write-OK "同梱ファイルから配置: mei_normal.htsvoice"
     } else {
 
+    # ── 優先度2: GitHub Release 直接ダウンロード（~25MB・SourceForge より軽量）──────
+    $dlGhOk = $false
+    try {
+        Write-Info "GitHub Release から直接ダウンロード試行: $githubVoiceUrl"
+        $ghHeaders = @{ 'User-Agent' = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
+        Invoke-WebRequest -Uri $githubVoiceUrl -OutFile $meiVoice `
+            -UseBasicParsing -MaximumRedirection 5 -Headers $ghHeaders
+        if ((Test-Path $meiVoice) -and (Get-Item $meiVoice).Length -gt 100000) {
+            $dlGhOk = $true
+            Write-OK "GitHub Release から配置: mei_normal.htsvoice"
+        } else {
+            if (Test-Path $meiVoice) { Remove-Item $meiVoice -Force }
+            Write-Host "  [!!] ダウンロードファイルが小さすぎます（SourceForge へフォールバック）" -ForegroundColor Yellow
+        }
+    } catch {
+        Write-Host "  [!!] GitHub Release ダウンロード失敗（SourceForge へフォールバック）: $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+
+    if (-not $dlGhOk) {
+    # ── フォールバック: SourceForge ZIP ダウンロード（~200MB）─────────────────────
     $mmdZip  = Join-Path $tmpDir "MMDAgent_Example-1.8.zip"
     $mmdWork = Join-Path $tmpDir "MMDAgent_Example-1.8"
 
@@ -322,21 +347,21 @@ if (Test-Path $meiVoice) {
 
         if (-not $dlOk) {
             Write-Host ""
-            Write-Host "  [!!] すべての URL からのダウンロードに失敗しました。" -ForegroundColor Yellow
+            Write-Host "  [!!] GitHub Release および SourceForge のすべての URL からのダウンロードに失敗しました。" -ForegroundColor Yellow
             Write-Host "       最後のエラー: $lastError" -ForegroundColor Yellow
-            Write-Host "       SourceForge が Cloudflare JS チャレンジで保護されている可能性があります。" -ForegroundColor Yellow
             Write-Host ""
-            Write-Host "  [手順 A] ZIP をダウンロードして配置する場合:" -ForegroundColor Cyan
+            Write-Host "  [手順 A] GitHub Release から直接ダウンロードする場合:" -ForegroundColor Cyan
+            Write-Host "    1. ブラウザで以下を開いてダウンロード:" -ForegroundColor White
+            Write-Host "       $githubVoiceUrl" -ForegroundColor White
+            Write-Host "    2. ダウンロードした mei_normal.htsvoice を以下のパスに配置:" -ForegroundColor White
+            Write-Host "       $meiVoice" -ForegroundColor White
+            Write-Host "    3. このスクリプトを再実行" -ForegroundColor White
+            Write-Host ""
+            Write-Host "  [手順 B] SourceForge ZIP をダウンロードして配置する場合:" -ForegroundColor Cyan
             Write-Host "    1. ブラウザで以下を開いてダウンロード:" -ForegroundColor White
             Write-Host "       $mmdUrl" -ForegroundColor White
             Write-Host "    2. ダウンロードした ZIP を以下のパスに配置:" -ForegroundColor White
             Write-Host "       $mmdZip" -ForegroundColor White
-            Write-Host "    3. このスクリプトを再実行" -ForegroundColor White
-            Write-Host ""
-            Write-Host "  [手順 B] htsvoice を直接配置する場合:" -ForegroundColor Cyan
-            Write-Host "    1. ZIP から Voice\mei\mei_normal.htsvoice を取り出す" -ForegroundColor White
-            Write-Host "    2. 以下のパスに配置:" -ForegroundColor White
-            Write-Host "       $meiVoice" -ForegroundColor White
             Write-Host "    3. このスクリプトを再実行" -ForegroundColor White
             Write-Host ""
             $summaryWarnings.Add("音声モデルのダウンロードに失敗しました（手動配置が必要）")
@@ -360,6 +385,8 @@ if (Test-Path $meiVoice) {
         Copy-Item $v.FullName (Join-Path $voiceDir $v.Name) -Force
         Write-OK "音声モデルを配置: $($v.Name)"
     }
+
+    } # end: GitHub からのダウンロードが失敗した場合（SourceForge フォールバック）
 
     } # end: 同梱ファイルがない場合の else ブロック
 }
