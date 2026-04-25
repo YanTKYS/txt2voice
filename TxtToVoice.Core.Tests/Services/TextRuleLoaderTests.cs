@@ -35,7 +35,7 @@ namespace TxtToVoice.Tests.Services
         // ================================================================
 
         [Fact]
-        public void Load_有効ルール1件_Apply が機能する()
+        public void Load_有効ルール1件_Applyが機能する()
         {
             string path = WriteTempJson(
                 @"[{""pattern"":""CPU"",""replacement"":""シーピーユー"",""description"":"""",""enabled"":true}]");
