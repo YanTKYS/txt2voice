@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -12,6 +13,7 @@ namespace TxtToVoice.Services
     /// フェーズ3（v0.4.4）: 慣用表現（Xか月、第X回、電話番号ハイフン）
     /// フェーズ4（v0.4.9）: 時刻表記（X時 0〜23、X分 0〜59）
     /// フェーズ5（v0.5.0）: コロン時刻表記（H:MM / HH:MM）→ X時X分に展開しフェーズ4へ渡す
+    /// フェーズ6（v0.5.2）: 外部ルール（Data/text_rules.json）— 呼び出し元がロード済みリストを渡す
     /// </summary>
     public static class TextPreprocessor
     {
@@ -90,7 +92,7 @@ namespace TxtToVoice.Services
         private static readonly Regex ColonTimePattern =
             new(@"(?<!\d)([01]?\d|2[0-3]):([0-5]\d)(?![:\d])", RegexOptions.Compiled);
 
-        public static string Apply(string text)
+        public static string Apply(string text, IReadOnlyList<CompiledTextRule>? rules = null)
         {
             // フェーズ2: 全角数字・全角パーセントを半角に正規化
             text = NormalizeFullWidth(text);
@@ -149,6 +151,13 @@ namespace TxtToVoice.Services
                     return MinuteReadings[n];
                 return m.Value;
             });
+
+            // フェーズ6: 外部ルール（text_rules.json — 有効なルールのみ適用）
+            if (rules != null)
+            {
+                foreach (var rule in rules)
+                    text = rule.Apply(text);
+            }
 
             return text;
         }

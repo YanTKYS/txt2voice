@@ -19,7 +19,6 @@
 |---|---|---|
 | 55 | 音声品質評価の定例化 | リリース前チェックリストに組み込む。詳細 #55（improvement-proposals）。 |
 | 60 | 辞書照合 Aho-Corasick 導入 | 辞書エントリが 1,000 件超を想定する前に設計着手。詳細 #60。 |
-| 61 | TextPreprocessor 外部ルール定義 | 変換ルールを `Data/text_rules.json` として外部化し、リリース不要でルール追加を可能に。詳細 #61。 |
 
 ---
 
@@ -57,3 +56,4 @@
 | 62 | 行政文書ゴールデンテスト（TextPreprocessorGoldenTests） | v0.5.0 |
 | 66 | TextPreprocessor フェーズ5（コロン時刻 HH:MM → X時X分展開） | v0.5.0 |
 | 49b | SourceForge Cloudflare 恒久対応（GitHub Release asset 方針A） | v0.5.1 |
+| 61 | TextPreprocessor 外部ルール定義（`Data/text_rules.json` 外部化） | v0.5.2 |

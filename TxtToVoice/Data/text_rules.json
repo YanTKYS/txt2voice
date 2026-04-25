@@ -1,0 +1,38 @@
+[
+  {
+    "pattern": "CPU",
+    "replacement": "シーピーユー",
+    "description": "アルファベット略語: CPU",
+    "enabled": false
+  },
+  {
+    "pattern": "AI",
+    "replacement": "エーアイ",
+    "description": "アルファベット略語: AI",
+    "enabled": false
+  },
+  {
+    "pattern": "SNS",
+    "replacement": "エスエヌエス",
+    "description": "アルファベット略語: SNS",
+    "enabled": false
+  },
+  {
+    "pattern": "PDF",
+    "replacement": "ピーディーエフ",
+    "description": "アルファベット略語: PDF",
+    "enabled": false
+  },
+  {
+    "pattern": "URL",
+    "replacement": "ユーアールエル",
+    "description": "アルファベット略語: URL",
+    "enabled": false
+  },
+  {
+    "pattern": "QR",
+    "replacement": "キューアール",
+    "description": "アルファベット略語: QR",
+    "enabled": false
+  }
+]

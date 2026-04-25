@@ -148,11 +148,23 @@ MainWindow.DictionaryOperations.cs — 辞書CRUD・プレビュー・CSV入出�
 **提案**: 辞書ビルド時に Aho-Corasick オートマトンを構築し、テキスト照合を O(n+m) に改善。依存ライブラリを導入するか、`TxtToVoice.Core` に自前実装（小規模のため実装コスト低）。  
 **優先度**: 低〜中（辞書エントリ数が数百件未満の現状では体感差なし。1,000 件超を想定する場合に検討）
 
-### 61. TextPreprocessor 外部ルール定義（JSON / TSV 化）
+### 61. TextPreprocessor 外部ルール定義（JSON / TSV 化）✅ v0.5.2
 
 **課題**: 変換ルールが C# コードにハードコードされており、現場ルール追加のたびにリリースが必要。  
 **提案**: ルールを `Data/text_rules.json`（または `.tsv`）として外部定義し、起動時にロード。辞書と同様に UI からルール一覧を確認・追加できる将来パスも想定。  
 **優先度**: 低〜中（現状のルール数が少ない間は不要。ルールが 20 件超える前に設計着手を推奨）
+
+**v0.5.2 実装内容**:
+- `TxtToVoice.Core/Models/TextRule.cs` — JSON DTO（`pattern` / `replacement` / `description` / `enabled`）
+- `TxtToVoice.Core/Services/TextRuleLoader.cs` — `TextRuleLoader.Load(filePath)` で JSON 読み込みとコンパイル
+  - `CompiledTextRule` クラスで `Regex` + 置換文字列を保持し `Apply(text)` を提供
+  - ファイル不在・JSON エラー・無効な正規表現はすべてスキップしてログ記録、処理を継続
+- `TextPreprocessor.Apply(text, rules?)` — `rules` パラメータを追加（省略可・null で既存動作を維持）
+  - フェーズ6として既存フェーズ1〜5 の後に外部ルールを適用
+- `PathConfig.TextRulesPath` — EXE 配置ディレクトリの `Data/text_rules.json` を返すプロパティを追加
+- `TxtToVoice/Data/text_rules.json` — サンプルルール（CPU / AI / SNS / PDF / URL / QR の略語展開を `enabled: false` で同梱）
+- `OpenJTalkEngine` — コンストラクタで `TextRuleLoader.Load(PathConfig.TextRulesPath)` を呼び `_textRules` に保持、`SpeakAsync` / `SaveToFile` の両呼び出し元に渡す
+- `TxtToVoice.Core.Tests/Services/TextRuleLoaderTests.cs` — 11 件のユニットテスト（不在/空配列/有効ルール/disabled フィルタ/不正 JSON/無効正規表現/空パターン/Apply パラメータ）
 
 ### 62. 運用品質テストセット（ゴールデンファイル）の整備
 

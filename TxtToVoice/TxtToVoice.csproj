@@ -10,7 +10,7 @@
     <AssemblyName>TxtToVoice</AssemblyName>
     <Company>声の広報 制作支援</Company>
     <Product>テキスト読み上げツール</Product>
-    <Version>0.5.1</Version>
+    <Version>0.5.2</Version>
     <ApplicationIcon></ApplicationIcon>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <Optimize>true</Optimize>
@@ -31,6 +31,10 @@
   <ItemGroup>
     <!-- サンプル辞書を出力ディレクトリにコピー -->
     <Content Include="Data\sample_dictionary.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <!-- テキスト変換ルール（ユーザー編集可・デフォルトは全 disabled） -->
+    <Content Include="Data\text_rules.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <!-- THIRD_PARTY_LICENSES.txt（同梱必須: CC BY 3.0 等のライセンス義務） -->

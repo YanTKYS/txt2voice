@@ -54,6 +54,7 @@ namespace TxtToVoice.Services
         private readonly string _voiceDir;
         // 表示名 → フルパス の辞書（サブディレクトリ含む再帰検索結果を保持）
         private readonly IReadOnlyDictionary<string, string> _voiceMap;
+        private readonly IReadOnlyList<CompiledTextRule> _textRules;
         private double _speed    = 1.0;
         private double _volumeDb = 0.0;
         private WaveOutEvent? _waveOut;
@@ -75,9 +76,10 @@ namespace TxtToVoice.Services
         public OpenJTalkEngine()
         {
             string baseDir = AppContext.BaseDirectory;
-            _dicPath  = Path.Combine(baseDir, "Data", "openjtalk", "open_jtalk_dic_utf_8");
-            _voiceDir = Path.Combine(baseDir, "Data", "openjtalk", "voice");
-            _voiceMap = BuildVoiceMap(_voiceDir);
+            _dicPath   = Path.Combine(baseDir, "Data", "openjtalk", "open_jtalk_dic_utf_8");
+            _voiceDir  = Path.Combine(baseDir, "Data", "openjtalk", "voice");
+            _voiceMap  = BuildVoiceMap(_voiceDir);
+            _textRules = TextRuleLoader.Load(PathConfig.TextRulesPath);
 
             bool dllPresent   = NativeJTalk.IsDllPresent();
             bool dicPresent   = Directory.Exists(_dicPath);
@@ -239,7 +241,7 @@ namespace TxtToVoice.Services
             CancelCurrent();
             _cts = new CancellationTokenSource();
             var cts = _cts;
-            Task.Run(() => SpeakCore(TextPreprocessor.Apply(text), cts.Token));
+            Task.Run(() => SpeakCore(TextPreprocessor.Apply(text, _textRules), cts.Token));
         }
 
         public void SpeakSsmlAsync(string ssml)
@@ -329,7 +331,7 @@ namespace TxtToVoice.Services
             if (_handle == IntPtr.Zero)
                 throw new InvalidOperationException("音声エンジンが利用できません。\n" + InitializationError);
 
-            string text = TextPreprocessor.Apply(isSsml ? StripSsmlTags(content) : content);
+            string text = TextPreprocessor.Apply(isSsml ? StripSsmlTags(content) : content, _textRules);
             if (string.IsNullOrWhiteSpace(text))
                 throw new ArgumentException("読み上げるテキストがありません。");
 
