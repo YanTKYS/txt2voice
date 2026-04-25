@@ -37,9 +37,8 @@ namespace TxtToVoice.Tests.Services
         [Fact]
         public void Load_有効ルール1件_Apply が機能する()
         {
-            string path = WriteTempJson("""
-                [{"pattern":"CPU","replacement":"シーピーユー","description":"","enabled":true}]
-                """);
+            string path = WriteTempJson(
+                @"[{""pattern"":""CPU"",""replacement"":""シーピーユー"",""description"":"""",""enabled"":true}]");
             try
             {
                 var rules = TextRuleLoader.Load(path);
@@ -52,12 +51,11 @@ namespace TxtToVoice.Tests.Services
         [Fact]
         public void Load_複数の有効ルール_順番に適用される()
         {
-            string path = WriteTempJson("""
-                [
-                  {"pattern":"AI","replacement":"エーアイ","description":"","enabled":true},
-                  {"pattern":"SNS","replacement":"エスエヌエス","description":"","enabled":true}
-                ]
-                """);
+            string path = WriteTempJson(
+                "[" +
+                @"{""pattern"":""AI"",""replacement"":""エーアイ"",""description"":"""",""enabled"":true}," +
+                @"{""pattern"":""SNS"",""replacement"":""エスエヌエス"",""description"":"""",""enabled"":true}" +
+                "]");
             try
             {
                 var rules = TextRuleLoader.Load(path);
@@ -74,14 +72,12 @@ namespace TxtToVoice.Tests.Services
         [Fact]
         public void Load_disabled_ルールはスキップされる()
         {
-            string path = WriteTempJson("""
-                [{"pattern":"CPU","replacement":"シーピーユー","description":"","enabled":false}]
-                """);
+            string path = WriteTempJson(
+                @"[{""pattern"":""CPU"",""replacement"":""シーピーユー"",""description"":"""",""enabled"":false}]");
             try
             {
                 var rules = TextRuleLoader.Load(path);
                 Assert.Empty(rules);
-                // Apply でも変換されない
                 Assert.Equal("CPU搭載", TextPreprocessor.Apply("CPU搭載", rules));
             }
             finally { File.Delete(path); }
@@ -90,12 +86,11 @@ namespace TxtToVoice.Tests.Services
         [Fact]
         public void Load_有効と無効の混在_有効のみ返す()
         {
-            string path = WriteTempJson("""
-                [
-                  {"pattern":"AI","replacement":"エーアイ","description":"","enabled":true},
-                  {"pattern":"CPU","replacement":"シーピーユー","description":"","enabled":false}
-                ]
-                """);
+            string path = WriteTempJson(
+                "[" +
+                @"{""pattern"":""AI"",""replacement"":""エーアイ"",""description"":"""",""enabled"":true}," +
+                @"{""pattern"":""CPU"",""replacement"":""シーピーユー"",""description"":"""",""enabled"":false}" +
+                "]");
             try
             {
                 var rules = TextRuleLoader.Load(path);
@@ -124,15 +119,13 @@ namespace TxtToVoice.Tests.Services
         [Fact]
         public void Load_無効な正規表現_そのルールをスキップして続行する()
         {
-            string path = WriteTempJson("""
-                [
-                  {"pattern":"[invalid","replacement":"X","description":"","enabled":true},
-                  {"pattern":"AI","replacement":"エーアイ","description":"","enabled":true}
-                ]
-                """);
+            string path = WriteTempJson(
+                "[" +
+                @"{""pattern"":""[invalid"",""replacement"":""X"",""description"":"""",""enabled"":true}," +
+                @"{""pattern"":""AI"",""replacement"":""エーアイ"",""description"":"""",""enabled"":true}" +
+                "]");
             try
             {
-                // 無効パターンはスキップ、有効ルールのみ返る
                 var rules = TextRuleLoader.Load(path);
                 Assert.Single(rules);
                 Assert.Equal("エーアイ", TextPreprocessor.Apply("AI", rules));
@@ -143,9 +136,8 @@ namespace TxtToVoice.Tests.Services
         [Fact]
         public void Load_空パターン_そのルールをスキップする()
         {
-            string path = WriteTempJson("""
-                [{"pattern":"","replacement":"X","description":"","enabled":true}]
-                """);
+            string path = WriteTempJson(
+                @"[{""pattern"":"""",""replacement"":""X"",""description"":"""",""enabled"":true}]");
             try
             {
                 var result = TextRuleLoader.Load(path);
@@ -161,7 +153,6 @@ namespace TxtToVoice.Tests.Services
         [Fact]
         public void Apply_rulesNull_既存フェーズのみ動作する()
         {
-            // rules=null でも既存フェーズ（月表記など）が動作することを確認
             Assert.Equal("いちがつ", TextPreprocessor.Apply("1月", null));
         }
 
