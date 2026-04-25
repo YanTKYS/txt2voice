@@ -169,19 +169,29 @@ namespace TxtToVoice
 
             try
             {
-                var imported = CsvService.Import(dlg.FileName);
+                var report   = CsvService.ImportWithReport(dlg.FileName);
+                var imported = report.ValidEntries;
+
                 if (imported.Count == 0)
                 {
-                    MessageBox.Show(
-                        "インポートできるエントリがありませんでした。\nCSVの形式（表記,読み,備考,優先順位）を確認してください。",
-                        "インポート", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    string detail = report.HasIssues
+                        ? $"すべての行がスキップされました。\n\n{report.FormatIssues()}\n\nCSV の形式（表記,読み,備考,優先順位）を確認してください。"
+                        : "インポートできるエントリがありませんでした。\nCSV の形式（表記,読み,備考,優先順位）を確認してください。";
+                    MessageBox.Show(detail, "インポート", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
+                string confirmMsg = report.HasIssues
+                    ? $"検証で以下の問題が検出されました:\n\n{report.FormatIssues()}\n\n" +
+                      $"有効エントリ {imported.Count} 件をインポートします。\n\n" +
+                      "「はい」: 現在の辞書に追加します\n" +
+                      "「いいえ」: 現在の辞書を置き換えます"
+                    : $"{imported.Count} 件のエントリをインポートします。\n\n" +
+                      "「はい」: 現在の辞書に追加します\n" +
+                      "「いいえ」: 現在の辞書を置き換えます";
+
                 var answer = MessageBox.Show(
-                    $"{imported.Count} 件のエントリをインポートします。\n\n" +
-                    "「はい」: 現在の辞書に追加します\n" +
-                    "「いいえ」: 現在の辞書を置き換えます",
+                    confirmMsg,
                     "インポート確認",
                     MessageBoxButton.YesNoCancel,
                     MessageBoxImage.Question);

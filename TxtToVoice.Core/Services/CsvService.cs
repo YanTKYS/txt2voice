@@ -63,6 +63,61 @@ namespace TxtToVoice.Services
             return entries;
         }
 
+        /// <summary>
+        /// CSV ファイルを読み込み、バリデーション結果（スキップ件数・優先順位補正件数）を
+        /// <see cref="CsvImportReport"/> に格納して返す。
+        /// 空表記・空読みはスキップ、優先順位は 1〜100 に補正する。
+        /// </summary>
+        public static CsvImportReport ImportWithReport(string filePath)
+        {
+            var valid = new List<DictionaryEntry>();
+            int skippedEmptyDisplay = 0;
+            int skippedEmptyReading = 0;
+            int priorityClamped     = 0;
+
+            Encoding enc = DetectEncoding(filePath);
+            bool isFirstRecord = true;
+            using var reader = new StreamReader(filePath, enc);
+            foreach (var cols in ParseCsvRecords(reader))
+            {
+                if (isFirstRecord)
+                {
+                    isFirstRecord = false;
+                    if (cols.Count > 0 && cols[0].TrimStart().StartsWith("表記", StringComparison.Ordinal))
+                        continue;
+                }
+
+                if (cols.Count < 2) continue;
+
+                string display = cols[0].Trim();
+                string reading = cols[1].Trim();
+
+                if (string.IsNullOrEmpty(display)) { skippedEmptyDisplay++; continue; }
+                if (string.IsNullOrEmpty(reading)) { skippedEmptyReading++; continue; }
+
+                int priority = cols.Count > 3 && int.TryParse(cols[3].Trim(), out int p) ? p : 50;
+                if (priority < 1 || priority > 100)
+                {
+                    priority = Math.Clamp(priority, 1, 100);
+                    priorityClamped++;
+                }
+
+                valid.Add(new DictionaryEntry
+                {
+                    Display  = display,
+                    Reading  = reading,
+                    Remarks  = cols.Count > 2 ? cols[2].Trim() : string.Empty,
+                    Priority = priority
+                });
+            }
+
+            Logger.Info($"CSV インポート検証: 有効 {valid.Count} 件" +
+                        $", 空表記スキップ {skippedEmptyDisplay}" +
+                        $", 空読みスキップ {skippedEmptyReading}" +
+                        $", 優先順位補正 {priorityClamped} ← {filePath}");
+            return new CsvImportReport(valid, skippedEmptyDisplay, skippedEmptyReading, priorityClamped);
+        }
+
         // ----------------------------------------------------------------
         // エクスポート
         // ----------------------------------------------------------------

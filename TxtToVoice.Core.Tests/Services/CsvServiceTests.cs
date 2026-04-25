@@ -203,6 +203,75 @@ namespace TxtToVoice.Tests.Services
         }
 
         // ================================================================
+        // ImportWithReport — バリデーション
+        // ================================================================
+
+        [Fact]
+        public void ImportWithReport_正常データは全件有効で問題なし()
+        {
+            string path = WriteTempCsv("市役所,しやくしょ\n令和,れいわ\n");
+            var report = CsvService.ImportWithReport(path);
+            Assert.Equal(2, report.ValidEntries.Count);
+            Assert.Equal(0, report.SkippedEmptyDisplay);
+            Assert.Equal(0, report.SkippedEmptyReading);
+            Assert.Equal(0, report.PriorityClampedCount);
+            Assert.False(report.HasIssues);
+        }
+
+        [Fact]
+        public void ImportWithReport_空表記の行はスキップされカウントされる()
+        {
+            string path = WriteTempCsv(",読みだけある\n市役所,しやくしょ\n");
+            var report = CsvService.ImportWithReport(path);
+            Assert.Single(report.ValidEntries);
+            Assert.Equal(1, report.SkippedEmptyDisplay);
+            Assert.True(report.HasIssues);
+        }
+
+        [Fact]
+        public void ImportWithReport_空読みの行はスキップされカウントされる()
+        {
+            string path = WriteTempCsv("表記だけある,\n市役所,しやくしょ\n");
+            var report = CsvService.ImportWithReport(path);
+            Assert.Single(report.ValidEntries);
+            Assert.Equal(1, report.SkippedEmptyReading);
+            Assert.True(report.HasIssues);
+        }
+
+        [Fact]
+        public void ImportWithReport_優先順位が範囲外の場合は補正されカウントされる()
+        {
+            string path = WriteTempCsv("表記A,よみA,,0\n表記B,よみB,,150\n表記C,よみC,,50\n");
+            var report = CsvService.ImportWithReport(path);
+            Assert.Equal(3, report.ValidEntries.Count);
+            Assert.Equal(2, report.PriorityClampedCount);
+            Assert.Equal(1,   report.ValidEntries[0].Priority);   // 0 → 1 に補正
+            Assert.Equal(100, report.ValidEntries[1].Priority);   // 150 → 100 に補正
+            Assert.Equal(50,  report.ValidEntries[2].Priority);   // そのまま
+        }
+
+        [Fact]
+        public void ImportWithReport_複数種の問題が混在しても各カウントが正しい()
+        {
+            string path = WriteTempCsv(",読みなし\n表記なし,\n正常,よみ,,0\n");
+            var report = CsvService.ImportWithReport(path);
+            Assert.Single(report.ValidEntries);
+            Assert.Equal(1, report.SkippedEmptyDisplay);
+            Assert.Equal(1, report.SkippedEmptyReading);
+            Assert.Equal(1, report.PriorityClampedCount);
+            Assert.True(report.HasIssues);
+        }
+
+        [Fact]
+        public void ImportWithReport_FormatIssues_問題がある場合は非空文字列を返す()
+        {
+            string path = WriteTempCsv(",読みなし\n");
+            var report = CsvService.ImportWithReport(path);
+            Assert.True(report.HasIssues);
+            Assert.False(string.IsNullOrWhiteSpace(report.FormatIssues()));
+        }
+
+        // ================================================================
         // エクスポート
         // ================================================================
 

@@ -272,6 +272,15 @@ if (Test-Path $meiVoice) {
     Write-OK "mei_normal.htsvoice は既に存在します（スキップ）"
 } else {
     New-Item -ItemType Directory -Force -Path $voiceDir | Out-Null
+
+    # ── 同梱ファイル優先（SourceForge ダウンロード不要）──────────────────────
+    # 配布 ZIP に bundled\mei_normal.htsvoice が含まれていればそれを使用する
+    $bundledVoice = Join-Path $scriptDir "bundled\mei_normal.htsvoice"
+    if (Test-Path $bundledVoice) {
+        Copy-Item $bundledVoice $meiVoice -Force
+        Write-OK "同梱ファイルから配置: mei_normal.htsvoice"
+    } else {
+
     $mmdZip  = Join-Path $tmpDir "MMDAgent_Example-1.8.zip"
     $mmdWork = Join-Path $tmpDir "MMDAgent_Example-1.8"
 
@@ -324,6 +333,8 @@ if (Test-Path $meiVoice) {
         Copy-Item $v.FullName (Join-Path $voiceDir $v.Name) -Force
         Write-OK "音声モデルを配置: $($v.Name)"
     }
+
+    } # end: 同梱ファイルがない場合の else ブロック
 }
 
 # ============================================================================

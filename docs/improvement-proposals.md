@@ -44,7 +44,7 @@
 
 **課題**: `setup_openjtalk.ps1` は SourceForge Cloudflare 失敗を想定済みだが、閉域配布で「手順の分岐」が障害点になる。  
 **提案**:
-- `mei_normal.htsvoice` を配布アセットに同梱し、スクリプトは同梱ファイルを優先（未着手）
+- `mei_normal.htsvoice` を配布アセットに同梱し、スクリプトは同梱ファイルを優先 ✅ v0.4.7
 - 取得元 URL を複数候補化し、失敗理由を最終サマリに明示（未着手）
 - `--verify-only` モードで事前確認できる機能を実装 ✅ v0.4.5
 
@@ -53,6 +53,9 @@
 - `OpenJTalkDiagnostics` レコード（`DllPresent` / `DictionaryPresent` / `VoicePresent` + `FormatChecklist()`）を `OpenJTalkEngine` に追加
 - `SpeechService.GetOpenJTalkDiagnostics()` 経由で UI 層から診断結果を取得可能に
 - `MainWindow` の初期化エラーダイアログで OpenJTalk 選択時はチェックリスト形式を表示（`BuildEngineErrorDetail()`）
+
+**v0.4.7 実装内容（同梱ファイル優先）**:
+- `setup_openjtalk.ps1` に同梱ファイル優先チェックを追加: スクリプトと同じフォルダの `bundled\mei_normal.htsvoice` が存在する場合はダウンロードをスキップしてそのままコピー配置
 
 ### 53. SystemSpeechEngine 長文 MP3/MP4 のメモリ最適化（A-3）✅ v0.4.4
 
@@ -78,9 +81,15 @@
 
 設定保存・復元と再生制御状態を ViewModel/サービスへ段階分離。回帰テストを追加しながら移行。
 
-### 57. 辞書インポートバリデーション強化（B-3）
+### 57. 辞書インポートバリデーション強化（B-3）✅ v0.4.7
 
 CSV インポート時に「重複語・極端な優先順位・空読み」を検知しレポート表示。「成功/警告/失敗」分類で提示。
+
+**v0.4.7 実装内容**:
+- `CsvImportReport` sealed class を新規作成（`ValidEntries` / `SkippedEmptyDisplay` / `SkippedEmptyReading` / `PriorityClampedCount` / `HasIssues` / `FormatIssues()`）
+- `CsvService.ImportWithReport()` を追加: 空表記・空読みのスキップ件数と優先順位補正（1〜100 クランプ）件数を集計し `CsvImportReport` として返す
+- `MainWindow.DictionaryOperations.MenuImportCsv_Click` を改修: `ImportWithReport()` を使用し、問題がある場合は確認ダイアログに検証サマリを表示
+- xUnit テスト 6 件を追加（正常系 / 空表記スキップ / 空読みスキップ / 優先順位補正 / 混在 / `FormatIssues` 非空文字列確認）
 
 ### 58. 設定反映タイミングの改善（C-1）
 
