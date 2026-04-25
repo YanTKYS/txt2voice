@@ -86,9 +86,9 @@ namespace TxtToVoice.Services
         private static readonly Regex MinutePattern =
             new(@"(\d{1,2})分", RegexOptions.Compiled);
 
-        // フェーズ5: コロン時刻 H:MM / HH:MM — 時は 0〜23 のみ、HH:MM:SS 形式を除くため (?![:\d]) で除外
+        // フェーズ5: コロン時刻 H:MM / HH:MM — 時は 0〜23 のみ、前後の数字との混同を防ぐため (?<!\d) / (?![:\d]) で境界を確認
         private static readonly Regex ColonTimePattern =
-            new(@"([01]?\d|2[0-3]):([0-5]\d)(?![:\d])", RegexOptions.Compiled);
+            new(@"(?<!\d)([01]?\d|2[0-3]):([0-5]\d)(?![:\d])", RegexOptions.Compiled);
 
         public static string Apply(string text)
         {
