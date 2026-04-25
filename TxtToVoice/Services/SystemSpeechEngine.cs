@@ -39,7 +39,7 @@ namespace TxtToVoice.Services
             {
                 IsAvailable = false;
                 InitializationError = ex.InnerException?.Message ?? ex.Message;
-                Logger.Error($"SystemSpeechEngine 初期化失敗: [{ex.GetType().Name}] {InitializationError}");
+                Logger.Error($"[{TtvErrorCode.SapiInitFailed}] SystemSpeechEngine 初期化失敗: [{ex.GetType().Name}] {InitializationError}");
             }
         }
 

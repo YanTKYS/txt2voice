@@ -52,7 +52,7 @@ namespace TxtToVoice.Services
             {
                 IsAvailable = false;
                 InitializationError = ex.InnerException?.Message ?? ex.Message;
-                Logger.Error($"WinRtSpeechEngine 初期化失敗: [{ex.GetType().Name}] {InitializationError}");
+                Logger.Error($"[{TtvErrorCode.WrtInitFailed}] WinRtSpeechEngine 初期化失敗: [{ex.GetType().Name}] {InitializationError}");
             }
         }
 

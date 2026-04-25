@@ -89,13 +89,13 @@ namespace TxtToVoice.Services
 
             if (!dllPresent)
             {
-                Fail($"jtalk.dll が見つかりません: {Path.Combine(baseDir, "jtalk.dll")}\n" +
+                Fail($"[{TtvErrorCode.OjtDllMissing}] jtalk.dll が見つかりません: {Path.Combine(baseDir, "jtalk.dll")}\n" +
                      "  setup_openjtalk.ps1 を実行するか、THIRD_PARTY_LICENSES.txt を参照してセットアップしてください。");
                 return;
             }
             if (!dicPresent)
             {
-                Fail($"MeCab 辞書が見つかりません: {_dicPath}\n" +
+                Fail($"[{TtvErrorCode.OjtDicMissing}] MeCab 辞書が見つかりません: {_dicPath}\n" +
                      "  setup_openjtalk.ps1 を実行してください。");
                 return;
             }
@@ -103,7 +103,7 @@ namespace TxtToVoice.Services
             _currentVoicePath = FindDefaultVoice();
             if (string.IsNullOrEmpty(_currentVoicePath))
             {
-                Fail($"音声モデル (.htsvoice) が見つかりません: {_voiceDir}\n" +
+                Fail($"[{TtvErrorCode.OjtVoiceMissing}] 音声モデル (.htsvoice) が見つかりません: {_voiceDir}\n" +
                      "  setup_openjtalk.ps1 を実行してください。");
                 return;
             }
@@ -114,7 +114,7 @@ namespace TxtToVoice.Services
                 _handle = NativeJTalk.Initialize(_currentVoicePath, _dicPath);
                 if (_handle == IntPtr.Zero)
                 {
-                    Fail("OpenJTalk の初期化に失敗しました（ハンドルが null）。辞書・音声モデルのパスを確認してください。");
+                    Fail($"[{TtvErrorCode.OjtInitFailed}] OpenJTalk の初期化に失敗しました（ハンドルが null）。辞書・音声モデルのパスを確認してください。");
                     return;
                 }
                 IsAvailable = true;
@@ -122,11 +122,11 @@ namespace TxtToVoice.Services
             }
             catch (DllNotFoundException ex)
             {
-                Fail($"jtalk.dll のロードに失敗しました: {ex.Message}\n  x64 ビルドかどうか、依存 DLL が揃っているか確認してください。");
+                Fail($"[{TtvErrorCode.OjtDllMissing}] jtalk.dll のロードに失敗しました: {ex.Message}\n  x64 ビルドかどうか、依存 DLL が揃っているか確認してください。");
             }
             catch (Exception ex)
             {
-                Fail(ex.InnerException?.Message ?? ex.Message);
+                Fail($"[{TtvErrorCode.OjtInitFailed}] " + (ex.InnerException?.Message ?? ex.Message));
             }
         }
 
@@ -259,7 +259,7 @@ namespace TxtToVoice.Services
 
                 if (ct.IsCancellationRequested || !ok)
                 {
-                    if (!ok) SpeakError?.Invoke(this, "OpenJTalk WAV 合成に失敗しました。");
+                    if (!ok) SpeakError?.Invoke(this, $"[{TtvErrorCode.OjtSynthFailed}] OpenJTalk WAV 合成に失敗しました。");
                     return;
                 }
 
@@ -343,7 +343,7 @@ namespace TxtToVoice.Services
                 {
                     bool ok = NativeJTalk.SpeakToFile(_handle, text, outputPath);
                     ct.ThrowIfCancellationRequested();
-                    if (!ok) throw new InvalidOperationException("OpenJTalk WAV 合成に失敗しました。");
+                    if (!ok) throw new InvalidOperationException($"[{TtvErrorCode.OjtSynthFailed}] OpenJTalk WAV 合成に失敗しました。");
                 }
                 Logger.Info($"WAV 保存完了: {outputPath}");
                 return;
@@ -358,7 +358,7 @@ namespace TxtToVoice.Services
                 {
                     bool ok = NativeJTalk.SpeakToFile(_handle, text, tmpWav);
                     ct.ThrowIfCancellationRequested();
-                    if (!ok) throw new InvalidOperationException("OpenJTalk WAV 合成に失敗しました。");
+                    if (!ok) throw new InvalidOperationException($"[{TtvErrorCode.OjtSynthFailed}] OpenJTalk WAV 合成に失敗しました。");
                 }
                 string encLabel = format == AudioFormat.Mp3 ? "MP3" : "MP4";
                 progress?.Report($"{encLabel} にエンコードしています...");

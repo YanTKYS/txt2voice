@@ -420,13 +420,13 @@ namespace TxtToVoice
             }
             catch (Exception ex)
             {
-                Logger.Error($"音声保存エラー: {ex.Message}");
+                Logger.Error($"[{TtvErrorCode.SaveFailed}] 音声保存エラー: {ex.Message}");
                 MessageBox.Show(
-                    $"音声ファイルの保存に失敗しました。\n\n{ex.Message}",
+                    $"[{TtvErrorCode.SaveFailed}] 音声ファイルの保存に失敗しました。\n\n{ex.Message}",
                     "保存エラー",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
-                SetStatus("音声保存に失敗しました。");
+                SetStatus($"[{TtvErrorCode.SaveFailed}] 音声保存に失敗しました。");
             }
             finally
             {

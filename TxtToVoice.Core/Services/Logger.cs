@@ -11,6 +11,12 @@ namespace TxtToVoice.Services
     ///
     /// 監査モード（SuppressInfo = true）では INFO レベルの書き込みを抑制する。
     /// WARN / ERROR は常に記録する。
+    ///
+    /// 【ログ匿名化ポリシー #63】
+    /// ログに記録するのはメタ情報（エンジン種別・文字数・保存パス・例外メッセージ）のみとする。
+    /// ユーザーが入力した原稿テキスト本文は一切ログに含めないこと。
+    /// 長い文字列の誤混入を防ぐため、メッセージは MaxMessageLength 文字で切り捨てる。
+    /// 監査モードでは AnonymizePaths() でパスをファイル名のみに置換する。
     /// </summary>
     public static class Logger
     {
@@ -28,6 +34,12 @@ namespace TxtToVoice.Services
         /// </summary>
         public static bool SuppressInfo { get; set; } = false;
 
+        /// <summary>
+        /// 1 行あたりのメッセージ最大長（文字数）。超過分は切り捨て + "…" を付加する。
+        /// 原稿テキストが誤ってログに混入しても一定量以上は記録されない。
+        /// </summary>
+        private const int MaxMessageLength = 500;
+
         public static void Info(string message)
         {
             if (SuppressInfo) return;
@@ -42,6 +54,10 @@ namespace TxtToVoice.Services
             // 監査モードでは WARN/ERROR のメッセージ中にあるファイルフルパスをファイル名のみに置換する
             if (SuppressInfo)
                 message = AnonymizePaths(message);
+
+            // 原稿テキスト誤混入対策: 超長メッセージは切り捨てる
+            if (message.Length > MaxMessageLength)
+                message = message[..MaxMessageLength] + "…[省略]";
 
             lock (_lock)
             {
