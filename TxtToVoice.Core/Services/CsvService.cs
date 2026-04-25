@@ -10,7 +10,7 @@ namespace TxtToVoice.Services
     /// 辞書の CSV インポート / エクスポートを担当するサービス。
     ///
     /// CSV 列順: 表記, 読み, 備考, 優先順位
-    /// 1行目はヘッダー（「表記」で始まる場合はスキップ）。
+    /// 1行目はヘッダー（1列目が正確に「表記」の場合はスキップ）。
     /// RFC 4180 に準じたクォート処理をサポートする（改行を含むフィールドも対応）。
     /// </summary>
     public static class CsvService
@@ -36,11 +36,11 @@ namespace TxtToVoice.Services
             using var reader = new StreamReader(filePath, enc);
             foreach (var cols in ParseCsvRecords(reader))
             {
-                // ヘッダー行スキップ（1行目が「表記」で始まる場合）
+                // ヘッダー行スキップ（1列目が正確に「表記」の場合）
                 if (isFirstRecord)
                 {
                     isFirstRecord = false;
-                    if (cols.Count > 0 && cols[0].TrimStart().StartsWith("表記", StringComparison.Ordinal))
+                    if (cols.Count > 0 && cols[0].Trim() == "表記")
                         continue;
                 }
 
@@ -83,7 +83,7 @@ namespace TxtToVoice.Services
                 if (isFirstRecord)
                 {
                     isFirstRecord = false;
-                    if (cols.Count > 0 && cols[0].TrimStart().StartsWith("表記", StringComparison.Ordinal))
+                    if (cols.Count > 0 && cols[0].Trim() == "表記")
                         continue;
                 }
 
