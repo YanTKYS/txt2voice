@@ -5,6 +5,41 @@
 
 ---
 
+## v0.4.9 実装済み提案（#56-a, #65）
+
+### 56-a. MainWindow コードビハインド縮小（段階 1）✅ v0.4.9
+
+**v0.4.9 実装内容**:
+- `MainWindow.SettingsOperations.cs` を新規作成（partial class）
+  - `LoadSettings()` / `SaveCurrentSettings()` / `BuildAppSettings()` を `PlaybackOperations.cs` から移動
+  - `MenuSettings_Click()` を `MainWindow.xaml.cs` から移動
+- `UpdateRecentFilesMenu()` / `OpenRecentFile()` を `MainWindow.xaml.cs` から `FileOperations.cs` へ移動
+- `MainWindow.xaml.cs` クラスコメント更新（ファイル一覧に SettingsOperations を追加）
+- 副作用ゼロの純リファクタリング（動作変更なし）
+
+partial class 構成（v0.4.9 以降）:
+```
+MainWindow.xaml.cs               — フィールド・コンストラクタ・初期化・共通ユーティリティ・ヘルプ
+MainWindow.FileOperations.cs     — ファイル開く・最近使ったファイル・クリア・テキスト入力
+MainWindow.SettingsOperations.cs — 設定読み書き・SettingsDialog 呼び出し（新規）
+MainWindow.PlaybackOperations.cs — 読み上げ・音声保存・パラメータ操作
+MainWindow.DictionaryOperations.cs — 辞書CRUD・プレビュー・CSV入出力
+```
+
+### 65. TextPreprocessor フェーズ4（時刻パターン）✅ v0.4.9
+
+**課題**: OpenJTalk の MeCab が X時・X分を誤読するケースがある。行政文書では「10時30分から受付」等の時刻表現が頻出。  
+**提案**: TextPreprocessor に時刻パターンを追加し、読み仮名に事前変換する。  
+
+**v0.4.9 実装内容**:
+- `HourPattern` / `MinutePattern` 正規表現を追加（`\d{1,2}時(?!間)` / `\d{1,2}分`）
+- `HourReadings[24]` — 0〜23時の読み仮名テーブル（4時=よじ・7時=しちじ・9時=くじ等の慣用読み対応）
+- `MinuteReadings[60]` — 0〜59分の読み仮名テーブル（促音便 ぷん/ふん を正確に反映）
+- 「X時間」（持続時間）との衝突を負の先読み `(?!間)` で除外
+- xUnit テスト 12 件追加（時・分・除外ケース・複合パターン）
+
+---
+
 ## v0.4.8 実装済み提案（#64, #52 残）
 
 ### 64. 辞書一覧リアルタイム絞り込み ✅ v0.4.8

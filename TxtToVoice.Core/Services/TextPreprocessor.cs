@@ -10,6 +10,7 @@ namespace TxtToVoice.Services
     /// フェーズ1（v0.4.2）: 月表記 X月（1〜12）の読み仮名変換、% → パーセント
     /// フェーズ2（v0.4.3）: 全角数字・全角パーセント正規化、〒 ℃ ㎡ 記号変換
     /// フェーズ3（v0.4.4）: 慣用表現（Xか月、第X回、電話番号ハイフン）
+    /// フェーズ4（v0.4.9）: 時刻表記（X時 0〜23、X分 0〜59）
     /// </summary>
     public static class TextPreprocessor
     {
@@ -25,6 +26,37 @@ namespace TxtToVoice.Services
             "じゅう", "じゅういち", "じゅうに", "じゅうさん", "じゅうし", "じゅうご",
             "じゅうろく", "じゅうなな", "じゅうはち", "じゅうきゅう",
             "にじゅう", "にじゅういち", "にじゅうに", "にじゅうさん", "にじゅうし"
+        };
+
+        // フェーズ4: 時刻 — 読み仮名（0〜23時。4・7・9 等の慣用読みに対応）
+        private static readonly string[] HourReadings =
+        {
+            "れいじ",       "いちじ",       "にじ",           "さんじ",
+            "よじ",         "ごじ",         "ろくじ",         "しちじ",
+            "はちじ",       "くじ",         "じゅうじ",       "じゅういちじ",
+            "じゅうにじ",   "じゅうさんじ", "じゅうよじ",     "じゅうごじ",
+            "じゅうろくじ", "じゅうしちじ", "じゅうはちじ",   "じゅうくじ",
+            "にじゅうじ",   "にじゅういちじ", "にじゅうにじ", "にじゅうさんじ"
+        };
+
+        // フェーズ4: 分 — 読み仮名（0〜59分。促音便 ぷん/ふん を正確に反映）
+        private static readonly string[] MinuteReadings =
+        {
+            "ぜろふん",           "いっぷん",           "にふん",             "さんぷん",
+            "よんふん",           "ごふん",             "ろっぷん",           "ななふん",
+            "はっぷん",           "きゅうふん",         "じゅっぷん",         "じゅういっぷん",
+            "じゅうにふん",       "じゅうさんぷん",     "じゅうよんふん",     "じゅうごふん",
+            "じゅうろっぷん",     "じゅうななふん",     "じゅうはっぷん",     "じゅうきゅうふん",
+            "にじゅっぷん",       "にじゅういっぷん",   "にじゅうにふん",     "にじゅうさんぷん",
+            "にじゅうよんふん",   "にじゅうごふん",     "にじゅうろっぷん",   "にじゅうななふん",
+            "にじゅうはっぷん",   "にじゅうきゅうふん", "さんじゅっぷん",     "さんじゅういっぷん",
+            "さんじゅうにふん",   "さんじゅうさんぷん", "さんじゅうよんふん", "さんじゅうごふん",
+            "さんじゅうろっぷん", "さんじゅうななふん", "さんじゅうはっぷん", "さんじゅうきゅうふん",
+            "よんじゅっぷん",     "よんじゅういっぷん", "よんじゅうにふん",   "よんじゅうさんぷん",
+            "よんじゅうよんふん", "よんじゅうごふん",   "よんじゅうろっぷん", "よんじゅうななふん",
+            "よんじゅうはっぷん", "よんじゅうきゅうふん", "ごじゅっぷん",     "ごじゅういっぷん",
+            "ごじゅうにふん",     "ごじゅうさんぷん",   "ごじゅうよんふん",   "ごじゅうごふん",
+            "ごじゅうろっぷん",   "ごじゅうななふん",   "ごじゅうはっぷん",   "ごじゅうきゅうふん"
         };
 
         // \d{1,2}月 — 1〜12 の月表記のみ変換（半角数字前提; 全角正規化後に適用）
@@ -44,6 +76,14 @@ namespace TxtToVoice.Services
         // 除外: 年月日の区切り（2024-01-01 等）は対象外とする
         private static readonly Regex PhonePattern =
             new(@"(?<!\d{4}-\d{2}-)(\d{2,5})-(\d{2,4})-(\d{4})", RegexOptions.Compiled);
+
+        // フェーズ4: X時（0〜23）— 「時間」（持続時間）との衝突を負の先読みで除外
+        private static readonly Regex HourPattern =
+            new(@"(\d{1,2})時(?!間)", RegexOptions.Compiled);
+
+        // フェーズ4: X分（0〜59）
+        private static readonly Regex MinutePattern =
+            new(@"(\d{1,2})分", RegexOptions.Compiled);
 
         public static string Apply(string text)
         {
@@ -85,6 +125,21 @@ namespace TxtToVoice.Services
             // フェーズ3: 電話番号ハイフン → 読み点「の」区切り
             text = PhonePattern.Replace(text, m =>
                 m.Groups[1].Value + "の" + m.Groups[2].Value + "の" + m.Groups[3].Value);
+
+            // フェーズ4: 時刻
+            text = HourPattern.Replace(text, m =>
+            {
+                if (int.TryParse(m.Groups[1].Value, out int n) && n >= 0 && n < HourReadings.Length)
+                    return HourReadings[n];
+                return m.Value;
+            });
+
+            text = MinutePattern.Replace(text, m =>
+            {
+                if (int.TryParse(m.Groups[1].Value, out int n) && n >= 0 && n < MinuteReadings.Length)
+                    return MinuteReadings[n];
+                return m.Value;
+            });
 
             return text;
         }

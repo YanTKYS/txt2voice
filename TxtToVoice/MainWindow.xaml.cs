@@ -7,7 +7,6 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using TxtToVoice.Dialogs;
 using TxtToVoice.Models;
 using TxtToVoice.Services;
 
@@ -17,8 +16,9 @@ namespace TxtToVoice
     /// 声の広報 テキスト読み上げツール — メインウィンドウ（コア）。
     ///
     /// ファイル構成（partial class）:
-    ///   MainWindow.xaml.cs            — フィールド・コンストラクタ・初期化・共通ユーティリティ
-    ///   MainWindow.FileOperations.cs  — ファイル開く・クリア・テキスト入力
+    ///   MainWindow.xaml.cs               — フィールド・コンストラクタ・初期化・共通ユーティリティ
+    ///   MainWindow.FileOperations.cs     — ファイル開く・最近使ったファイル・クリア・テキスト入力
+    ///   MainWindow.SettingsOperations.cs — 設定読み書き・SettingsDialog 呼び出し
     ///   MainWindow.PlaybackOperations.cs — 読み上げ・音声保存・パラメータ操作
     ///   MainWindow.DictionaryOperations.cs — 辞書CRUD・プレビュー・CSV入出力
     /// </summary>
@@ -159,40 +159,6 @@ namespace TxtToVoice
         }
 
         // ----------------------------------------------------------------
-        // ファイルメニュー — 設定
-        // ----------------------------------------------------------------
-
-        private void MenuSettings_Click(object sender, RoutedEventArgs e)
-        {
-            var dlg = new SettingsDialog(
-                _saveLastInputText, _saveRecentFiles,
-                _clearSensitiveDataOnExit, _deleteLogOnExit,
-                _speechEngineType)
-            {
-                Owner = this
-            };
-            if (dlg.ShowDialog() != true) return;
-
-            _saveLastInputText       = dlg.SaveLastInputText;
-            _saveRecentFiles          = dlg.SaveRecentFiles;
-            _clearSensitiveDataOnExit = dlg.ClearSensitiveDataOnExit;
-            _deleteLogOnExit          = dlg.DeleteLogOnExit;
-            _speechEngineType         = dlg.SpeechEngineType;
-
-            // 監査モードの変化を Logger にも即時反映する
-            Logger.SuppressInfo = _clearSensitiveDataOnExit;
-
-            // _saveRecentFiles が false になった場合はメモリ上の履歴も消去
-            if (!_saveRecentFiles)
-            {
-                _recentFiles.Clear();
-            }
-
-            SaveCurrentSettings();
-            UpdateRecentFilesMenu();
-        }
-
-        // ----------------------------------------------------------------
         // ヘルプメニュー
         // ----------------------------------------------------------------
 
@@ -245,72 +211,6 @@ namespace TxtToVoice
                 "バージョン情報",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
-        }
-
-        // ----------------------------------------------------------------
-        // 最近使ったファイルメニュー
-        // ----------------------------------------------------------------
-
-        /// <summary>_recentFiles の内容を「最近使ったファイル」サブメニューに反映する。
-        /// _saveRecentFiles が false のときはメニューを非表示にする。</summary>
-        internal void UpdateRecentFilesMenu()
-        {
-            // 保存ポリシーが false のときはメニュー自体を隠す
-            bool visible = _saveRecentFiles;
-            MenuRecentFiles.Visibility      = visible ? Visibility.Visible : Visibility.Collapsed;
-            SepAfterRecentFiles.Visibility  = visible ? Visibility.Visible : Visibility.Collapsed;
-
-            if (!visible) return;
-
-            MenuRecentFiles.Items.Clear();
-
-            if (_recentFiles.Count == 0)
-            {
-                MenuRecentFiles.Items.Add(new MenuItem { Header = "（なし）", IsEnabled = false });
-                return;
-            }
-
-            for (int i = 0; i < _recentFiles.Count; i++)
-            {
-                string path = _recentFiles[i];
-                var item = new MenuItem
-                {
-                    Header  = $"_{i + 1}  {Path.GetFileName(path)}",
-                    ToolTip = path
-                };
-                item.Click += (_, _) => OpenRecentFile(path);
-                MenuRecentFiles.Items.Add(item);
-            }
-
-            MenuRecentFiles.Items.Add(new Separator());
-            var clearItem = new MenuItem { Header = "リストをクリア(_C)" };
-            clearItem.Click += (_, _) =>
-            {
-                _recentFiles.Clear();
-                SaveCurrentSettings();
-                UpdateRecentFilesMenu();
-            };
-            MenuRecentFiles.Items.Add(clearItem);
-        }
-
-        private void OpenRecentFile(string path)
-        {
-            try
-            {
-                LoadFileIntoInput(path);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    $"ファイルを開けませんでした。\n移動・削除された可能性があります。\n\n{path}\n\n{ex.Message}",
-                    "読み込みエラー",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-                Logger.Error($"最近使ったファイルの読み込みエラー: {path} / {ex.Message}");
-                _recentFiles.Remove(path);
-                SaveCurrentSettings();
-                UpdateRecentFilesMenu();
-            }
         }
 
         // ----------------------------------------------------------------

@@ -4,6 +4,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
+using TxtToVoice.Models;
 using TxtToVoice.Services;
 
 namespace TxtToVoice
@@ -144,6 +145,71 @@ namespace TxtToVoice
         {
             TxtCharCount.Text = $"{TxtInput.Text.Length:N0} 文字";
             UpdateEstimatedTime();
+        }
+
+        // ----------------------------------------------------------------
+        // 最近使ったファイルメニュー
+        // ----------------------------------------------------------------
+
+        /// <summary>_recentFiles の内容を「最近使ったファイル」サブメニューに反映する。
+        /// _saveRecentFiles が false のときはメニューを非表示にする。</summary>
+        internal void UpdateRecentFilesMenu()
+        {
+            bool visible = _saveRecentFiles;
+            MenuRecentFiles.Visibility     = visible ? Visibility.Visible : Visibility.Collapsed;
+            SepAfterRecentFiles.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+
+            if (!visible) return;
+
+            MenuRecentFiles.Items.Clear();
+
+            if (_recentFiles.Count == 0)
+            {
+                MenuRecentFiles.Items.Add(new MenuItem { Header = "（なし）", IsEnabled = false });
+                return;
+            }
+
+            for (int i = 0; i < _recentFiles.Count; i++)
+            {
+                string path = _recentFiles[i];
+                var item = new MenuItem
+                {
+                    Header  = $"_{i + 1}  {Path.GetFileName(path)}",
+                    ToolTip = path
+                };
+                item.Click += (_, _) => OpenRecentFile(path);
+                MenuRecentFiles.Items.Add(item);
+            }
+
+            MenuRecentFiles.Items.Add(new Separator());
+            var clearItem = new MenuItem { Header = "リストをクリア(_C)" };
+            clearItem.Click += (_, _) =>
+            {
+                _recentFiles.Clear();
+                SaveCurrentSettings();
+                UpdateRecentFilesMenu();
+            };
+            MenuRecentFiles.Items.Add(clearItem);
+        }
+
+        private void OpenRecentFile(string path)
+        {
+            try
+            {
+                LoadFileIntoInput(path);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"ファイルを開けませんでした。\n移動・削除された可能性があります。\n\n{path}\n\n{ex.Message}",
+                    "読み込みエラー",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                Logger.Error($"最近使ったファイルの読み込みエラー: {path} / {ex.Message}");
+                _recentFiles.Remove(path);
+                SaveCurrentSettings();
+                UpdateRecentFilesMenu();
+            }
         }
     }
 }

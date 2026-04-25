@@ -161,6 +161,58 @@ namespace TxtToVoice.Tests.Services
         }
 
         // ================================================================
+        // フェーズ4: 時刻パターン（X時 / X分）
+        // ================================================================
+
+        [Theory]
+        [InlineData("9時",   "くじ")]
+        [InlineData("10時",  "じゅうじ")]
+        [InlineData("4時",   "よじ")]
+        [InlineData("7時",   "しちじ")]
+        [InlineData("14時",  "じゅうよじ")]
+        [InlineData("17時",  "じゅうしちじ")]
+        [InlineData("0時",   "れいじ")]
+        [InlineData("23時",  "にじゅうさんじ")]
+        public void Apply_時刻_時を読み仮名に変換する(string input, string expected)
+        {
+            Assert.Equal(expected, TextPreprocessor.Apply(input));
+        }
+
+        [Theory]
+        [InlineData("10時間",  "10時間")]   // 持続時間は変換しない
+        [InlineData("24時",    "24時")]      // 範囲外はそのまま
+        public void Apply_時刻_時の除外ケース(string input, string expected)
+        {
+            Assert.Equal(expected, TextPreprocessor.Apply(input));
+        }
+
+        [Theory]
+        [InlineData("0分",   "ぜろふん")]
+        [InlineData("1分",   "いっぷん")]
+        [InlineData("3分",   "さんぷん")]
+        [InlineData("5分",   "ごふん")]
+        [InlineData("10分",  "じゅっぷん")]
+        [InlineData("30分",  "さんじゅっぷん")]
+        [InlineData("45分",  "よんじゅうごふん")]
+        [InlineData("59分",  "ごじゅうきゅうふん")]
+        public void Apply_時刻_分を読み仮名に変換する(string input, string expected)
+        {
+            Assert.Equal(expected, TextPreprocessor.Apply(input));
+        }
+
+        [Fact]
+        public void Apply_時刻_時分の複合パターンを変換する()
+        {
+            Assert.Equal("じゅうじさんじゅっぷんから受付", TextPreprocessor.Apply("10時30分から受付"));
+        }
+
+        [Fact]
+        public void Apply_時刻_60分以上はそのまま()
+        {
+            Assert.Equal("60分", TextPreprocessor.Apply("60分"));
+        }
+
+        // ================================================================
         // 無変換ケース（副作用なし確認）
         // ================================================================
 
