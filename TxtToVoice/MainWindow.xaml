@@ -327,6 +327,7 @@
                 <Grid Grid.Row="2">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
@@ -362,7 +363,27 @@
                         </DockPanel>
                     </Border>
 
-                    <DataGrid Grid.Row="1" x:Name="DgDictionary"
+                    <!-- 絞り込み入力欄 -->
+                    <Border Grid.Row="1" Background="#F5F7FA"
+                            BorderBrush="#C8CDD4" BorderThickness="0,0,0,1"
+                            Padding="6,4">
+                        <DockPanel>
+                            <TextBlock Text="絞り込み:" VerticalAlignment="Center"
+                                       FontSize="11" Foreground="#555" Margin="0,0,5,0"/>
+                            <Button x:Name="BtnDictFilterClear" DockPanel.Dock="Right"
+                                    Content="×" Padding="5,1" Margin="4,0,0,0"
+                                    FontSize="11" VerticalAlignment="Center"
+                                    Click="BtnDictFilterClear_Click"
+                                    ToolTip="フィルターをクリア"/>
+                            <TextBox x:Name="TxtDictFilter"
+                                     TextChanged="TxtDictFilter_TextChanged"
+                                     FontSize="12" Padding="4,2"
+                                     VerticalAlignment="Center"
+                                     ToolTip="表記・読み・備考で絞り込み（部分一致）"/>
+                        </DockPanel>
+                    </Border>
+
+                    <DataGrid Grid.Row="2" x:Name="DgDictionary"
                               AutoGenerateColumns="False"
                               IsReadOnly="True"
                               SelectionMode="Single"
@@ -404,7 +425,7 @@
                         </DataGrid.Columns>
                     </DataGrid>
 
-                    <Border Grid.Row="2" Background="#E4E8EE" Padding="8,4">
+                    <Border Grid.Row="3" Background="#E4E8EE" Padding="8,4">
                         <TextBlock x:Name="TxtDictCount"
                                    Text="辞書: 0 件"
                                    FontSize="11" Foreground="#555"/>

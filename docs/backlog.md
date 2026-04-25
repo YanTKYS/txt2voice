@@ -10,7 +10,6 @@
 | # | 概要 | 詳細 |
 |---|---|---|
 | 49b | SourceForge Cloudflare 恒久対応 | `setup_openjtalk.ps1` / CI ともに MMDAgent 音声モデルのダウンロードが Cloudflare JS チャレンジで失敗する場合がある。**方針候補**: A) GitHub Release Asset への音声ファイル再配布（ライセンス確認要: CC BY 3.0 は再配布可だがクレジット義務あり）、B) ZIP に `mei_normal.htsvoice` を事前同梱（配布サイズ増加 +25MB）。実装コストは A が低い。ライセンス確認後に方針決定。 |
-| 52 | OpenJTalk セットアップのオフライン完結強化（残: URL 複数候補化） | `--verify-only` と UI 診断チェックリストは v0.4.5 で完了。同梱ファイル優先は v0.4.7 で完了。未着手: 取得元 URL 複数候補化。詳細 #52。 |
 
 ---
 
@@ -28,7 +27,7 @@
 | # | 概要 | 詳細 |
 |---|---|---|
 | 55 | 音声品質評価の定例化 | リリース前チェックリストに組み込む。詳細 #55（improvement-proposals）。 |
-| 56 | MainWindow コードビハインド縮小 | 設定保存・再生制御状態を ViewModel/サービスへ段階分離。詳細 #56。 |
+| 56 | MainWindow コードビハインド縮小 | 設定保存・再生制御状態を ViewModel/サービスへ段階分離。v0.4.9 でリファクタリングとして着手予定。詳細 #56。 |
 | 60 | 辞書照合 Aho-Corasick 導入 | 辞書エントリが 1,000 件超を想定する前に設計着手。詳細 #60。 |
 | 61 | TextPreprocessor 外部ルール定義 | 変換ルールを `Data/text_rules.json` として外部化し、リリース不要でルール追加を可能に。詳細 #61。 |
 
@@ -60,3 +59,5 @@
 | 63 | ログ匿名化ハードニング（メッセージ長キャップ + ポリシー明文化） | v0.4.6 |
 | 57 | 辞書インポートバリデーション強化（空読み・優先順位補正レポート） | v0.4.7 |
 | 52-b | OpenJTalk 同梱ファイル優先配置（`bundled\mei_normal.htsvoice`） | v0.4.7 |
+| 52-c | setup_openjtalk.ps1 URL 複数候補化 + 最終サマリ表示 | v0.4.8 |
+| 64 | 辞書一覧リアルタイム絞り込み（TxtDictFilter + ICollectionView.Filter） | v0.4.8 |

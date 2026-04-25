@@ -57,7 +57,19 @@ $dllDest   = Join-Path $dataDir "jtalk.dll"
 $tmpDir    = Join-Path $env:USERPROFILE "openjtalk-setup"
 
 $jtalkRepo = "https://github.com/rosmarinus/jtalkdll.git"
+
+# MMDAgent 音声モデルのダウンロード候補 URL（順に試行、失敗したら次へ）
 $mmdUrl    = "https://downloads.sourceforge.net/project/mmdagent/MMDAgent_Example/MMDAgent_Example-1.8/MMDAgent_Example-1.8.zip"
+$mmdUrlCandidates = @(
+    "https://jaist.dl.sourceforge.net/project/mmdagent/MMDAgent_Example/MMDAgent_Example-1.8/MMDAgent_Example-1.8.zip",
+    "https://downloads.sourceforge.net/project/mmdagent/MMDAgent_Example/MMDAgent_Example-1.8/MMDAgent_Example-1.8.zip",
+    "https://umnmirror.dl.sourceforge.net/project/mmdagent/MMDAgent_Example/MMDAgent_Example-1.8/MMDAgent_Example-1.8.zip",
+    "https://excellmirror.dl.sourceforge.net/project/mmdagent/MMDAgent_Example/MMDAgent_Example-1.8/MMDAgent_Example-1.8.zip"
+)
+
+# セットアップ結果サマリ用
+$summaryItems = [System.Collections.Generic.List[string]]::new()
+$summaryWarnings = [System.Collections.Generic.List[string]]::new()
 
 # ---- -VerifyOnly モード -------------------------------------------------------
 
@@ -286,19 +298,33 @@ if (Test-Path $meiVoice) {
 
     if (-not (Test-ArchiveFile $mmdZip)) {
         if (Test-Path $mmdZip) { Remove-Item $mmdZip -Force }
-        Write-Info "ダウンロード試行中: MMDAgent_Example-1.8.zip ..."
         $dlOk = $false
-        try {
-            $headers = @{ 'User-Agent' = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
-            Invoke-WebRequest -Uri $mmdUrl -OutFile $mmdZip -UseBasicParsing -MaximumRedirection 10 -Headers $headers
-            $dlOk = Test-ArchiveFile $mmdZip
-        } catch { }
+        $lastError = ""
+        $headers = @{ 'User-Agent' = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
+
+        foreach ($candidate in $mmdUrlCandidates) {
+            Write-Info "ダウンロード試行: $candidate"
+            try {
+                Invoke-WebRequest -Uri $candidate -OutFile $mmdZip -UseBasicParsing -MaximumRedirection 10 -Headers $headers
+                if (Test-ArchiveFile $mmdZip) {
+                    $dlOk = $true
+                    break
+                } else {
+                    $lastError = "ダウンロードされたファイルが有効な ZIP ではありません"
+                    if (Test-Path $mmdZip) { Remove-Item $mmdZip -Force }
+                }
+            } catch {
+                $lastError = $_.Exception.Message
+                if (Test-Path $mmdZip) { Remove-Item $mmdZip -Force }
+                Write-Host "  [!!] 失敗: $lastError" -ForegroundColor Yellow
+            }
+        }
 
         if (-not $dlOk) {
-            if (Test-Path $mmdZip) { Remove-Item $mmdZip -Force }
             Write-Host ""
-            Write-Host "  [!!] SourceForge が Cloudflare JS チャレンジで保護されており自動ダウンロードできません。" -ForegroundColor Yellow
-            Write-Host "       以下の手順で手動ダウンロードして再実行してください:" -ForegroundColor Yellow
+            Write-Host "  [!!] すべての URL からのダウンロードに失敗しました。" -ForegroundColor Yellow
+            Write-Host "       最後のエラー: $lastError" -ForegroundColor Yellow
+            Write-Host "       SourceForge が Cloudflare JS チャレンジで保護されている可能性があります。" -ForegroundColor Yellow
             Write-Host ""
             Write-Host "  [手順 A] ZIP をダウンロードして配置する場合:" -ForegroundColor Cyan
             Write-Host "    1. ブラウザで以下を開いてダウンロード:" -ForegroundColor White
@@ -313,6 +339,7 @@ if (Test-Path $meiVoice) {
             Write-Host "       $meiVoice" -ForegroundColor White
             Write-Host "    3. このスクリプトを再実行" -ForegroundColor White
             Write-Host ""
+            $summaryWarnings.Add("音声モデルのダウンロードに失敗しました（手動配置が必要）")
             exit 1
         }
         Write-OK "ダウンロード完了: MMDAgent_Example-1.8.zip"
@@ -338,7 +365,7 @@ if (Test-Path $meiVoice) {
 }
 
 # ============================================================================
-# 完了
+# 完了サマリ
 # ============================================================================
 
 Write-Host ""
@@ -346,10 +373,32 @@ Write-Host ("=" * 60) -ForegroundColor Cyan
 Write-Host "セットアップ完了！" -ForegroundColor Cyan
 Write-Host ("=" * 60) -ForegroundColor Cyan
 Write-Host ""
-Write-Host "配置されたファイル:"
-Write-Host "  $dllDest"
-Write-Host "  $dicDir"
-Write-Host "  $voiceDir"
+
+# コンポーネント別結果
+$dllOk2   = Test-Path $dllDest
+$dicOk2   = Test-Path (Join-Path $dicDir "sys.dic")
+$voiceOk2 = (@(Get-ChildItem $voiceDir -Filter "*.htsvoice" -Recurse -ErrorAction SilentlyContinue)).Count -gt 0
+
+function Write-SummaryLine([bool]$ok, [string]$label, [string]$detail) {
+    $mark  = if ($ok) { "[OK]" } else { "[NG]" }
+    $color = if ($ok) { "Green" } else { "Red" }
+    Write-Host "  $mark  $label" -ForegroundColor $color
+    if ($detail) { Write-Host "        $detail" -ForegroundColor Gray }
+}
+
+Write-Host "コンポーネント状態:"
+Write-SummaryLine $dllOk2   "jtalk.dll"      $dllDest
+Write-SummaryLine $dicOk2   "MeCab 辞書"     $dicDir
+Write-SummaryLine $voiceOk2 "音声モデル"     $voiceDir
+
+if ($summaryWarnings.Count -gt 0) {
+    Write-Host ""
+    Write-Host "警告:" -ForegroundColor Yellow
+    foreach ($w in $summaryWarnings) {
+        Write-Host "  [!!] $w" -ForegroundColor Yellow
+    }
+}
+
 Write-Host ""
 Write-Host "TxtToVoice.exe を起動し、「設定」→「音声エンジン」で"
 Write-Host "「OpenJTalk」を選択して再起動してください。"

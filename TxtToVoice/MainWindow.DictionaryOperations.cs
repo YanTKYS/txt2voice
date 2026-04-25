@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using Microsoft.Win32;
 using TxtToVoice.Dialogs;
@@ -54,7 +56,47 @@ namespace TxtToVoice
             _entries.Clear();
             foreach (var e in _dictService.Entries)
                 _entries.Add(e);
-            TxtDictCount.Text = $"辞書: {_entries.Count} 件";
+
+            var view = CollectionViewSource.GetDefaultView(_entries);
+            view.Filter = FilterDictEntry;
+            UpdateDictCount(view);
+        }
+
+        private bool FilterDictEntry(object obj)
+        {
+            if (obj is not DictionaryEntry e) return false;
+            string filter = TxtDictFilter?.Text?.Trim() ?? string.Empty;
+            if (filter.Length == 0) return true;
+            return e.Display.Contains(filter, StringComparison.CurrentCultureIgnoreCase)
+                || e.Reading.Contains(filter, StringComparison.CurrentCultureIgnoreCase)
+                || e.Remarks.Contains(filter, StringComparison.CurrentCultureIgnoreCase);
+        }
+
+        private void UpdateDictCount(ICollectionView? view = null)
+        {
+            view ??= CollectionViewSource.GetDefaultView(_entries);
+            string filter = TxtDictFilter?.Text?.Trim() ?? string.Empty;
+            if (filter.Length == 0)
+            {
+                TxtDictCount.Text = $"辞書: {_entries.Count} 件";
+            }
+            else
+            {
+                int visible = view.Cast<object>().Count();
+                TxtDictCount.Text = $"辞書: {visible} / {_entries.Count} 件（フィルター中）";
+            }
+        }
+
+        private void TxtDictFilter_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            var view = CollectionViewSource.GetDefaultView(_entries);
+            view.Refresh();
+            UpdateDictCount(view);
+        }
+
+        private void BtnDictFilterClear_Click(object sender, RoutedEventArgs e)
+        {
+            TxtDictFilter.Clear();
         }
 
         // ----------------------------------------------------------------
