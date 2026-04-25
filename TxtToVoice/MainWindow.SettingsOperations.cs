@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using TxtToVoice.Dialogs;
+using TxtToVoice.Models;
 using TxtToVoice.Services;
 
 namespace TxtToVoice
