@@ -27,7 +27,6 @@
 | # | 概要 | 詳細 |
 |---|---|---|
 | 55 | 音声品質評価の定例化 | リリース前チェックリストに組み込む。詳細 #55（improvement-proposals）。 |
-| 56 | MainWindow コードビハインド縮小（段階 2〜） | 段階 1（SettingsOperations 分離）は v0.4.9 で完了。段階 2: 再生制御状態を PlaybackStateService 等へ分離（v0.5.x）。詳細 #56。 |
 | 60 | 辞書照合 Aho-Corasick 導入 | 辞書エントリが 1,000 件超を想定する前に設計着手。詳細 #60。 |
 | 61 | TextPreprocessor 外部ルール定義 | 変換ルールを `Data/text_rules.json` として外部化し、リリース不要でルール追加を可能に。詳細 #61。 |
 
@@ -63,3 +62,6 @@
 | 64 | 辞書一覧リアルタイム絞り込み（TxtDictFilter + ICollectionView.Filter） | v0.4.8 |
 | 56-a | MainWindow SettingsOperations 分離 + RecentFiles を FileOperations へ移動 | v0.4.9 |
 | 65 | TextPreprocessor フェーズ4（時刻パターン X時 / X分） | v0.4.9 |
+| 56-b | PlaybackState sealed record 導入（_isSpeaking / _isPaused 置き換え） | v0.5.0 |
+| 62 | 行政文書ゴールデンテスト（TextPreprocessorGoldenTests） | v0.5.0 |
+| 66 | TextPreprocessor フェーズ5（コロン時刻 HH:MM → X時X分展開） | v0.5.0 |

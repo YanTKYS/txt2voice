@@ -11,6 +11,7 @@ namespace TxtToVoice.Services
     /// フェーズ2（v0.4.3）: 全角数字・全角パーセント正規化、〒 ℃ ㎡ 記号変換
     /// フェーズ3（v0.4.4）: 慣用表現（Xか月、第X回、電話番号ハイフン）
     /// フェーズ4（v0.4.9）: 時刻表記（X時 0〜23、X分 0〜59）
+    /// フェーズ5（v0.5.0）: コロン時刻表記（H:MM / HH:MM）→ X時X分に展開しフェーズ4へ渡す
     /// </summary>
     public static class TextPreprocessor
     {
@@ -85,6 +86,10 @@ namespace TxtToVoice.Services
         private static readonly Regex MinutePattern =
             new(@"(\d{1,2})分", RegexOptions.Compiled);
 
+        // フェーズ5: コロン時刻 H:MM / HH:MM — 時は 0〜23 のみ、HH:MM:SS 形式を除くため (?![:\d]) で除外
+        private static readonly Regex ColonTimePattern =
+            new(@"([01]?\d|2[0-3]):([0-5]\d)(?![:\d])", RegexOptions.Compiled);
+
         public static string Apply(string text)
         {
             // フェーズ2: 全角数字・全角パーセントを半角に正規化
@@ -125,6 +130,10 @@ namespace TxtToVoice.Services
             // フェーズ3: 電話番号ハイフン → 読み点「の」区切り
             text = PhonePattern.Replace(text, m =>
                 m.Groups[1].Value + "の" + m.Groups[2].Value + "の" + m.Groups[3].Value);
+
+            // フェーズ5: コロン時刻（10:30 → 10時30分）— Phase 4 で読み仮名化される
+            text = ColonTimePattern.Replace(text, m =>
+                m.Groups[1].Value + "時" + m.Groups[2].Value + "分");
 
             // フェーズ4: 時刻
             text = HourPattern.Replace(text, m =>

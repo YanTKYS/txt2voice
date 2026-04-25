@@ -213,6 +213,29 @@ namespace TxtToVoice.Tests.Services
         }
 
         // ================================================================
+        // フェーズ5: コロン時刻（H:MM / HH:MM → X時X分 → フェーズ4 で読み仮名化）
+        // ================================================================
+
+        [Theory]
+        [InlineData("9:00",  "くじぜろふん")]
+        [InlineData("10:30", "じゅうじさんじゅっぷん")]
+        [InlineData("17:45", "じゅうしちじよんじゅうごふん")]
+        [InlineData("0:00",  "れいじぜろふん")]
+        [InlineData("23:59", "にじゅうさんじごじゅうきゅうふん")]
+        public void Apply_コロン時刻_読み仮名に変換する(string input, string expected)
+        {
+            Assert.Equal(expected, TextPreprocessor.Apply(input));
+        }
+
+        [Theory]
+        [InlineData("10:30:00", "10:30:00")] // HH:MM:SS はそのまま
+        [InlineData("24:00",    "24:00")]     // 時が範囲外（24以上）はそのまま
+        public void Apply_コロン時刻_除外ケース(string input, string expected)
+        {
+            Assert.Equal(expected, TextPreprocessor.Apply(input));
+        }
+
+        // ================================================================
         // 無変換ケース（副作用なし確認）
         // ================================================================
 

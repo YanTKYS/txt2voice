@@ -65,10 +65,10 @@ namespace TxtToVoice
 
         private void PauseSpeech()
         {
-            if (_isSpeaking && !_isPaused)
+            if (_playback.IsSpeaking && !_playback.IsPaused)
             {
                 _speechService.Pause();
-                _isPaused = true;
+                _playback = PlaybackState.Paused;
                 UpdatePlaybackButtons();
                 SetStatus("一時停止中。「再開」で読み上げを続けます。");
             }
@@ -76,10 +76,10 @@ namespace TxtToVoice
 
         private void ResumeSpeech()
         {
-            if (_isSpeaking && _isPaused)
+            if (_playback.IsSpeaking && _playback.IsPaused)
             {
                 _speechService.Resume();
-                _isPaused = false;
+                _playback = PlaybackState.Active;
                 UpdatePlaybackButtons();
                 SetStatus("読み上げ再開中...");
             }
@@ -97,16 +97,14 @@ namespace TxtToVoice
 
         private void OnSpeakStarted(object? sender, EventArgs e)
         {
-            _isSpeaking = true;
-            _isPaused   = false;
+            _playback = PlaybackState.Active;
             UpdatePlaybackButtons();
             SetStatus("読み上げ中...");
         }
 
         private void OnSpeakCompleted(object? sender, EventArgs e)
         {
-            _isSpeaking  = false;
-            _isPaused    = false;
+            _playback    = PlaybackState.Idle;
             _positionMap = null;
             UpdatePlaybackButtons();
             ClearReadingHighlight();
@@ -115,8 +113,7 @@ namespace TxtToVoice
 
         private void OnSpeakError(object? sender, string message)
         {
-            _isSpeaking  = false;
-            _isPaused    = false;
+            _playback    = PlaybackState.Idle;
             _positionMap = null;
             UpdatePlaybackButtons();
             ClearReadingHighlight();
@@ -181,11 +178,11 @@ namespace TxtToVoice
         {
             if (!_speechService.IsAvailable) return;
 
-            BtnPlay.IsEnabled    = !_isSpeaking;
-            BtnPause.IsEnabled   =  _isSpeaking && !_isPaused;
-            BtnResume.IsEnabled  =  _isSpeaking &&  _isPaused;
-            BtnStop.IsEnabled    =  _isSpeaking;
-            BtnSaveWav.IsEnabled = !_isSpeaking;
+            BtnPlay.IsEnabled    = !_playback.IsSpeaking;
+            BtnPause.IsEnabled   =  _playback.IsSpeaking && !_playback.IsPaused;
+            BtnResume.IsEnabled  =  _playback.IsSpeaking &&  _playback.IsPaused;
+            BtnStop.IsEnabled    =  _playback.IsSpeaking;
+            BtnSaveWav.IsEnabled = !_playback.IsSpeaking;
         }
 
         private void DisableSpeechControls()
@@ -273,7 +270,7 @@ namespace TxtToVoice
         {
             if (_speechService is null) return;
             // ハイライトを OFF にした場合、再生中なら既存のハイライトをすぐ消す
-            if (ChkHighlight.IsChecked == false && _isSpeaking)
+            if (ChkHighlight.IsChecked == false && _playback.IsSpeaking)
                 ClearReadingHighlight();
             SaveCurrentSettings();
         }

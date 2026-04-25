@@ -38,8 +38,7 @@ namespace TxtToVoice
         private static readonly string SampleDictionaryPath =
             Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "sample_dictionary.json");
 
-        private bool _isSpeaking      = false;
-        private bool _isPaused        = false;
+        private PlaybackState _playback = PlaybackState.Idle;
         private bool _annotatedPreview = true;
         private readonly List<string> _recentFiles = new();
 

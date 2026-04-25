@@ -5,6 +5,54 @@
 
 ---
 
+## v0.5.0 実装済み提案（#56-b, #62, #66）
+
+### 56-b. PlaybackState sealed record 導入 ✅ v0.5.0
+
+**課題**: `MainWindow.xaml.cs` の `_isSpeaking` / `_isPaused` は 2 つのブール値が独立しており、無効な状態（`_isSpeaking=false && _isPaused=true` 等）を型で防げない。  
+**提案**: `sealed record PlaybackState` を導入して有効状態を 3 つの静的インスタンス（`Idle` / `Active` / `Paused`）に限定し、参照箇所を 1 フィールドに集約する。  
+
+**v0.5.0 実装内容**:
+- `TxtToVoice/PlaybackState.cs` を新規作成
+  ```csharp
+  internal sealed record PlaybackState(bool IsSpeaking, bool IsPaused)
+  {
+      internal static readonly PlaybackState Idle   = new(false, false);
+      internal static readonly PlaybackState Active = new(true,  false);
+      internal static readonly PlaybackState Paused = new(true,  true);
+  }
+  ```
+- `MainWindow.xaml.cs`: `_isSpeaking` / `_isPaused` フィールドを `private PlaybackState _playback = PlaybackState.Idle;` に一本化
+- `MainWindow.PlaybackOperations.cs`: 全 16 参照を `_playback.IsSpeaking` / `_playback.IsPaused` / `PlaybackState.Idle` / `.Active` / `.Paused` に置き換え
+- 動作変更なし・純リファクタリング
+
+### 62. 行政文書ゴールデンテスト ✅ v0.5.0
+
+**v0.5.0 実装内容**:
+- `TxtToVoice.Core.Tests/Golden/TextPreprocessorGoldenTests.cs` を新規作成
+- 6 クラス 11 件の xUnit Theory / Fact テスト
+  - S1: 月×時刻複合（フェーズ1+4）
+  - S2: 記号×パーセント（フェーズ1+2）
+  - S3: 電話番号×第X回×Xか月（フェーズ3）
+  - S4: コロン時刻（フェーズ5→4 連鎖）
+  - S5: 除外ケース（時間・日付）
+  - S6: 全フェーズ混合（行政文書総合）
+
+### 66. TextPreprocessor フェーズ5（コロン時刻）✅ v0.5.0
+
+**課題**: `10:30` 形式のコロン区切り時刻はフェーズ4（X時/X分）で変換されず、OpenJTalk が誤読する。  
+**提案**: フェーズ5 として `H:MM / HH:MM` → `X時X分` への展開を追加し、フェーズ4 の読み仮名変換に連鎖させる。  
+
+**v0.5.0 実装内容**:
+- `ColonTimePattern = new(@"([01]?\d|2[0-3]):([0-5]\d)(?![:\d])", ...)` を追加
+  - 時は 0〜23 のみ一致（`[01]?\d|2[0-3]`）
+  - 分は 00〜59 のみ一致（`[0-5]\d`）
+  - `HH:MM:SS` 形式を `(?![:\d])` で除外
+- Phase 5 を Phase 4 の直前で実行（展開後は Phase 4 が読み仮名化）
+- xUnit テスト 7 件追加（基本変換・除外ケース）
+
+---
+
 ## v0.4.9 実装済み提案（#56-a, #65）
 
 ### 56-a. MainWindow コードビハインド縮小（段階 1）✅ v0.4.9
