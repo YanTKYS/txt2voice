@@ -307,21 +307,29 @@
                              ToolTip="辞書適用後のテキストプレビュー。【元表記→読み】形式で変換箇所を確認できます。"/>
 
                     <Border Grid.Row="2" Background="#E4E8EE" Padding="8,4">
-                        <StackPanel Orientation="Horizontal">
-                            <RadioButton x:Name="RbPreviewAnnotated"
-                                         Content="【変換箇所を表示】"
-                                         IsChecked="True"
-                                         GroupName="PreviewMode"
-                                         FontSize="11" Margin="0,0,16,0"
-                                         Checked="PreviewMode_Changed"
-                                         ToolTip="変換箇所を【元表記→読み】形式で表示"/>
-                            <RadioButton x:Name="RbPreviewClean"
-                                         Content="読み上げ用テキストのみ"
-                                         GroupName="PreviewMode"
-                                         FontSize="11"
-                                         Checked="PreviewMode_Changed"
-                                         ToolTip="実際に読み上げるテキストのみ表示"/>
-                        </StackPanel>
+                        <DockPanel>
+                            <Button Content="コピー"
+                                    DockPanel.Dock="Right"
+                                    Click="BtnCopyPreview_Click"
+                                    FontSize="11" Padding="10,2"
+                                    VerticalAlignment="Center"
+                                    ToolTip="プレビューテキストをクリップボードにコピーします"/>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <RadioButton x:Name="RbPreviewAnnotated"
+                                             Content="【変換箇所を表示】"
+                                             IsChecked="True"
+                                             GroupName="PreviewMode"
+                                             FontSize="11" Margin="0,0,16,0"
+                                             Checked="PreviewMode_Changed"
+                                             ToolTip="変換箇所を【元表記→読み】形式で表示"/>
+                                <RadioButton x:Name="RbPreviewClean"
+                                             Content="読み上げ用テキストのみ"
+                                             GroupName="PreviewMode"
+                                             FontSize="11"
+                                             Checked="PreviewMode_Changed"
+                                             ToolTip="実際に読み上げるテキストのみ表示"/>
+                            </StackPanel>
+                        </DockPanel>
                     </Border>
                 </Grid>
 

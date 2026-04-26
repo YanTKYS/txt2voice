@@ -105,6 +105,13 @@ namespace TxtToVoice
 
         private void BtnApplyDictionary_Click(object sender, RoutedEventArgs e) => ApplyAndPreview();
 
+        private void BtnCopyPreview_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(TxtPreview.Text)) return;
+            Clipboard.SetText(TxtPreview.Text);
+            SetStatus("プレビューをクリップボードにコピーしました。");
+        }
+
         private void ApplyAndPreview()
         {
             string input = TxtInput.Text;

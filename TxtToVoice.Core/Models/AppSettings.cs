@@ -89,5 +89,17 @@ namespace TxtToVoice.Models
         /// </summary>
         [JsonPropertyName("auditRetentionMonths")]
         public int AuditRetentionMonths { get; set; } = 13;
+
+        // ----------------------------------------------------------------
+        // プレビュー設定
+        // ----------------------------------------------------------------
+
+        /// <summary>自動プレビュー更新（ChkAutoPreview）が有効かどうか（デフォルト: false）</summary>
+        [JsonPropertyName("autoPreviewEnabled")]
+        public bool AutoPreviewEnabled { get; set; } = false;
+
+        /// <summary>プレビューを注釈付き（【元表記→読み】）で表示するかどうか（デフォルト: true）</summary>
+        [JsonPropertyName("annotatedPreviewMode")]
+        public bool AnnotatedPreviewMode { get; set; } = true;
     }
 }

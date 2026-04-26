@@ -27,7 +27,9 @@ namespace TxtToVoice.Services
             string speechEngineType,
             string lastText,
             IReadOnlyList<string> recentFiles,
-            int auditRetentionMonths = 13)
+            int auditRetentionMonths = 13,
+            bool autoPreviewEnabled = false,
+            bool annotatedPreviewMode = true)
         {
             bool persistText   = isExit && saveLastInputText && !clearSensitiveDataOnExit;
             bool persistRecent = isExit
@@ -51,7 +53,9 @@ namespace TxtToVoice.Services
                 DeleteLogOnExit          = deleteLogOnExit,
                 ShowReadingHighlight     = showHighlight,
                 SpeechEngineType         = speechEngineType,
-                AuditRetentionMonths     = auditRetentionMonths
+                AuditRetentionMonths     = auditRetentionMonths,
+                AutoPreviewEnabled       = autoPreviewEnabled,
+                AnnotatedPreviewMode     = annotatedPreviewMode
             };
         }
     }

@@ -43,6 +43,11 @@ namespace TxtToVoice
             _deleteLogOnExit          = s.DeleteLogOnExit;
             _speechEngineType         = s.SpeechEngineType;
             _auditRetentionMonths     = s.AuditRetentionMonths;
+            // プレビュー設定
+            ChkAutoPreview.IsChecked    = s.AutoPreviewEnabled;
+            _annotatedPreview           = s.AnnotatedPreviewMode;
+            RbPreviewAnnotated.IsChecked = s.AnnotatedPreviewMode;
+            RbPreviewClean.IsChecked     = !s.AnnotatedPreviewMode;
             // 監査モードを Logger に即時反映（INFO ログ抑制）
             Logger.SuppressInfo = _clearSensitiveDataOnExit;
             // 前回セッションのテキストを復元（ポリシーが許可している場合のみ）
@@ -87,7 +92,9 @@ namespace TxtToVoice
                 _speechEngineType,
                 TxtInput.Text,
                 _recentFiles,
-                _auditRetentionMonths);
+                _auditRetentionMonths,
+                ChkAutoPreview.IsChecked == true,
+                _annotatedPreview);
 
         // ----------------------------------------------------------------
         // 設定ダイアログ
