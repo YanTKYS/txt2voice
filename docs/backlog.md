@@ -9,7 +9,6 @@
 
 | # | 概要 | 詳細 |
 |---|---|---|
-| 58 | 設定反映タイミング改善（安全条件つき即時反映） | 再生停止中のみエンジン再初期化。`SpeechEngineFactory.Create()` が差し替えポイント。詳細 #58。 |
 | 59 | 運用監査向けエクスポート（監査 CSV 最小セット） | timestamp / engineType / format / success / errorCode / fileHash を CSV 追記。詳細 #59。 |
 
 ---
@@ -61,3 +60,4 @@
 | 51 | OpenJTalk 音声品質評価 CI インフラ整備（VoiceQualityEvalTests + artifact） | v0.5.3 |
 | 55 | 音声品質評価の定例化（`docs/release-checklist.md` 新規作成） | v0.5.3 |
 | 60 | 辞書照合 Aho-Corasick 導入（O(n×m) → O(n+m)） | v0.5.4 |
+| 58 | 設定反映タイミング改善（安全条件つき即時反映） | v0.5.5 |

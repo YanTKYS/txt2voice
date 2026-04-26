@@ -101,6 +101,8 @@ namespace TxtToVoice
             };
             if (dlg.ShowDialog() != true) return;
 
+            string previousEngineType = _speechEngineType;
+
             _saveLastInputText       = dlg.SaveLastInputText;
             _saveRecentFiles          = dlg.SaveRecentFiles;
             _clearSensitiveDataOnExit = dlg.ClearSensitiveDataOnExit;
@@ -113,6 +115,16 @@ namespace TxtToVoice
             // _saveRecentFiles が false になった場合はメモリ上の履歴も消去
             if (!_saveRecentFiles)
                 _recentFiles.Clear();
+
+            // 再生停止中かつエンジン種別が変わった場合は即時切替
+            if (_speechEngineType != previousEngineType && _playback == PlaybackState.Idle)
+            {
+                _speechService.ReplaceEngine(SpeechEngineFactory.Create(_speechEngineType));
+                InitializeVoiceCombo();
+                _speechService.SetRate((int)SldRate.Value);
+                _speechService.SetVolume((int)SldVolume.Value);
+                Logger.Info($"エンジンを即時切替: {SpeechEngineFactory.GetLabel(_speechEngineType)}");
+            }
 
             SaveCurrentSettings();
             UpdateRecentFilesMenu();

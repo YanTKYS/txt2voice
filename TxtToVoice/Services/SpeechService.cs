@@ -22,11 +22,11 @@ namespace TxtToVoice.Services
     ///
     /// 音声エンジンの実装は <see cref="SystemSpeechEngine"/>（SAPI）または
     /// <see cref="WinRtSpeechEngine"/>（WinRT OneCore）を使用する。
-    /// 設定ダイアログでエンジン種別を切り替えでき、変更は次回起動時に適用される。
+    /// 再生停止中（PlaybackState.Idle）に限り <see cref="ReplaceEngine"/> で即時切替可能。
     /// </summary>
     public class SpeechService : IDisposable
     {
-        private readonly ISpeechEngine _engine;
+        private ISpeechEngine _engine;
         private bool _disposed;
         private readonly SynchronizationContext? _uiContext;
 
@@ -54,11 +54,7 @@ namespace TxtToVoice.Services
         {
             _uiContext = SynchronizationContext.Current;
             _engine = engine;
-
-            _engine.SpeakStarted   += (s, e) => RaiseOnUiThread(() => SpeakStarted?.Invoke(this, EventArgs.Empty));
-            _engine.SpeakCompleted += (s, e) => RaiseOnUiThread(() => SpeakCompleted?.Invoke(this, EventArgs.Empty));
-            _engine.SpeakProgress  += (s, e) => RaiseOnUiThread(() => SpeakProgress?.Invoke(this, e));
-            _engine.SpeakError     += (s, e) => RaiseOnUiThread(() => SpeakError?.Invoke(this, e));
+            AttachEngine(_engine);
         }
 
         /// <summary>後方互換のための便宜コンストラクタ。SystemSpeechEngine（SAPI）を使用する。</summary>
@@ -109,6 +105,24 @@ namespace TxtToVoice.Services
                 ct);
 
         // ----------------------------------------------------------------
+        // エンジン差し替え
+        // ----------------------------------------------------------------
+
+        /// <summary>
+        /// 現在のエンジンを <paramref name="newEngine"/> に差し替える。
+        /// 呼び出し前に PlaybackState.Idle であることを確認すること（SpeechService は状態を追跡しない）。
+        /// </summary>
+        public void ReplaceEngine(ISpeechEngine newEngine)
+        {
+            var old = _engine;
+            DetachEngine(old);
+            try { old.Stop(); }    catch { /* 無視 */ }
+            _engine = newEngine;
+            AttachEngine(_engine);
+            try { old.Dispose(); } catch { /* 無視 */ }
+        }
+
+        // ----------------------------------------------------------------
         // IDisposable
         // ----------------------------------------------------------------
 
@@ -116,6 +130,7 @@ namespace TxtToVoice.Services
         {
             if (!_disposed)
             {
+                DetachEngine(_engine);
                 try { _engine.Stop(); }    catch { /* 無視 */ }
                 try { _engine.Dispose(); } catch { /* 無視 */ }
                 _disposed = true;
@@ -125,6 +140,34 @@ namespace TxtToVoice.Services
         // ----------------------------------------------------------------
         // ヘルパー
         // ----------------------------------------------------------------
+
+        private void AttachEngine(ISpeechEngine engine)
+        {
+            engine.SpeakStarted   += OnEngineStarted;
+            engine.SpeakCompleted += OnEngineCompleted;
+            engine.SpeakProgress  += OnEngineProgress;
+            engine.SpeakError     += OnEngineError;
+        }
+
+        private void DetachEngine(ISpeechEngine engine)
+        {
+            engine.SpeakStarted   -= OnEngineStarted;
+            engine.SpeakCompleted -= OnEngineCompleted;
+            engine.SpeakProgress  -= OnEngineProgress;
+            engine.SpeakError     -= OnEngineError;
+        }
+
+        private void OnEngineStarted(object? s, EventArgs e)
+            => RaiseOnUiThread(() => SpeakStarted?.Invoke(this, EventArgs.Empty));
+
+        private void OnEngineCompleted(object? s, EventArgs e)
+            => RaiseOnUiThread(() => SpeakCompleted?.Invoke(this, EventArgs.Empty));
+
+        private void OnEngineProgress(object? s, SpeakProgressInfo e)
+            => RaiseOnUiThread(() => SpeakProgress?.Invoke(this, e));
+
+        private void OnEngineError(object? s, string e)
+            => RaiseOnUiThread(() => SpeakError?.Invoke(this, e));
 
         private void RaiseOnUiThread(Action action)
         {

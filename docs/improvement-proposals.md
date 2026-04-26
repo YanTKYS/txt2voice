@@ -323,16 +323,16 @@ CSV インポート時に「重複語・極端な優先順位・空読み」を�
 - `MainWindow.DictionaryOperations.MenuImportCsv_Click` を改修: `ImportWithReport()` を使用し、問題がある場合は確認ダイアログに検証サマリを表示
 - xUnit テスト 6 件を追加（正常系 / 空表記スキップ / 空読みスキップ / 優先順位補正 / 混在 / `FormatIssues` 非空文字列確認）
 
-### 58. 設定反映タイミングの改善（C-1）
+### 58. 設定反映タイミングの改善（C-1）✅
 
 エンジン切替は再起動反映のまま維持しつつ、「エンジン再初期化」による即時反映を将来 PoC で確認。  
 リスク（リソース解放漏れ・ハンドル競合）の事前確認が前提。
 
-**v0.5.5 実装方針（安全条件つき即時反映）**:
-- 適用条件を「再生停止中のみ（`PlaybackState.Idle`）」に限定することでリソース競合を回避
-- `SpeechEngineFactory.Create()` がエンジン生成を集約しているため差し替えポイントは明確
-- エンジン切替後の再初期化フローを `SpeechService` に追加し、成功/失敗をダイアログで通知
-- PoC スコープ: SAPI (SystemSpeech) / OpenJTalk の 2 エンジン間切替を対象とする
+**v0.5.5 実装（安全条件つき即時反映）**:
+- `SpeechService._engine` から `readonly` を除去し、`ReplaceEngine(ISpeechEngine)` メソッドを追加
+- コンストラクタの匿名ラムダを名前付きハンドラ（`OnEngineStarted` 等）に変換し、`AttachEngine` / `DetachEngine` ヘルパーでハンドラの着脱を管理
+- `ReplaceEngine`: 旧エンジンをデタッチ → Stop → 新エンジンをアタッチ → 旧エンジンを Dispose の順で実行
+- `MainWindow.SettingsOperations.cs` の `MenuSettings_Click` に「`_speechEngineType` 変化かつ `_playback == PlaybackState.Idle`」ガードを追加し、条件を満たす場合のみ即時切替 + `InitializeVoiceCombo()` + `SetRate` / `SetVolume` 再適用
 
 ### 59. 運用監査向けエクスポート（C-2）
 
