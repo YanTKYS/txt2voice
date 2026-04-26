@@ -23,7 +23,18 @@ namespace TxtToVoice.Services
             _replacement = replacement;
         }
 
-        public string Apply(string text) => _pattern.Replace(text, _replacement);
+        public string Apply(string text)
+        {
+            try
+            {
+                return _pattern.Replace(text, _replacement);
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                Logger.Warn($"テキストルール 正規表現タイムアウト（スキップ）: pattern={_pattern}");
+                return text;
+            }
+        }
     }
 
     /// <summary>
@@ -63,7 +74,7 @@ namespace TxtToVoice.Services
 
                 try
                 {
-                    var regex = new Regex(rule.Pattern, RegexOptions.Compiled);
+                    var regex = new Regex(rule.Pattern, RegexOptions.Compiled, TimeSpan.FromSeconds(1));
                     compiled.Add(new CompiledTextRule(regex, rule.Replacement));
                 }
                 catch (ArgumentException ex)

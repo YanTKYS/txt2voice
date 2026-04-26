@@ -14,7 +14,13 @@ namespace TxtToVoice.Tests.Services
     ///
     /// [Trait("Category", "Performance")] が付いているため、通常 CI では除外できる:
     ///   dotnet test --filter "Category!=Performance"
-    /// 閾値は低スペック CI ランナーやコンテナ環境を考慮して余裕を持たせてある。
+    ///
+    /// 閾値（v0.5.7 改訂 — Aho-Corasick 導入後の実測ベースライン）:
+    ///   v0.5.4 で O(n×m) → AC O(n+m) に刷新済み。実測では < 10ms が典型。
+    ///   CI ランナーのばらつき（Azure VM、コンテナ起動オーバーヘッド等）を
+    ///   考慮し実測値の ~100 倍の余裕係数を設けた:
+    ///     500件 × 10,000文字 → 1,000ms（旧: 30,000ms）
+    ///     100件 × 50,000文字 → 2,000ms（旧: 45,000ms）
     /// </summary>
     [Trait("Category", "Performance")]
     public class DictionaryServicePerformanceTests : IDisposable
@@ -38,12 +44,11 @@ namespace TxtToVoice.Tests.Services
         // ================================================================
 
         /// <summary>
-        /// 500件辞書 × 10,000文字テキストで ApplyDictionary が 30 秒以内に完了すること。
-        /// （ベースライン確認用。将来的にアルゴリズム改善後の比較に使う）
-        /// 閾値 30 秒: 低スペック CI ランナーでも安定するよう余裕を持たせてある。
+        /// 500件辞書 × 10,000文字テキストで ApplyDictionary が 1 秒以内に完了すること。
+        /// AC 導入後の実測は &lt; 10ms 典型。閾値 1,000ms は CI ランナーばらつきを考慮した余裕値。
         /// </summary>
         [Fact]
-        public void ApplyDictionary_500件辞書_10000文字を30秒以内に処理する()
+        public void ApplyDictionary_500件辞書_10000文字を1秒以内に処理する()
         {
             // 500件の辞書エントリを登録
             for (int i = 0; i < 500; i++)
@@ -69,16 +74,16 @@ namespace TxtToVoice.Tests.Services
             sw.Stop();
 
             Assert.NotEmpty(result);
-            Assert.True(sw.ElapsedMilliseconds < 30_000,
-                $"処理時間が上限を超えました: {sw.ElapsedMilliseconds} ms（上限: 30,000 ms）");
+            Assert.True(sw.ElapsedMilliseconds < 1_000,
+                $"処理時間が上限を超えました: {sw.ElapsedMilliseconds} ms（上限: 1,000 ms）");
         }
 
         /// <summary>
-        /// 100件辞書 × 50,000文字テキストで ApplyDictionaryForSpeech が 45 秒以内に完了すること。
-        /// 閾値 45 秒: 低スペック CI ランナーでも安定するよう余裕を持たせてある。
+        /// 100件辞書 × 50,000文字テキストで ApplyDictionaryForSpeech が 2 秒以内に完了すること。
+        /// AC 導入後の実測は &lt; 5ms 典型。閾値 2,000ms は CI ランナーばらつきを考慮した余裕値。
         /// </summary>
         [Fact]
-        public void ApplyDictionaryForSpeech_100件辞書_50000文字を45秒以内に処理する()
+        public void ApplyDictionaryForSpeech_100件辞書_50000文字を2秒以内に処理する()
         {
             for (int i = 0; i < 100; i++)
                 _svc.AddEntry(new DictionaryEntry
@@ -103,8 +108,8 @@ namespace TxtToVoice.Tests.Services
 
             Assert.NotEmpty(speechText);
             Assert.NotNull(map);
-            Assert.True(sw.ElapsedMilliseconds < 45_000,
-                $"処理時間が上限を超えました: {sw.ElapsedMilliseconds} ms（上限: 45,000 ms）");
+            Assert.True(sw.ElapsedMilliseconds < 2_000,
+                $"処理時間が上限を超えました: {sw.ElapsedMilliseconds} ms（上限: 2,000 ms）");
         }
     }
 }

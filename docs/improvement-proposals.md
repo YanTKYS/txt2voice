@@ -134,24 +134,24 @@
 - 辞書 UI（`DictionaryOperations`）の実装パターンを流用できる  
 **優先度**: 低〜中（#61 外部化の運用価値を最大化するため、ルール数が増える前に整備推奨）
 
-### 68. TextRuleLoader Regex タイムアウト
+### 68. TextRuleLoader Regex タイムアウト ✅
 
 **課題**: `new Regex(rule.Pattern, RegexOptions.Compiled)` はタイムアウト未指定のため、ReDoS（指数的バックトラッキング）パターンが設定されるとスレッドが CPU 張り付きになる。  
 **提案**: `Regex(pattern, options, TimeSpan)` オーバーロードでマッチタイムアウト（例: 1 秒）を設定し、`RegexMatchTimeoutException` をキャッチして当該ルールをスキップ・ログ出力する。  
-**スコープ**:
-- `TextRuleLoader.Load()` のコンパイル箇所に `TimeSpan.FromSeconds(1)` を追加
-- `CompiledTextRule.Apply()` で `RegexMatchTimeoutException` を try/catch しスキップ
-- テスト: タイムアウトを誘発するパターン（例: `(a+)+`）でスキップされることを確認  
-**優先度**: 低〜中（閉域運用でも設定ミスは起きうるため、フェイルセーフとして有効）
 
-### 69. 性能テスト閾値の再設計（Aho-Corasick 導入後）
+**v0.5.7 実装**:
+- `TextRuleLoader.Load()`: `new Regex(pattern, RegexOptions.Compiled, TimeSpan.FromSeconds(1))` に変更
+- `CompiledTextRule.Apply()`: `RegexMatchTimeoutException` を try/catch し、元テキストをそのまま返してログ警告
+- `TextRuleLoaderTests.cs` に 2 件追加: タイムアウト時の動作確認 + 正常ルールのロード確認
+
+### 69. 性能テスト閾値の再設計（Aho-Corasick 導入後）✅
 
 **課題**: 現行の性能テスト閾値（500件辞書×10,000文字で 30 秒、100件×50,000文字で 45 秒）は Aho-Corasick 導入前の O(n×m) を前提とした値で、回帰検知として機能していない。  
-**提案**: AC 導入後の実測ベースラインを計測し、閾値を段階的に引き下げる。または「前回比 +20% 以内」などの相対基準に切り替える。  
-**スコープ**:
-- 閾値を実測値の 3〜5 倍程度（例: 500ms / 1000ms 等）に更新
-- CI ランナーのばらつきを考慮した余裕係数を文書化  
-**優先度**: 低（v0.5.4 の成果を活かすなら早期対応が望ましい）
+
+**v0.5.7 実装**:
+- 500件 × 10,000文字: 30,000ms → **1,000ms**（AC 実測 < 10ms の ~100 倍余裕）
+- 100件 × 50,000文字: 45,000ms → **2,000ms**（AC 実測 < 5ms の ~400 倍余裕）
+- CI ランナーのばらつき（Azure VM コンテナ起動等）を考慮した余裕係数をコメントに明記
 
 ### 70. 辞書インポート容量ガード
 

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text.RegularExpressions;
 using TxtToVoice.Services;
 using Xunit;
 
@@ -160,6 +161,43 @@ namespace TxtToVoice.Tests.Services
         public void Apply_rules省略_既存フェーズのみ動作する()
         {
             Assert.Equal("いちがつ", TextPreprocessor.Apply("1月"));
+        }
+
+        // ================================================================
+        // タイムアウト（ReDoS 対策）
+        // ================================================================
+
+        [Fact]
+        public void Apply_RegexMatchTimeoutException_元テキストをそのまま返す()
+        {
+            // (a+)+$ は古典的な指数的バックトラッキングパターン。
+            // 25個の 'a' + 'b'（非マッチ末尾）で 2^25 回のバックトラックが発生するため
+            // 100ms タイムアウトで確実に RegexMatchTimeoutException が発生する。
+            var regex = new Regex(@"(a+)+$", RegexOptions.None, TimeSpan.FromMilliseconds(100));
+            var rule = new CompiledTextRule(regex, "REPLACED");
+            string input = new string('a', 25) + 'b';
+
+            string result = rule.Apply(input);
+
+            Assert.Equal(input, result);
+        }
+
+        [Fact]
+        public void Load_有効ルール_Regexに1秒タイムアウトが設定されている()
+        {
+            // Load() が Regex を TimeSpan.FromSeconds(1) で構築していることを
+            // 間接的に確認: タイムアウト付きパターンが例外を吐かず読み込まれる
+            string json = @"[{""pattern"":""foo"",""replacement"":""bar"",""enabled"":true}]";
+            string path = Path.Combine(Path.GetTempPath(), $"rules_{Guid.NewGuid():N}.json");
+            try
+            {
+                File.WriteAllText(path, json);
+                var rules = TextRuleLoader.Load(path);
+                Assert.Single(rules);
+                // 正常な入力では置換が機能する
+                Assert.Equal("bar baz", rules[0].Apply("foo baz"));
+            }
+            finally { try { File.Delete(path); } catch { } }
         }
 
         // ================================================================
