@@ -5,6 +5,27 @@
 
 ---
 
+## v0.5.4 実装済み提案（#60）
+
+### 60. 辞書照合の Aho-Corasick アルゴリズム導入 ✅ v0.5.4
+
+**v0.5.4 実装内容**:
+- `TxtToVoice.Core/Services/AhoCorasick.cs` を新規追加（自前実装・外部依存なし）
+  - `AhoCorasick.Build(string[] patterns)` — トライ木構築 + 失敗リンク BFS で O(Σ|p|) 構築
+  - `AhoCorasick.Search(string text)` — テキストを O(n + 出力数) の 1 パスで走査、全マッチを `(Start, PatternIndex)` で返す
+- `DictionaryService` を更新
+  - `_acAutomaton` フィールドを追加し `_sortedCache` と一括管理
+  - `BuildSortedEntries()` を `EnsureCache()` に統合（初回 `FindReplacements` 時に AC オートマトンも構築）
+  - `_sortedCache = null` を全て `InvalidateCache()` に置き換え（`_acAutomaton` も同時クリア）
+  - `FindReplacements` を `static` → インスタンスメソッドに変更し AC を使用
+  - AC の全候補を「長さ降順 → 優先度降順 → 位置昇順」でソート後、貪欲非重複選択 — 既存の置換結果と完全に等価
+
+**計算量**:
+- ビルド: O(Σ|p|)（エントリ変更時のみ再構築）
+- 照合: O(n + 出力数) → 従来の O(n × m) から改善
+
+---
+
 ## v0.5.3 実装済み提案（#51・#55）
 
 ### 51. OpenJTalk 音声品質評価・レポート ✅ v0.5.3（インフラ整備）

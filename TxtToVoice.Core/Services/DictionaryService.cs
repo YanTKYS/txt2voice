@@ -20,8 +20,9 @@ namespace TxtToVoice.Services
         private List<DictionaryEntry> _entries = new();
         private readonly JsonPersistenceService _persistence;
 
-        // BuildSortedEntries() の結果をキャッシュする。エントリ変更時に null にして無効化する。
+        // FindReplacements で使うキャッシュ。エントリ変更時に InvalidateCache() で両方クリアする。
         private List<DictionaryEntry>? _sortedCache;
+        private AhoCorasick? _acAutomaton;
 
         public IReadOnlyList<DictionaryEntry> Entries => _entries.AsReadOnly();
 
@@ -37,7 +38,7 @@ namespace TxtToVoice.Services
         public void Load()
         {
             _entries = _persistence.Load();
-            _sortedCache = null;
+            InvalidateCache();
             Logger.Info($"辞書読み込み完了: {_entries.Count}件");
         }
 
@@ -46,7 +47,7 @@ namespace TxtToVoice.Services
         public void AddEntry(DictionaryEntry entry)
         {
             _entries.Add(entry);
-            _sortedCache = null;
+            InvalidateCache();
             Logger.Info($"辞書追加: 「{entry.Display}」→「{entry.Reading}」");
         }
 
@@ -54,7 +55,7 @@ namespace TxtToVoice.Services
         {
             if (index < 0 || index >= _entries.Count) return;
             _entries[index] = entry;
-            _sortedCache = null;
+            InvalidateCache();
             Logger.Info($"辞書更新: index={index} 「{entry.Display}」→「{entry.Reading}」");
         }
 
@@ -63,14 +64,14 @@ namespace TxtToVoice.Services
             if (index < 0 || index >= _entries.Count) return;
             var removed = _entries[index];
             _entries.RemoveAt(index);
-            _sortedCache = null;
+            InvalidateCache();
             Logger.Info($"辞書削除: 「{removed.Display}」");
         }
 
         public void ReplaceAll(IEnumerable<DictionaryEntry> entries)
         {
             _entries = entries.ToList();
-            _sortedCache = null;
+            InvalidateCache();
         }
 
         // ----------------------------------------------------------------
@@ -91,7 +92,7 @@ namespace TxtToVoice.Services
                 e => e.Display.Equals(entry.Display, StringComparison.Ordinal));
             if (idx < 0) return;
             _entries[idx] = entry;
-            _sortedCache = null;
+            InvalidateCache();
             Logger.Info($"辞書上書き（表記一致）: 「{entry.Display}」→「{entry.Reading}」");
         }
 
@@ -114,8 +115,7 @@ namespace TxtToVoice.Services
             if (string.IsNullOrEmpty(text))
                 return (text, new SpeechPositionMap(new()));
 
-            var sorted = BuildSortedEntries();
-            var replacements = FindReplacements(text, sorted);
+            var replacements = FindReplacements(text);
 
             var segments = new List<(int, int, int, int)>();
             var sb = new StringBuilder(text.Length);
@@ -154,8 +154,7 @@ namespace TxtToVoice.Services
         {
             if (string.IsNullOrEmpty(text)) return text;
 
-            var sorted = BuildSortedEntries();
-            var replacements = FindReplacements(text, sorted);
+            var replacements = FindReplacements(text);
             var sb = new StringBuilder(text.Length);
             int cursor = 0;
 
@@ -191,7 +190,7 @@ namespace TxtToVoice.Services
                     added++;
                 }
             }
-            if (added > 0) _sortedCache = null;
+            if (added > 0) InvalidateCache();
             Logger.Info($"サンプル辞書読み込み: {added}件追加");
             return added;
         }
@@ -200,53 +199,77 @@ namespace TxtToVoice.Services
         // プライベートヘルパー
         // ----------------------------------------------------------------
 
-        private List<DictionaryEntry> BuildSortedEntries()
+        private void InvalidateCache()
         {
-            _sortedCache ??= _entries
+            _sortedCache = null;
+            _acAutomaton = null;
+        }
+
+        /// <summary>
+        /// 初回アクセス時に _sortedCache と _acAutomaton を一括構築する。
+        /// </summary>
+        private void EnsureCache()
+        {
+            if (_sortedCache != null) return;
+
+            _sortedCache = _entries
                 .Where(e => !string.IsNullOrEmpty(e.Display) && !string.IsNullOrEmpty(e.Reading))
                 .OrderByDescending(e => e.Display.Length)
                 .ThenByDescending(e => e.Priority)
                 .ToList();
-            return _sortedCache;
+
+            var patterns = new string[_sortedCache.Count];
+            for (int i = 0; i < _sortedCache.Count; i++)
+                patterns[i] = _sortedCache[i].Display;
+            _acAutomaton = AhoCorasick.Build(patterns);
         }
 
         /// <summary>
-        /// テキスト内の全置換箇所を (Start, Length, Display, Reading) のリストで返す。
-        /// 長い語句優先・二重置換防止・位置昇順ソート済み。
+        /// Aho-Corasick で全マッチを収集し、長い語句優先・二重置換防止・位置昇順で返す。
         /// </summary>
-        private static List<(int Start, int Length, string Display, string Reading)> FindReplacements(
-            string text, List<DictionaryEntry> sortedEntries)
+        private List<(int Start, int Length, string Display, string Reading)> FindReplacements(string text)
         {
-            bool[] replaced = new bool[text.Length];
-            var replacements = new List<(int Start, int Length, string Display, string Reading)>();
+            EnsureCache();
+            var sortedEntries = _sortedCache!;
+            var automaton     = _acAutomaton!;
 
-            foreach (var entry in sortedEntries)
+            // AC で全マッチ候補を収集
+            var allMatches = new List<(int Start, int Length, int Priority, string Display, string Reading)>();
+            foreach (var (start, pi) in automaton.Search(text))
             {
-                int searchFrom = 0;
-                while (searchFrom < text.Length)
+                var e = sortedEntries[pi];
+                allMatches.Add((start, e.Display.Length, e.Priority, e.Display, e.Reading));
+            }
+
+            // 長さ降順 → 優先度降順 → 位置昇順 でソート
+            allMatches.Sort((a, b) =>
+            {
+                int c = b.Length.CompareTo(a.Length);     if (c != 0) return c;
+                    c = b.Priority.CompareTo(a.Priority); if (c != 0) return c;
+                return a.Start.CompareTo(b.Start);
+            });
+
+            // 貪欲に非重複選択
+            bool[] replaced = new bool[text.Length];
+            var selected = new List<(int Start, int Length, string Display, string Reading)>(allMatches.Count);
+
+            foreach (var (start, length, _, display, reading) in allMatches)
+            {
+                bool overlaps = false;
+                for (int i = start; i < start + length; i++)
                 {
-                    int pos = text.IndexOf(entry.Display, searchFrom, StringComparison.Ordinal);
-                    if (pos < 0) break;
-
-                    bool overlaps = false;
-                    for (int i = pos; i < pos + entry.Display.Length; i++)
-                    {
-                        if (replaced[i]) { overlaps = true; break; }
-                    }
-
-                    if (!overlaps)
-                    {
-                        for (int i = pos; i < pos + entry.Display.Length; i++)
-                            replaced[i] = true;
-                        replacements.Add((pos, entry.Display.Length, entry.Display, entry.Reading));
-                    }
-
-                    searchFrom = pos + 1;
+                    if (replaced[i]) { overlaps = true; break; }
+                }
+                if (!overlaps)
+                {
+                    for (int i = start; i < start + length; i++)
+                        replaced[i] = true;
+                    selected.Add((start, length, display, reading));
                 }
             }
 
-            replacements.Sort((a, b) => a.Start.CompareTo(b.Start));
-            return replacements;
+            selected.Sort((a, b) => a.Start.CompareTo(b.Start));
+            return selected;
         }
     }
 }

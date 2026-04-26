@@ -5,14 +5,6 @@
 
 ---
 
-## 優先度：低〜中（v0.5.x）
-
-| # | 概要 | 詳細 |
-|---|---|---|
-| 60 | 辞書照合 Aho-Corasick 導入 | 辞書エントリが 1,000 件超を想定する前に設計着手。詳細 #60。 |
-
----
-
 ## 優先度：低（中長期）
 
 | # | 概要 | 詳細 |
@@ -50,3 +42,4 @@
 | 61 | TextPreprocessor 外部ルール定義（`Data/text_rules.json` 外部化） | v0.5.2 |
 | 51 | OpenJTalk 音声品質評価 CI インフラ整備（VoiceQualityEvalTests + artifact） | v0.5.3 |
 | 55 | 音声品質評価の定例化（`docs/release-checklist.md` 新規作成） | v0.5.3 |
+| 60 | 辞書照合 Aho-Corasick 導入（O(n×m) → O(n+m)） | v0.5.4 |
