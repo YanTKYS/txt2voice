@@ -64,7 +64,10 @@ namespace TxtToVoice.Services
 
         public event EventHandler? SpeakStarted;
         public event EventHandler? SpeakCompleted;
+        // OpenJTalk はバッチ合成のため単語位置進捗を提供できない（ISpeechEngine 要件で宣言必須）
+#pragma warning disable CS0067
         public event EventHandler<SpeakProgressInfo>? SpeakProgress;
+#pragma warning restore CS0067
         public event EventHandler<string>? SpeakError;
 
         public bool IsAvailable { get; private set; }
