@@ -65,6 +65,51 @@ namespace TxtToVoice.Services
         }
 
         // ----------------------------------------------------------------
+        // 保持期間管理
+        // ----------------------------------------------------------------
+
+        /// <summary>
+        /// 保持期間を超えた月次監査ログを削除する。
+        /// </summary>
+        /// <param name="retentionMonths">保持月数。0 以下の場合は何もしない（無制限）。</param>
+        public static void PurgeOldLogs(int retentionMonths)
+            => PurgeOldLogsFrom(retentionMonths, PathConfig.DataDirectory);
+
+        /// <summary>テスト用オーバーロード。削除対象ディレクトリを指定できる。</summary>
+        internal static void PurgeOldLogsFrom(int retentionMonths, string dataDirectory)
+        {
+            if (retentionMonths <= 0) return;
+            try
+            {
+                DateTimeOffset now     = DateTimeOffset.Now;
+                // 当月初日から retentionMonths か月前を cutoff とする
+                DateTimeOffset cutoff  = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, now.Offset)
+                                             .AddMonths(-retentionMonths);
+
+                if (!Directory.Exists(dataDirectory)) return;
+
+                foreach (string file in Directory.GetFiles(dataDirectory, "audit_??????.csv"))
+                {
+                    string stem = Path.GetFileNameWithoutExtension(file); // "audit_YYYYMM"
+                    if (stem.Length != 12 || !int.TryParse(stem.AsSpan(6), out int ym)) continue;
+                    int year = ym / 100, month = ym % 100;
+                    if (month < 1 || month > 12) continue;
+
+                    var fileMonth = new DateTimeOffset(year, month, 1, 0, 0, 0, now.Offset);
+                    if (fileMonth < cutoff)
+                    {
+                        File.Delete(file);
+                        Logger.Info($"AuditLogger: 保持期間超過により削除: {Path.GetFileName(file)}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"AuditLogger: 古いログの削除に失敗: {ex.Message}");
+            }
+        }
+
+        // ----------------------------------------------------------------
         // ヘルパー
         // ----------------------------------------------------------------
 

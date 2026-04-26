@@ -41,6 +41,7 @@ namespace TxtToVoice
             _clearSensitiveDataOnExit = s.ClearSensitiveDataOnExit;
             _deleteLogOnExit          = s.DeleteLogOnExit;
             _speechEngineType         = s.SpeechEngineType;
+            _auditRetentionMonths     = s.AuditRetentionMonths;
             // 監査モードを Logger に即時反映（INFO ログ抑制）
             Logger.SuppressInfo = _clearSensitiveDataOnExit;
             // 前回セッションのテキストを復元（ポリシーが許可している場合のみ）
@@ -84,7 +85,8 @@ namespace TxtToVoice
                 _deleteLogOnExit,
                 _speechEngineType,
                 TxtInput.Text,
-                _recentFiles);
+                _recentFiles,
+                _auditRetentionMonths);
 
         // ----------------------------------------------------------------
         // 設定ダイアログ
@@ -118,7 +120,7 @@ namespace TxtToVoice
             var dlg = new SettingsDialog(
                 _saveLastInputText, _saveRecentFiles,
                 _clearSensitiveDataOnExit, _deleteLogOnExit,
-                _speechEngineType)
+                _speechEngineType, _auditRetentionMonths)
             {
                 Owner = this
             };
@@ -131,6 +133,7 @@ namespace TxtToVoice
             _clearSensitiveDataOnExit = dlg.ClearSensitiveDataOnExit;
             _deleteLogOnExit          = dlg.DeleteLogOnExit;
             _speechEngineType         = dlg.SpeechEngineType;
+            _auditRetentionMonths     = dlg.AuditRetentionMonths;
 
             // 監査モードの変化を Logger にも即時反映する
             Logger.SuppressInfo = _clearSensitiveDataOnExit;
@@ -148,6 +151,9 @@ namespace TxtToVoice
                 _speechService.SetVolume((int)SldVolume.Value);
                 Logger.Info($"エンジンを即時切替: {SpeechEngineFactory.GetLabel(_speechEngineType)}");
             }
+
+            // 保持期間変更を即時適用
+            AuditLogger.PurgeOldLogs(_auditRetentionMonths);
 
             SaveCurrentSettings();
             UpdateRecentFilesMenu();

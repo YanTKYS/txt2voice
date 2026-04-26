@@ -78,5 +78,16 @@ namespace TxtToVoice.Models
         /// </summary>
         [JsonPropertyName("speechEngineType")]
         public string SpeechEngineType { get; set; } = "SystemSpeech";
+
+        // ----------------------------------------------------------------
+        // 監査ログ保持期間
+        // ----------------------------------------------------------------
+
+        /// <summary>
+        /// 月次監査ログの保持期間（か月）。0 = 無制限（自動削除なし）。デフォルト: 13。
+        /// 起動時および設定変更時に閾値超の古い audit_YYYYMM.csv を自動削除する。
+        /// </summary>
+        [JsonPropertyName("auditRetentionMonths")]
+        public int AuditRetentionMonths { get; set; } = 13;
     }
 }

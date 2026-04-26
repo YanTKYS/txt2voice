@@ -26,7 +26,8 @@ namespace TxtToVoice.Services
             bool deleteLogOnExit,
             string speechEngineType,
             string lastText,
-            IReadOnlyList<string> recentFiles)
+            IReadOnlyList<string> recentFiles,
+            int auditRetentionMonths = 13)
         {
             bool persistText   = isExit && saveLastInputText && !clearSensitiveDataOnExit;
             bool persistRecent = isExit
@@ -49,7 +50,8 @@ namespace TxtToVoice.Services
                 ClearSensitiveDataOnExit = clearSensitiveDataOnExit,
                 DeleteLogOnExit          = deleteLogOnExit,
                 ShowReadingHighlight     = showHighlight,
-                SpeechEngineType         = speechEngineType
+                SpeechEngineType         = speechEngineType,
+                AuditRetentionMonths     = auditRetentionMonths
             };
         }
     }

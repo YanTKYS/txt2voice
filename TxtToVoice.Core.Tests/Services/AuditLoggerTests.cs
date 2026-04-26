@@ -130,6 +130,70 @@ namespace TxtToVoice.Tests.Services
         }
 
         // ================================================================
+        // PurgeOldLogs
+        // ================================================================
+
+        [Fact]
+        public void PurgeOldLogs_保持期間超過ファイルを削除する()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), $"purge_{Guid.NewGuid():N}");
+            Directory.CreateDirectory(dir);
+            try
+            {
+                File.WriteAllText(Path.Combine(dir, "audit_202201.csv"), "header\n");
+                string thisMonth = DateTimeOffset.Now.ToString("yyyyMM");
+                File.WriteAllText(Path.Combine(dir, $"audit_{thisMonth}.csv"), "header\n");
+
+                AuditLogger.PurgeOldLogsFrom(retentionMonths: 13, dataDirectory: dir);
+
+                Assert.False(File.Exists(Path.Combine(dir, "audit_202201.csv")),
+                    "保持期間超過ファイルが削除されていない");
+                Assert.True(File.Exists(Path.Combine(dir, $"audit_{thisMonth}.csv")),
+                    "今月ファイルが誤って削除された");
+            }
+            finally { Directory.Delete(dir, recursive: true); }
+        }
+
+        [Fact]
+        public void PurgeOldLogs_保持期間0は削除しない()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), $"purge_{Guid.NewGuid():N}");
+            Directory.CreateDirectory(dir);
+            try
+            {
+                File.WriteAllText(Path.Combine(dir, "audit_202201.csv"), "header\n");
+                AuditLogger.PurgeOldLogsFrom(retentionMonths: 0, dataDirectory: dir);
+                Assert.True(File.Exists(Path.Combine(dir, "audit_202201.csv")),
+                    "無制限設定なのにファイルが削除された");
+            }
+            finally { Directory.Delete(dir, recursive: true); }
+        }
+
+        [Fact]
+        public void PurgeOldLogs_保持期間内ファイルは削除しない()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), $"purge_{Guid.NewGuid():N}");
+            Directory.CreateDirectory(dir);
+            try
+            {
+                string lastMonth = DateTimeOffset.Now.AddMonths(-1).ToString("yyyyMM");
+                File.WriteAllText(Path.Combine(dir, $"audit_{lastMonth}.csv"), "header\n");
+                AuditLogger.PurgeOldLogsFrom(retentionMonths: 13, dataDirectory: dir);
+                Assert.True(File.Exists(Path.Combine(dir, $"audit_{lastMonth}.csv")),
+                    "保持期間内ファイルが誤って削除された");
+            }
+            finally { Directory.Delete(dir, recursive: true); }
+        }
+
+        [Fact]
+        public void PurgeOldLogs_ディレクトリ不在でも例外を投げない()
+        {
+            string nonExistent = Path.Combine(Path.GetTempPath(), $"no_such_{Guid.NewGuid():N}");
+            var ex = Record.Exception(() => AuditLogger.PurgeOldLogsFrom(13, nonExistent));
+            Assert.Null(ex);
+        }
+
+        // ================================================================
         // ヘルパー: RFC 4180 準拠の CSV 1行パーサ
         // ================================================================
 

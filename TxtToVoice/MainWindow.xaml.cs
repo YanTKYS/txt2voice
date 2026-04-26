@@ -48,6 +48,9 @@ namespace TxtToVoice
         private bool _clearSensitiveDataOnExit = false;
         private bool _deleteLogOnExit          = false;
 
+        // 監査ログ保持期間（0 = 無制限）
+        private int _auditRetentionMonths = 13;
+
         // 音声エンジン種別（変更は次回起動時に適用）
         private string _speechEngineType = SpeechEngineFactory.Default;
 
@@ -77,7 +80,8 @@ namespace TxtToVoice
             _speechService.SpeakError     += OnSpeakError;
 
             InitializeVoiceCombo();
-            LoadSettings();   // スライダー値・音声を復元（InitializeVoiceCombo の後）
+            LoadSettings();                               // スライダー値・音声を復元（InitializeVoiceCombo の後）
+            AuditLogger.PurgeOldLogs(_auditRetentionMonths); // 起動時に保持期間超過ファイルを削除
             LoadDictionary();
 
             // ポータブルモード書込不可フォールバックの通知
