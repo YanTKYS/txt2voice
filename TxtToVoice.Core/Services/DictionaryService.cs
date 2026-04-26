@@ -68,6 +68,19 @@ namespace TxtToVoice.Services
             Logger.Info($"辞書削除: 「{removed.Display}」");
         }
 
+        /// <summary>エントリを <paramref name="fromIndex"/> から <paramref name="toIndex"/> へ移動する。</summary>
+        public void MoveEntry(int fromIndex, int toIndex)
+        {
+            if (fromIndex < 0 || fromIndex >= _entries.Count) return;
+            if (toIndex < 0 || toIndex >= _entries.Count) return;
+            if (fromIndex == toIndex) return;
+            var entry = _entries[fromIndex];
+            _entries.RemoveAt(fromIndex);
+            _entries.Insert(toIndex, entry);
+            InvalidateCache();
+            Logger.Info($"辞書移動: index {fromIndex} → {toIndex} 「{entry.Display}」");
+        }
+
         public void ReplaceAll(IEnumerable<DictionaryEntry> entries)
         {
             _entries = entries.ToList();

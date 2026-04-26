@@ -12,27 +12,34 @@ namespace TxtToVoice.Tests.Services
     public class BuildAppSettingsTests
     {
         private static AppSettings Build(
-            bool isExit                  = false,
-            int rate                     = 0,
-            int volume                   = 100,
-            string? voiceName            = "TestVoice",
-            string? voiceId              = "test-voice-id",
-            bool ssmlEnabled             = false,
-            bool showHighlight           = true,
-            bool saveLastInputText       = true,
-            bool saveRecentFiles         = true,
+            bool isExit                   = false,
+            int rate                      = 0,
+            int volume                    = 100,
+            string? voiceName             = "TestVoice",
+            string? voiceId               = "test-voice-id",
+            bool ssmlEnabled              = false,
+            bool showHighlight            = true,
+            bool saveLastInputText        = true,
+            bool saveRecentFiles          = true,
             bool clearSensitiveDataOnExit = false,
-            bool deleteLogOnExit         = false,
-            string speechEngineType      = "SystemSpeech",
-            string lastText              = "テスト本文",
-            IReadOnlyList<string>? recentFiles = null)
+            bool deleteLogOnExit          = false,
+            string speechEngineType       = "SystemSpeech",
+            string lastText               = "テスト本文",
+            IReadOnlyList<string>? recentFiles = null,
+            int auditRetentionMonths      = 13,
+            bool autoPreviewEnabled       = false,
+            bool annotatedPreviewMode     = true,
+            int ssmlPauseStrength         = 1,
+            string saveFilePrefix         = "kouhou")
             => AppSettingsBuilder.Build(
                 isExit, rate, volume, voiceName, voiceId,
                 ssmlEnabled, showHighlight,
                 saveLastInputText, saveRecentFiles,
                 clearSensitiveDataOnExit, deleteLogOnExit,
                 speechEngineType, lastText,
-                recentFiles ?? new List<string> { "file1.txt", "file2.txt" });
+                recentFiles ?? new List<string> { "file1.txt", "file2.txt" },
+                auditRetentionMonths, autoPreviewEnabled, annotatedPreviewMode,
+                ssmlPauseStrength, saveFilePrefix);
 
         // ================================================================
         // 非終了時の挙動
@@ -156,6 +163,59 @@ namespace TxtToVoice.Tests.Services
             var s = Build(rate: -5, volume: 80);
             Assert.Equal(-5, s.Rate);
             Assert.Equal(80, s.Volume);
+        }
+
+        // ================================================================
+        // v0.6.3〜0.6.7 追加フィールド
+        // ================================================================
+
+        [Fact]
+        public void AuditRetentionMonthsは指定値が保存される()
+        {
+            var s = Build(auditRetentionMonths: 6);
+            Assert.Equal(6, s.AuditRetentionMonths);
+        }
+
+        [Fact]
+        public void AutoPreviewEnabledは指定値が保存される()
+        {
+            var s = Build(autoPreviewEnabled: true);
+            Assert.True(s.AutoPreviewEnabled);
+        }
+
+        [Fact]
+        public void AnnotatedPreviewModeは指定値が保存される()
+        {
+            var s = Build(annotatedPreviewMode: false);
+            Assert.False(s.AnnotatedPreviewMode);
+        }
+
+        [Fact]
+        public void SsmlPauseStrengthは指定値が保存される()
+        {
+            var s = Build(ssmlPauseStrength: 2);
+            Assert.Equal(2, s.SsmlPauseStrength);
+        }
+
+        [Fact]
+        public void SaveFilePrefixは指定値が保存される()
+        {
+            var s = Build(saveFilePrefix: "city");
+            Assert.Equal("city", s.SaveFilePrefix);
+        }
+
+        [Fact]
+        public void SaveFilePrefix空白はkouhouにフォールバックする()
+        {
+            var s = Build(saveFilePrefix: "   ");
+            Assert.Equal("kouhou", s.SaveFilePrefix);
+        }
+
+        [Fact]
+        public void SaveFilePrefixは前後空白をトリムする()
+        {
+            var s = Build(saveFilePrefix: "  town  ");
+            Assert.Equal("town", s.SaveFilePrefix);
         }
     }
 }

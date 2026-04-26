@@ -156,6 +156,40 @@ namespace TxtToVoice
         private void BtnEditEntry_Click(object sender, RoutedEventArgs e)       => EditSelectedEntry();
         private void DgDictionary_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e) => EditSelectedEntry();
 
+        private void BtnMoveUp_Click(object sender, RoutedEventArgs e)
+        {
+            int idx = GetSelectedEntryIndex();
+            if (idx <= 0 || !string.IsNullOrEmpty(TxtDictFilter.Text)) return;
+            _dictService.MoveEntry(idx, idx - 1);
+            SaveDictionaryAndRefresh();
+            DgDictionary.SelectedIndex = idx - 1;
+            DgDictionary.ScrollIntoView(DgDictionary.SelectedItem);
+            SetStatus("辞書エントリを上に移動しました。");
+        }
+
+        private void BtnMoveDown_Click(object sender, RoutedEventArgs e)
+        {
+            int idx = GetSelectedEntryIndex();
+            if (idx < 0 || idx >= _dictService.Entries.Count - 1 || !string.IsNullOrEmpty(TxtDictFilter.Text)) return;
+            _dictService.MoveEntry(idx, idx + 1);
+            SaveDictionaryAndRefresh();
+            DgDictionary.SelectedIndex = idx + 1;
+            DgDictionary.ScrollIntoView(DgDictionary.SelectedItem);
+            SetStatus("辞書エントリを下に移動しました。");
+        }
+
+        /// <summary>
+        /// DataGrid の SelectedItem から、フィルタに関わらず _dictService.Entries 内の実インデックスを返す。
+        /// 未選択または見つからない場合は -1。
+        /// </summary>
+        private int GetSelectedEntryIndex()
+        {
+            if (DgDictionary.SelectedItem is not Models.DictionaryEntry selected) return -1;
+            for (int i = 0; i < _dictService.Entries.Count; i++)
+                if (ReferenceEquals(_dictService.Entries[i], selected)) return i;
+            return -1;
+        }
+
         private void EditSelectedEntry()
         {
             int idx = DgDictionary.SelectedIndex;

@@ -52,6 +52,9 @@ namespace TxtToVoice
         // 監査ログ保持期間（0 = 無制限）
         private int _auditRetentionMonths = 13;
 
+        // 音声保存ファイル名プレフィックス
+        private string _saveFilePrefix = "kouhou";
+
         // 自動プレビュー用デバウンスキャンセルトークン
         private CancellationTokenSource? _autoPreviewCts;
 

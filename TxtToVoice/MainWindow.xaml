@@ -367,6 +367,16 @@
                                         Click="BtnDeleteEntry_Click"
                                         ToolTip="選択したエントリを削除 (Del)"
                                         Padding="8,3"/>
+                                <Button x:Name="BtnMoveUp" Content="↑"
+                                        Style="{StaticResource BtnPrimary}"
+                                        Click="BtnMoveUp_Click"
+                                        ToolTip="選択したエントリを1つ上に移動（絞り込み中は無効）"
+                                        Padding="7,3"/>
+                                <Button x:Name="BtnMoveDown" Content="↓"
+                                        Style="{StaticResource BtnPrimary}"
+                                        Click="BtnMoveDown_Click"
+                                        ToolTip="選択したエントリを1つ下に移動（絞り込み中は無効）"
+                                        Padding="7,3"/>
                                 <Button Content="CSV読込" Style="{StaticResource BtnPrimary}"
                                         Click="MenuImportCsv_Click"
                                         ToolTip="CSV ファイルからインポート"

@@ -310,7 +310,7 @@ namespace TxtToVoice
                 Filter      = "MP3ファイル (*.mp3)|*.mp3|WAVファイル (*.wav)|*.wav|MP4ファイル (*.mp4)|*.mp4",
                 DefaultExt  = "mp3",
                 FilterIndex = 1,
-                FileName    = $"kouhou_{DateTime.Now:yyyyMMdd_HHmmss}"
+                FileName    = $"{_saveFilePrefix}_{DateTime.Now:yyyyMMdd_HHmmss}"
             };
             if (dlg.ShowDialog() != true) return;
 

@@ -43,6 +43,7 @@ namespace TxtToVoice
             _deleteLogOnExit          = s.DeleteLogOnExit;
             _speechEngineType         = s.SpeechEngineType;
             _auditRetentionMonths     = s.AuditRetentionMonths;
+            _saveFilePrefix           = s.SaveFilePrefix;
             // SSML ポーズ強度
             CmbSsmlStrength.SelectedIndex = Math.Clamp(s.SsmlPauseStrength, 0, 2);
             // プレビュー設定
@@ -97,7 +98,8 @@ namespace TxtToVoice
                 _auditRetentionMonths,
                 ChkAutoPreview.IsChecked == true,
                 _annotatedPreview,
-                CmbSsmlStrength.SelectedIndex);
+                CmbSsmlStrength.SelectedIndex,
+                _saveFilePrefix);
 
         // ----------------------------------------------------------------
         // 設定ダイアログ
@@ -131,7 +133,7 @@ namespace TxtToVoice
             var dlg = new SettingsDialog(
                 _saveLastInputText, _saveRecentFiles,
                 _clearSensitiveDataOnExit, _deleteLogOnExit,
-                _speechEngineType, _auditRetentionMonths)
+                _speechEngineType, _auditRetentionMonths, _saveFilePrefix)
             {
                 Owner = this
             };
@@ -145,6 +147,7 @@ namespace TxtToVoice
             _deleteLogOnExit          = dlg.DeleteLogOnExit;
             _speechEngineType         = dlg.SpeechEngineType;
             _auditRetentionMonths     = dlg.AuditRetentionMonths;
+            _saveFilePrefix           = dlg.SaveFilePrefix;
 
             // 監査モードの変化を Logger にも即時反映する
             Logger.SuppressInfo = _clearSensitiveDataOnExit;

@@ -101,6 +101,13 @@ namespace TxtToVoice.Models
         [JsonPropertyName("ssmlPauseStrength")]
         public int SsmlPauseStrength { get; set; } = 1;
 
+        /// <summary>
+        /// 音声保存ダイアログのデフォルトファイル名プレフィックス（デフォルト: "kouhou"）。
+        /// 実際のファイル名は &lt;prefix&gt;_yyyyMMdd_HHmmss.ext になる。
+        /// </summary>
+        [JsonPropertyName("saveFilePrefix")]
+        public string SaveFilePrefix { get; set; } = "kouhou";
+
         /// <summary>自動プレビュー更新（ChkAutoPreview）が有効かどうか（デフォルト: false）</summary>
         [JsonPropertyName("autoPreviewEnabled")]
         public bool AutoPreviewEnabled { get; set; } = false;

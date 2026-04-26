@@ -30,7 +30,8 @@ namespace TxtToVoice.Services
             int auditRetentionMonths = 13,
             bool autoPreviewEnabled = false,
             bool annotatedPreviewMode = true,
-            int ssmlPauseStrength = 1)
+            int ssmlPauseStrength = 1,
+            string saveFilePrefix = "kouhou")
         {
             bool persistText   = isExit && saveLastInputText && !clearSensitiveDataOnExit;
             bool persistRecent = isExit
@@ -57,7 +58,9 @@ namespace TxtToVoice.Services
                 AuditRetentionMonths     = auditRetentionMonths,
                 AutoPreviewEnabled       = autoPreviewEnabled,
                 AnnotatedPreviewMode     = annotatedPreviewMode,
-                SsmlPauseStrength        = ssmlPauseStrength
+                SsmlPauseStrength        = ssmlPauseStrength,
+                SaveFilePrefix           = string.IsNullOrWhiteSpace(saveFilePrefix)
+                                           ? "kouhou" : saveFilePrefix.Trim()
             };
         }
     }

@@ -27,9 +27,13 @@ namespace TxtToVoice.Dialogs
         /// <summary>監査ログ保持月数（0 = 無制限、OK 押下後に確定）</summary>
         public int AuditRetentionMonths { get; private set; } = 13;
 
+        /// <summary>音声保存ファイル名プレフィックス（OK 押下後に確定）</summary>
+        public string SaveFilePrefix { get; private set; } = "kouhou";
+
         public SettingsDialog(bool saveLastInputText, bool saveRecentFiles,
             bool clearSensitiveDataOnExit, bool deleteLogOnExit,
-            string speechEngineType, int auditRetentionMonths = 13)
+            string speechEngineType, int auditRetentionMonths = 13,
+            string saveFilePrefix = "kouhou")
         {
             InitializeComponent();
             ChkSaveLastInputText.IsChecked        = saveLastInputText;
@@ -49,6 +53,7 @@ namespace TxtToVoice.Dialogs
             }
             if (CmbAuditRetention.SelectedItem == null)
                 CmbAuditRetention.SelectedIndex = 3; // 既定: 13か月
+            TxtSaveFilePrefix.Text = saveFilePrefix;
         }
 
         private void BtnOk_Click(object sender, RoutedEventArgs e)
@@ -60,8 +65,10 @@ namespace TxtToVoice.Dialogs
             SpeechEngineType         = RbWinRt.IsChecked    == true ? SpeechEngineFactory.WinRt
                                      : RbOpenJTalk.IsChecked == true ? SpeechEngineFactory.OpenJTalk
                                      : SpeechEngineFactory.SystemSpeech;
-            AuditRetentionMonths     = CmbAuditRetention.SelectedItem is System.Windows.Controls.ComboBoxItem ci
-                                     ? (int)ci.Tag : 13;
+            AuditRetentionMonths = CmbAuditRetention.SelectedItem is System.Windows.Controls.ComboBoxItem ci
+                                 ? Convert.ToInt32(ci.Tag) : 13;
+            SaveFilePrefix = string.IsNullOrWhiteSpace(TxtSaveFilePrefix.Text)
+                           ? "kouhou" : TxtSaveFilePrefix.Text.Trim();
             DialogResult = true;
         }
 
