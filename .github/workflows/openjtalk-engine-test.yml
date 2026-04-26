@@ -23,6 +23,7 @@ on:
 
 
 jobs:
+  openjtalk-engine-test:
     name: OpenJTalk RequiresEngine Tests (Windows)
     runs-on: windows-latest
 
