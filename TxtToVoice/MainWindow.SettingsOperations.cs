@@ -93,14 +93,23 @@ namespace TxtToVoice
         private void MenuTextRules_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new Dialogs.TextRuleDialog(PathConfig.EffectiveTextRulesPath) { Owner = this };
-            if (dlg.ShowDialog() == true && _playback == PlaybackState.Idle)
+            if (dlg.ShowDialog() != true) return;
+
+            if (_playback == PlaybackState.Idle)
             {
-                // ルール保存後、アイドル中はエンジンを即時差し替えて変更を反映する (#71)
+                // アイドル中: エンジンを即時差し替えて変更を反映する (#71)
                 _speechService.ReplaceEngine(SpeechEngineFactory.Create(_speechEngineType));
                 InitializeVoiceCombo();
                 _speechService.SetRate((int)SldRate.Value);
                 _speechService.SetVolume((int)SldVolume.Value);
                 Logger.Info("読みルール変更によりエンジンを即時再起動しました。");
+                SetStatus("読みルールを保存しました。");
+            }
+            else
+            {
+                // 再生中: 即時反映できないためユーザーに通知する (#77)
+                Logger.Info("読みルールを保存しましたが、再生中のため即時反映を延期しました。");
+                SetStatus("読みルールを保存しました。次回エンジン起動時に反映されます。");
             }
         }
 

@@ -80,16 +80,22 @@
                        TextChanged="TxtTestInput_TextChanged"/>
         </Grid>
 
-        <!-- 変換結果 -->
-        <Grid Grid.Row="7">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="46"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="変換:" VerticalAlignment="Center" FontSize="12"/>
-            <TextBox   Grid.Column="1" x:Name="TxtTestResult" Height="26" FontSize="12"
-                       IsReadOnly="True" Background="#F8F8F8"/>
-        </Grid>
+        <!-- 変換結果 + 無効ルール診断 (#79) -->
+        <StackPanel Grid.Row="7">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="46"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="変換:" VerticalAlignment="Center" FontSize="12"/>
+                <TextBox   Grid.Column="1" x:Name="TxtTestResult" Height="26" FontSize="12"
+                           IsReadOnly="True" Background="#F8F8F8"/>
+            </Grid>
+            <TextBlock x:Name="TxtDiagnostic"
+                       FontSize="10" Foreground="#CC4400"
+                       Margin="46,2,0,0"
+                       Visibility="Collapsed"/>
+        </StackPanel>
 
         <!-- ボタン -->
         <StackPanel Grid.Row="9" Orientation="Horizontal" HorizontalAlignment="Right">

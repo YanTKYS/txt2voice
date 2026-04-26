@@ -223,14 +223,23 @@ namespace TxtToVoice
                     return;
                 }
 
-                // #73 容量ガード: 件数・表記文字数・読み文字数のいずれかが閾値を超える場合は確認を求める
-                int totalDisplayChars = imported.Sum(en => en.Display.Length);
-                int totalReadingChars  = imported.Sum(en => en.Reading.Length);
-                if (imported.Count > 1000 || totalDisplayChars > 10_000 || totalReadingChars > 10_000)
+                // #78 容量ガード: インポート単体 + インポート後総量の両方で判定
+                int totalDisplayChars    = imported.Sum(en => en.Display.Length);
+                int totalReadingChars    = imported.Sum(en => en.Reading.Length);
+                int existingDisplayChars = _dictService.Entries.Sum(en => en.Display.Length);
+                int afterCount           = _dictService.Entries.Count + imported.Count;
+                int afterDisplayChars    = existingDisplayChars + totalDisplayChars;
+
+                bool importLarge = imported.Count > 1000 || totalDisplayChars > 10_000 || totalReadingChars > 10_000;
+                bool totalLarge  = afterCount > 2_000 || afterDisplayChars > 20_000;
+
+                if (importLarge || totalLarge)
                 {
+                    string guardDetail = totalLarge && !importLarge
+                        ? $"インポート後の辞書総量が大きくなります（合計 {afterCount} 件、表記合計 {afterDisplayChars} 文字）。\n\n"
+                        : $"インポートするエントリが大量です（{imported.Count} 件、表記 {totalDisplayChars} 文字、読み {totalReadingChars} 文字）。\n\n";
                     var guardAnswer = MessageBox.Show(
-                        $"インポートするエントリが大量です（{imported.Count} 件、表記 {totalDisplayChars} 文字、読み {totalReadingChars} 文字）。\n\n" +
-                        "Aho-Corasick 辞書の構築に時間がかかる場合があります。\n続行しますか？",
+                        guardDetail + "Aho-Corasick 辞書の構築に時間がかかる場合があります。\n続行しますか？",
                         "大量インポートの確認",
                         MessageBoxButton.YesNo,
                         MessageBoxImage.Warning);

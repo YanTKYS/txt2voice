@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Xunit;
@@ -39,7 +40,7 @@ namespace TxtToVoice.Tests.Services
             Assert.Equal(2, lines.Length);
             Assert.Equal("timestamp,engineType,format,success,errorCode,fileHash", lines[0]);
 
-            string[] cols = lines[1].Split(',');
+            string[] cols = ParseCsvLine(lines[1]);
             Assert.Equal(6, cols.Length);
             Assert.Equal("SystemSpeech", cols[1]);
             Assert.Equal("mp3",          cols[2]);
@@ -54,7 +55,7 @@ namespace TxtToVoice.Tests.Services
             AuditLogger.Record("OpenJTalk", "wav", success: false,
                 errorCode: "TTV-E-SAVE-001");
 
-            string[] cols = File.ReadAllLines(_csvPath)[1].Split(',');
+            string[] cols = ParseCsvLine(File.ReadAllLines(_csvPath)[1]);
             Assert.Equal("OpenJTalk",       cols[1]);
             Assert.Equal("wav",             cols[2]);
             Assert.Equal("false",           cols[3]);
@@ -78,7 +79,7 @@ namespace TxtToVoice.Tests.Services
         {
             AuditLogger.Record("SystemSpeech", "mp3", success: true);
 
-            string[] cols = File.ReadAllLines(_csvPath)[1].Split(',');
+            string[] cols = ParseCsvLine(File.ReadAllLines(_csvPath)[1]);
             Assert.Equal(string.Empty, cols[5]);
         }
 
@@ -87,8 +88,17 @@ namespace TxtToVoice.Tests.Services
         {
             AuditLogger.Record("SystemSpeech", "wav", success: true, outputPath: @"C:\x.wav");
 
-            string ts = File.ReadAllLines(_csvPath)[1].Split(',')[0];
+            string ts = ParseCsvLine(File.ReadAllLines(_csvPath)[1])[0];
             Assert.True(DateTime.TryParse(ts, out _), $"ISO 8601 パース失敗: {ts}");
+        }
+
+        [Fact]
+        public void Record_engineTypeにカンマを含む場合_引用符でエスケープされる()
+        {
+            AuditLogger.Record("Engine,With,Commas", "wav", success: true);
+
+            string[] cols = ParseCsvLine(File.ReadAllLines(_csvPath)[1]);
+            Assert.Equal("Engine,With,Commas", cols[1]);
         }
 
         // ================================================================
@@ -117,6 +127,28 @@ namespace TxtToVoice.Tests.Services
             var feb = new DateTimeOffset(2026, 2, 1, 0, 0, 0, TimeSpan.Zero);
             Assert.NotEqual(PathConfig.AuditLogPathForMonth(jan),
                             PathConfig.AuditLogPathForMonth(feb));
+        }
+
+        // ================================================================
+        // ヘルパー: RFC 4180 準拠の CSV 1行パーサ
+        // ================================================================
+
+        private static string[] ParseCsvLine(string line)
+        {
+            var fields  = new List<string>();
+            var current = new System.Text.StringBuilder();
+            bool inQuotes = false;
+            foreach (char c in line)
+            {
+                if (c == '"')
+                    inQuotes = !inQuotes;
+                else if (c == ',' && !inQuotes)
+                { fields.Add(current.ToString()); current.Clear(); }
+                else
+                    current.Append(c);
+            }
+            fields.Add(current.ToString());
+            return fields.ToArray();
         }
     }
 

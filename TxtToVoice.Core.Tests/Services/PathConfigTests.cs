@@ -88,5 +88,49 @@ namespace TxtToVoice.Tests.Services
             // フォールバックが発生しているときはポータブルモードは false
             Assert.False(PathConfig.IsPortable && PathConfig.PortableFallbackApplied);
         }
+
+        // ================================================================
+        // TextRules パス（v0.5.9 追加・v0.6.2 テスト拡充）
+        // ================================================================
+
+        [Fact]
+        public void TextRulesPath_はData配下のtext_rules_json()
+        {
+            Assert.EndsWith(Path.Combine("Data", "text_rules.json"), PathConfig.TextRulesPath);
+        }
+
+        [Fact]
+        public void UserTextRulesPath_はDataDirectory下のtext_rules_json()
+        {
+            Assert.StartsWith(PathConfig.DataDirectory, PathConfig.UserTextRulesPath,
+                StringComparison.OrdinalIgnoreCase);
+            Assert.EndsWith("text_rules.json", PathConfig.UserTextRulesPath);
+        }
+
+        [Fact]
+        public void UserTextRulesPath_とTextRulesPath_は異なるパス()
+        {
+            Assert.NotEqual(PathConfig.UserTextRulesPath, PathConfig.TextRulesPath,
+                StringComparer.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public void EffectiveTextRulesPath_はTextRulesPathまたはUserTextRulesPathのいずれか()
+        {
+            string result = PathConfig.EffectiveTextRulesPath;
+            bool isValid = string.Equals(result, PathConfig.TextRulesPath,  StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(result, PathConfig.UserTextRulesPath, StringComparison.OrdinalIgnoreCase);
+            Assert.True(isValid, $"想定外のパス: {result}");
+        }
+
+        [Fact]
+        public void EffectiveTextRulesPath_ユーザーファイル不在時はTextRulesPathを返す()
+        {
+            if (File.Exists(PathConfig.UserTextRulesPath))
+                return; // ユーザーファイルが存在する環境はスキップ
+
+            Assert.Equal(PathConfig.TextRulesPath, PathConfig.EffectiveTextRulesPath,
+                StringComparer.OrdinalIgnoreCase);
+        }
     }
 }

@@ -45,7 +45,12 @@ namespace TxtToVoice.Dialogs
             var token = _previewCts.Token;
 
             string input = TxtTestInput.Text;
-            if (string.IsNullOrEmpty(input)) { TxtTestResult.Text = string.Empty; return; }
+            if (string.IsNullOrEmpty(input))
+            {
+                TxtTestResult.Text  = string.Empty;
+                TxtDiagnostic.Visibility = System.Windows.Visibility.Collapsed;
+                return;
+            }
 
             // スナップショットを取ってバックグラウンドで評価し、300ms デバウンス
             var snapshot = new List<(string Pattern, string Replacement, bool Enabled)>(_viewModels.Count);
@@ -59,6 +64,7 @@ namespace TxtToVoice.Dialogs
                     await Task.Delay(300, token).ConfigureAwait(false);
 
                     string result = input;
+                    var skipped = new List<string>();
                     foreach (var (pattern, replacement, enabled) in snapshot)
                     {
                         if (!enabled || string.IsNullOrEmpty(pattern)) continue;
@@ -67,10 +73,25 @@ namespace TxtToVoice.Dialogs
                             var rx = new Regex(pattern, RegexOptions.None, TimeSpan.FromMilliseconds(500));
                             result = rx.Replace(result, replacement);
                         }
-                        catch { /* 無効なパターンまたは Regex タイムアウト — スキップ */ }
+                        catch { skipped.Add(pattern); }
                     }
 
-                    Dispatcher.Invoke(() => { if (!token.IsCancellationRequested) TxtTestResult.Text = result; });
+                    Dispatcher.Invoke(() =>
+                    {
+                        if (token.IsCancellationRequested) return;
+                        TxtTestResult.Text = result;
+                        if (skipped.Count > 0)
+                        {
+                            TxtDiagnostic.Text = skipped.Count == 1
+                                ? $"パターンエラーによりスキップ: 「{skipped[0]}」"
+                                : $"パターンエラーによりスキップ: {skipped.Count}件（「{skipped[0]}」ほか）";
+                            TxtDiagnostic.Visibility = System.Windows.Visibility.Visible;
+                        }
+                        else
+                        {
+                            TxtDiagnostic.Visibility = System.Windows.Visibility.Collapsed;
+                        }
+                    });
                 }
                 catch (OperationCanceledException) { /* デバウンスキャンセル — 無視 */ }
             }, token);
