@@ -263,6 +263,9 @@ namespace TxtToVoice
         private void ChkSsml_Changed(object sender, RoutedEventArgs e)
         {
             if (_speechService is null) return;
+            bool ssml = ChkSsml.IsChecked == true;
+            ChkHighlight.IsEnabled = !ssml;
+            if (ssml) ChkHighlight.IsChecked = false;
             SaveCurrentSettings();
         }
 

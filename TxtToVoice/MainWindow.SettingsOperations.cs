@@ -33,7 +33,8 @@ namespace TxtToVoice
             }
             // SSML モード
             ChkSsml.IsChecked = s.SsmlPauseEnabled;
-            // 読み上げ位置ハイライト
+            // 読み上げ位置ハイライト（SSML ON のときは無効）
+            ChkHighlight.IsEnabled = !s.SsmlPauseEnabled;
             ChkHighlight.IsChecked = s.ShowReadingHighlight;
             // 機微データ保存ポリシー
             _saveLastInputText       = s.SaveLastInputText;

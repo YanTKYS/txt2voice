@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
@@ -145,6 +147,21 @@ namespace TxtToVoice
         {
             TxtCharCount.Text = $"{TxtInput.Text.Length:N0} 文字";
             UpdateEstimatedTime();
+
+            if (ChkAutoPreview.IsChecked != true) return;
+            _autoPreviewCts?.Cancel();
+            _autoPreviewCts?.Dispose();
+            _autoPreviewCts = new CancellationTokenSource();
+            var token = _autoPreviewCts.Token;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(500, token);
+                    Dispatcher.Invoke(ApplyAndPreview);
+                }
+                catch (OperationCanceledException) { }
+            }, token);
         }
 
         // ----------------------------------------------------------------

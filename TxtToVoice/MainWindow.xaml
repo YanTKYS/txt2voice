@@ -235,7 +235,7 @@
                          IsInactiveSelectionHighlightEnabled="True"
                          ToolTip="読み上げる原稿をここに入力または貼り付けてください。&#10;テキストを選択して読み上げ開始すると、選択範囲のみ読み上げます。"/>
 
-                <!-- フッター: 文字数 + 想定読み上げ時間 + プレビュー更新ボタン -->
+                <!-- フッター: 文字数 + 想定読み上げ時間 + 自動プレビュー + プレビュー更新ボタン -->
                 <Border Grid.Row="2" Background="#E4E8EE" Padding="8,5">
                     <DockPanel>
                         <TextBlock x:Name="TxtCharCount"
@@ -248,10 +248,17 @@
                                    VerticalAlignment="Center"/>
                         <Button Content="辞書を適用してプレビュー更新 (Ctrl+P)"
                                 Style="{StaticResource BtnSuccess}"
+                                DockPanel.Dock="Right"
                                 Click="BtnApplyDictionary_Click"
-                                HorizontalAlignment="Right"
                                 ToolTip="入力テキストに辞書を適用し、プレビューを更新します"
                                 Padding="14,4"/>
+                        <CheckBox x:Name="ChkAutoPreview"
+                                  Content="自動更新"
+                                  DockPanel.Dock="Right"
+                                  VerticalAlignment="Center"
+                                  FontSize="11"
+                                  Margin="0,0,10,0"
+                                  ToolTip="オンにすると入力中に自動でプレビューを更新します（500ms デバウンス）"/>
                     </DockPanel>
                 </Border>
             </Grid>

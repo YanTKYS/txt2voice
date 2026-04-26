@@ -33,7 +33,7 @@
                              Content="OpenJTalk — 日本語専用 TTS（要セットアップ: setup_openjtalk.ps1）"
                              FontSize="12" Margin="0,4"/>
                 <TextBlock FontSize="10" Foreground="#666" Margin="0,6,0,0" TextWrapping="Wrap">
-                    ※ 変更は次回起動時に適用されます。音声の選択は起動後に再設定してください。
+                    ※ エンジン変更は再生停止中に即時反映されます。再生中の場合は次回起動時に反映されます。音声の選択はダイアログを閉じた後に再設定してください。
                     OpenJTalk を選択する場合は事前に setup_openjtalk.ps1 を実行してください（TxtToVoice.exe と同じフォルダ）。
                 </TextBlock>
             </StackPanel>
