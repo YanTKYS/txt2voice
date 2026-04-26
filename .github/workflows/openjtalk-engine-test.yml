@@ -21,8 +21,10 @@ on:
   schedule:
     - cron: "0 2 * * 1"  # 毎週月曜 02:00 UTC
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
-  openjtalk-engine-test:
     name: OpenJTalk RequiresEngine Tests (Windows)
     runs-on: windows-latest
 
