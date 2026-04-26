@@ -223,6 +223,19 @@ namespace TxtToVoice
                     return;
                 }
 
+                // #70 容量ガード: 件数または総表記文字数が閾値を超える場合は確認を求める
+                int totalDisplayChars = imported.Sum(en => en.Display.Length);
+                if (imported.Count > 1000 || totalDisplayChars > 10_000)
+                {
+                    var guardAnswer = MessageBox.Show(
+                        $"インポートするエントリが大量です（{imported.Count} 件、表記合計 {totalDisplayChars} 文字）。\n\n" +
+                        "Aho-Corasick 辞書の構築に時間がかかる場合があります。\n続行しますか？",
+                        "大量インポートの確認",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Warning);
+                    if (guardAnswer != MessageBoxResult.Yes) return;
+                }
+
                 string confirmMsg = report.HasIssues
                     ? $"検証で以下の問題が検出されました:\n\n{report.FormatIssues()}\n\n" +
                       $"有効エントリ {imported.Count} 件をインポートします。\n\n" +

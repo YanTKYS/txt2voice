@@ -82,7 +82,7 @@ namespace TxtToVoice.Services
             _dicPath   = Path.Combine(baseDir, "Data", "openjtalk", "open_jtalk_dic_utf_8");
             _voiceDir  = Path.Combine(baseDir, "Data", "openjtalk", "voice");
             _voiceMap  = BuildVoiceMap(_voiceDir);
-            _textRules = TextRuleLoader.Load(PathConfig.TextRulesPath);
+            _textRules = TextRuleLoader.Load(PathConfig.EffectiveTextRulesPath);
 
             bool dllPresent   = NativeJTalk.IsDllPresent();
             bool dicPresent   = Directory.Exists(_dicPath);

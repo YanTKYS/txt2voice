@@ -153,14 +153,53 @@
 - 100件 × 50,000文字: 45,000ms → **2,000ms**（AC 実測 < 5ms の ~400 倍余裕）
 - CI ランナーのばらつき（Azure VM コンテナ起動等）を考慮した余裕係数をコメントに明記
 
-### 70. 辞書インポート容量ガード
+### 70. 辞書インポート容量ガード ✅ v0.5.9
 
 **課題**: CSV インポートは件数上限・総文字数上限が未実装。極端な大規模辞書投入時に Aho-Corasick 構築メモリ（状態数 ∝ パターン総文字数）と応答性が悪化する可能性がある。  
-**提案**: インポート前に件数と総文字数をチェックし、一定閾値を超えた場合に確認ダイアログを表示する（インポート自体は続行可能）。  
-**スコープ**:
-- 閾値案: エントリ数 1,000 件超 / 総表記文字数 10,000 文字超で警告
-- `CsvService.ImportWithReport()` または呼び出し元 (`DictionaryOperations`) で確認ダイアログを追加  
-**優先度**: 低（現状のユースケースでは不要だが、AC 構築コストのガードとして将来有効）
+
+**v0.5.9 実装**:
+- `MainWindow.DictionaryOperations.cs` の `MenuImportCsv_Click` にガードを追加
+- 閾値: エントリ数 1,000 件超 または 総表記文字数 10,000 文字超で YesNo 確認ダイアログ
+- ユーザーが「いいえ」を選択した場合はインポート中止（「はい」で続行可能）
+
+---
+
+## v0.5.9 実装済み提案（#70 + リファクタリング）
+
+### 読みルール保存先フォールバック ✅ v0.5.9
+
+**課題**: Program Files 等に EXE を配置すると `Data/text_rules.json` が読み取り専用になり、読みルール画面で保存が失敗する。  
+
+**v0.5.9 実装**:
+- `PathConfig.UserTextRulesPath` — `DataDirectory` 下の `text_rules.json` フルパス（新規追加）
+- `PathConfig.EffectiveTextRulesPath` — ユーザー保存済みファイルを優先し、未保存時は EXE 配下を返す（新規追加）
+- `OpenJTalkEngine` / `TextRuleDialog` / `MainWindow.SettingsOperations` でいずれも `EffectiveTextRulesPath` を使用
+- `TextRuleDialog.BtnOk_Click`: 最初に `_rulesPath` へ書き込み試行、`UnauthorizedAccessException` または `IOException` が発生した場合は `UserTextRulesPath` へ自動フォールバック
+
+### プレビューデバウンス ✅ v0.5.9
+
+**課題**: `TxtTestInput_TextChanged` が毎キー入力ごとに全ルールに対して Regex.Replace を実行するため、多数のルールがある場合に UI スレッドが詰まる。  
+
+**v0.5.9 実装**:
+- `CancellationTokenSource` パターンで 300ms デバウンス
+- `Task.Run` でスナップショットをバックグラウンド評価し、完了後 `Dispatcher.InvokeAsync` で UI に反映
+- UI スレッドへの負荷ゼロ; キャンセルで古い評価が捨てられる
+
+### 読みルール保存後のエンジン即時再起動 ✅ v0.5.9
+
+**課題**: 読みルール画面で保存しても、エンジン切替またはアプリ再起動まで変更が反映されない（v0.5.8 時点の制約）。  
+
+**v0.5.9 実装**:
+- `MenuTextRules_Click`: `dlg.ShowDialog() == true && _playback == PlaybackState.Idle` の場合に `_speechService.ReplaceEngine()` を呼び出し、保存後即時反映
+- 再生中の場合はスキップ（再起動時に反映）
+
+### 監査 CSV timestamp タイムゾーンオフセット付与 ✅ v0.5.9
+
+**課題**: `AuditLogger` の timestamp が `DateTime.Now` でローカル時刻のみを記録しており、UTC オフセットが不明なため監査ログの突合が困難。  
+
+**v0.5.9 実装**:
+- `DateTimeOffset.Now.ToString("yyyy-MM-ddTHH:mm:sszzz")` に変更（例: `2026-04-26T14:30:00+09:00`）
+- RFC 3339 / ISO 8601 準拠の形式で UTCオフセットを明示
 
 ---
 

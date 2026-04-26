@@ -70,11 +70,24 @@ namespace TxtToVoice.Services
         public static string AuditLogPath => Path.Combine(DataDirectory, "audit.csv");
 
         /// <summary>
-        /// テキスト変換ルール JSON ファイルのフルパス（EXE 配置ディレクトリ固定・ユーザー編集可）。
-        /// DataDirectory（ポータブル/通常モード）には依存せず、常に EXE の Data\ フォルダを参照する。
+        /// テキスト変換ルール JSON ファイルのフルパス（EXE 配置ディレクトリ固定）。
+        /// Program Files 等で書き込み不可の場合は <see cref="UserTextRulesPath"/> に保存される。
         /// </summary>
         public static string TextRulesPath =>
             Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "text_rules.json");
+
+        /// <summary>
+        /// ユーザーが保存した text_rules.json のフルパス（DataDirectory 下）。
+        /// EXE 配置ディレクトリが書き込み不可のときの保存先フォールバック。
+        /// </summary>
+        public static string UserTextRulesPath =>
+            Path.Combine(DataDirectory, "text_rules.json");
+
+        /// <summary>
+        /// 読み込み時に使う有効パス。ユーザー保存済みファイルを優先し、未保存時は EXE 配下デフォルトを返す。
+        /// </summary>
+        public static string EffectiveTextRulesPath =>
+            File.Exists(UserTextRulesPath) ? UserTextRulesPath : TextRulesPath;
 
         // ----------------------------------------------------------------
         // 書き込みテスト

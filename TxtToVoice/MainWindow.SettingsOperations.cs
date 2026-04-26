@@ -92,8 +92,13 @@ namespace TxtToVoice
 
         private void MenuTextRules_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new Dialogs.TextRuleDialog(PathConfig.TextRulesPath) { Owner = this };
-            dlg.ShowDialog();
+            var dlg = new Dialogs.TextRuleDialog(PathConfig.EffectiveTextRulesPath) { Owner = this };
+            if (dlg.ShowDialog() == true && _playback == PlaybackState.Idle)
+            {
+                // ルール保存後、アイドル中はエンジンを即時差し替えて変更を反映する
+                _speechService.ReplaceEngine(SpeechEngineFactory.Create(_speechEngineType));
+                Logger.Info("読みルール変更によりエンジンを即時再起動しました。");
+            }
         }
 
         private void MenuSettings_Click(object sender, RoutedEventArgs e)

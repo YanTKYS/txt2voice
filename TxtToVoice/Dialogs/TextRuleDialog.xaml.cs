@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using TxtToVoice.Models;
@@ -12,12 +14,13 @@ namespace TxtToVoice.Dialogs
 {
     /// <summary>
     /// text_rules.json のルール一覧を DataGrid で表示し、有効/無効を切替・保存するダイアログ。
-    /// テスト入力欄で変換結果をリアルタイムプレビューできる。
+    /// テスト入力欄で変換結果をリアルタイムプレビューできる（300ms デバウンス）。
     /// </summary>
     public partial class TextRuleDialog : Window
     {
         private readonly string _rulesPath;
         private readonly ObservableCollection<TextRuleViewModel> _viewModels = new();
+        private CancellationTokenSource? _previewCts;
 
         public TextRuleDialog(string rulesPath)
         {
@@ -32,21 +35,38 @@ namespace TxtToVoice.Dialogs
 
         private void TxtTestInput_TextChanged(object sender, TextChangedEventArgs e)
         {
+            _previewCts?.Cancel();
+            _previewCts = new CancellationTokenSource();
+            var token = _previewCts.Token;
+
             string input = TxtTestInput.Text;
             if (string.IsNullOrEmpty(input)) { TxtTestResult.Text = string.Empty; return; }
 
-            string result = input;
+            // スナップショットを取ってバックグラウンドで評価し、300ms デバウンス
+            var snapshot = new List<(string Pattern, string Replacement, bool Enabled)>(_viewModels.Count);
             foreach (var vm in _viewModels)
+                snapshot.Add((vm.Pattern, vm.Replacement, vm.Enabled));
+
+            _ = Task.Run(async () =>
             {
-                if (!vm.Enabled || string.IsNullOrEmpty(vm.Pattern)) continue;
-                try
+                await Task.Delay(300, token).ConfigureAwait(false);
+                if (token.IsCancellationRequested) return;
+
+                string result = input;
+                foreach (var (pattern, replacement, enabled) in snapshot)
                 {
-                    var rx = new Regex(vm.Pattern, RegexOptions.None, TimeSpan.FromMilliseconds(500));
-                    result = rx.Replace(result, vm.Replacement);
+                    if (!enabled || string.IsNullOrEmpty(pattern)) continue;
+                    try
+                    {
+                        var rx = new Regex(pattern, RegexOptions.None, TimeSpan.FromMilliseconds(500));
+                        result = rx.Replace(result, replacement);
+                    }
+                    catch { /* 無効なパターンまたはタイムアウト — スキップ */ }
                 }
-                catch { /* 無効なパターンまたはタイムアウト — スキップ */ }
-            }
-            TxtTestResult.Text = result;
+
+                if (!token.IsCancellationRequested)
+                    Dispatcher.InvokeAsync(() => { if (!token.IsCancellationRequested) TxtTestResult.Text = result; });
+            }, token);
         }
 
         private void BtnOk_Click(object sender, RoutedEventArgs e)
@@ -57,7 +77,19 @@ namespace TxtToVoice.Dialogs
                 foreach (var vm in _viewModels)
                     models.Add(vm.ToModel());
 
-                TextRuleLoader.SaveRaw(_rulesPath, models);
+                // EXE 配置先が書き込み不可のとき DataDirectory 下にフォールバック
+                string savePath = _rulesPath;
+                try
+                {
+                    TextRuleLoader.SaveRaw(savePath, models);
+                }
+                catch (Exception ex) when (ex is UnauthorizedAccessException || ex is System.IO.IOException)
+                {
+                    savePath = PathConfig.UserTextRulesPath;
+                    TextRuleLoader.SaveRaw(savePath, models);
+                    Logger.Warn($"読みルール: EXE 配下への書き込み不可、DataDirectory に保存: {savePath}");
+                }
+
                 Logger.Info($"読みルール保存: {models.Count}件");
                 DialogResult = true;
             }

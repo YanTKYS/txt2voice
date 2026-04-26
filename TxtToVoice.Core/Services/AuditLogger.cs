@@ -43,7 +43,7 @@ namespace TxtToVoice.Services
                     : string.Empty;
 
                 string line = string.Join(",",
-                    DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    DateTimeOffset.Now.ToString("yyyy-MM-ddTHH:mm:sszzz"),
                     CsvEscape(engineType),
                     CsvEscape(format),
                     success ? "true" : "false",
