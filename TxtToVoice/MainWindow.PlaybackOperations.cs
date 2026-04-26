@@ -325,6 +325,8 @@ namespace TxtToVoice
                 await _speechService.SaveToFileAsync(content, dlg.FileName, format,
                     isSsml: useSsml, progress: progress, ct: cts.Token);
                 progressDialog.MarkCompleted();
+                AuditLogger.Record(_speechEngineType, format.ToString().ToLowerInvariant(),
+                    success: true, outputPath: dlg.FileName);
                 SetStatus($"音声保存完了: {Path.GetFileName(dlg.FileName)}");
                 MessageBox.Show(
                     $"音声ファイルを保存しました。\n\n{dlg.FileName}",
@@ -341,6 +343,8 @@ namespace TxtToVoice
             catch (Exception ex)
             {
                 Logger.Error($"[{TtvErrorCode.SaveFailed}] 音声保存エラー: {ex.Message}");
+                AuditLogger.Record(_speechEngineType, format.ToString().ToLowerInvariant(),
+                    success: false, errorCode: TtvErrorCode.SaveFailed);
                 MessageBox.Show(
                     $"[{TtvErrorCode.SaveFailed}] 音声ファイルの保存に失敗しました。\n\n{ex.Message}",
                     "保存エラー",

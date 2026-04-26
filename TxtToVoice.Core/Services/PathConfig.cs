@@ -66,6 +66,9 @@ namespace TxtToVoice.Services
         /// <summary>設定 JSON ファイルのフルパス。</summary>
         public static string SettingsPath => Path.Combine(DataDirectory, "settings.json");
 
+        /// <summary>監査ログ CSV ファイルのフルパス。</summary>
+        public static string AuditLogPath => Path.Combine(DataDirectory, "audit.csv");
+
         /// <summary>
         /// テキスト変換ルール JSON ファイルのフルパス（EXE 配置ディレクトリ固定・ユーザー編集可）。
         /// DataDirectory（ポータブル/通常モード）には依存せず、常に EXE の Data\ フォルダを参照する。

@@ -334,17 +334,17 @@ CSV インポート時に「重複語・極端な優先順位・空読み」を�
 - `ReplaceEngine`: 旧エンジンをデタッチ → Stop → 新エンジンをアタッチ → 旧エンジンを Dispose の順で実行
 - `MainWindow.SettingsOperations.cs` の `MenuSettings_Click` に「`_speechEngineType` 変化かつ `_playback == PlaybackState.Idle`」ガードを追加し、条件を満たす場合のみ即時切替 + `InitializeVoiceCombo()` + `SetRate` / `SetVolume` 再適用
 
-### 59. 運用監査向けエクスポート（C-2）
+### 59. 運用監査向けエクスポート（C-2）✅
 
 「いつ・どのファイルを・どのエンジンで・どの形式に保存したか」の最小監査ログを CSV 出力可能に。  
 個人情報は保持せず（ファイル名ハッシュ化・件数ベース統計採用）。
 
-**v0.5.6 実装方針（監査 CSV 最小セット）**:
-- 出力列: `timestamp`, `engineType`, `format`, `success`, `errorCode`（任意）, `fileHash`（任意）
-- 保存操作は既に UI/ログで情報を持っているため実装土台は整っている
-- `PathConfig.AuditLogPath` を追加し `%LOCALAPPDATA%\TxtToVoice\audit.csv` に追記
-- ポータブルモード時は EXE フォルダ配下に出力（PathConfig の既存分岐に準拠）
-- 個人情報ゼロ方針: ファイル名は SHA-256 ハッシュ（先頭8文字）のみ記録
+**v0.5.6 実装（監査 CSV 最小セット）**:
+- `TxtToVoice.Core/Services/AuditLogger.cs` を新規追加（`Record(engineType, format, success, errorCode?, outputPath?)`）
+- `PathConfig.AuditLogPath` を追加し `%LOCALAPPDATA%\TxtToVoice\audit.csv` に追記（ポータブルモード時は EXE フォルダ配下）
+- `MainWindow.PlaybackOperations.cs` の `SaveAudio()` で成功時・失敗時に `AuditLogger.Record()` を呼び出す（キャンセルは記録しない）
+- 個人情報ゼロ方針: ファイル名のみ SHA-256 ハッシュ（先頭 8 文字小文字）として記録、実パスは保持しない
+- `AuditLoggerTests.cs` で 5 件のテストを追加（ヘッダー、errorCode、複数行、outputPath なし、timestamp 形式）
 
 ---
 
