@@ -66,8 +66,15 @@ namespace TxtToVoice.Services
         /// <summary>設定 JSON ファイルのフルパス。</summary>
         public static string SettingsPath => Path.Combine(DataDirectory, "settings.json");
 
-        /// <summary>監査ログ CSV ファイルのフルパス。</summary>
-        public static string AuditLogPath => Path.Combine(DataDirectory, "audit.csv");
+        /// <summary>現在月の監査ログ CSV ファイルのフルパス（月次ローテーション形式）。</summary>
+        public static string AuditLogPath => AuditLogPathForMonth(DateTimeOffset.Now);
+
+        /// <summary>
+        /// 指定月の監査ログ CSV ファイルのフルパス。
+        /// ファイル名形式: audit_YYYYMM.csv（例: audit_202601.csv）
+        /// </summary>
+        public static string AuditLogPathForMonth(DateTimeOffset month) =>
+            Path.Combine(DataDirectory, $"audit_{month:yyyyMM}.csv");
 
         /// <summary>
         /// テキスト変換ルール JSON ファイルのフルパス（EXE 配置ディレクトリ固定）。

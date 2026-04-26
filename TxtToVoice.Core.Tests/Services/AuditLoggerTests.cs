@@ -90,6 +90,34 @@ namespace TxtToVoice.Tests.Services
             string ts = File.ReadAllLines(_csvPath)[1].Split(',')[0];
             Assert.True(DateTime.TryParse(ts, out _), $"ISO 8601 パース失敗: {ts}");
         }
+
+        // ================================================================
+        // 月次ローテーション
+        // ================================================================
+
+        [Fact]
+        public void AuditLogPath_現在年月を含むファイル名になる()
+        {
+            string expected = $"audit_{DateTimeOffset.Now:yyyyMM}.csv";
+            Assert.Contains(expected, PathConfig.AuditLogPath);
+        }
+
+        [Fact]
+        public void AuditLogPathForMonth_指定月のファイル名を返す()
+        {
+            var month = new DateTimeOffset(2026, 1, 15, 0, 0, 0, TimeSpan.Zero);
+            string path = PathConfig.AuditLogPathForMonth(month);
+            Assert.EndsWith("audit_202601.csv", path);
+        }
+
+        [Fact]
+        public void AuditLogPathForMonth_月が異なれば別ファイルになる()
+        {
+            var jan = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+            var feb = new DateTimeOffset(2026, 2, 1, 0, 0, 0, TimeSpan.Zero);
+            Assert.NotEqual(PathConfig.AuditLogPathForMonth(jan),
+                            PathConfig.AuditLogPathForMonth(feb));
+        }
     }
 
     /// <summary>テスト用: AuditLogger の出力パスを差し替えるヘルパー。</summary>
