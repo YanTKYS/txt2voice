@@ -56,11 +56,15 @@
             </DataGrid.Columns>
         </DataGrid>
 
-        <!-- 注記 -->
-        <TextBlock Grid.Row="1"
-                   FontSize="10" Foreground="#666"
-                   TextWrapping="Wrap"
-                   Text="※ 保存後、次回エンジン起動時（エンジン切替またはアプリ再起動）に読み上げへ反映されます。"/>
+        <!-- 有効ファイルパス + 注記 (#75) -->
+        <StackPanel Grid.Row="1" Margin="0,3,0,0">
+            <TextBlock x:Name="TxtRulesPathLabel"
+                       FontSize="10" Foreground="#888"
+                       TextTrimming="CharacterEllipsis"/>
+            <TextBlock FontSize="10" Foreground="#666"
+                       TextWrapping="Wrap"
+                       Text="※ 保存後、再生停止中は即時反映。再生中の場合は次回エンジン切替またはアプリ再起動時に反映。"/>
+        </StackPanel>
 
         <!-- テスト入力ヘッダー -->
         <TextBlock Grid.Row="3" Text="テスト入力" FontWeight="SemiBold" FontSize="12"/>

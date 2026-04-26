@@ -5,6 +5,55 @@
 
 ---
 
+## v0.6.0 実装済み提案（#71・#72・#73・#75）
+
+### 71. 読みルール保存後の ReplaceEngine 後 UI 再同期 ✅ v0.6.0
+
+**課題**: v0.5.9 で読みルール保存後に `ReplaceEngine` を呼び出すようにしたが、設定変更時と異なり `InitializeVoiceCombo` / `SetRate` / `SetVolume` の再適用がなかった。エンジン再起動後に UI 表示と内部状態（音声リスト・速度・音量）がズレる可能性があった。
+
+**v0.6.0 実装**:
+- `MenuTextRules_Click`: `ReplaceEngine` 後に `InitializeVoiceCombo()` / `SetRate` / `SetVolume` を追加（設定変更導線と同等の再同期）
+
+### 72. TextRuleDialog CancellationTokenSource 後始末 ✅ v0.6.0
+
+**課題**: `_previewCts` はキャンセルしていたが Dispose していなかった。ダイアログの開閉を繰り返す運用でリソースリークの可能性があった。また `Task.Run` の fire-and-forget で `OperationCanceledException` が暗黙的に握り潰されていた。
+
+**v0.6.0 実装**:
+- `Closed` イベントで `Cancel()` + `Dispose()` を確実に実行
+- `TxtTestInput_TextChanged`: 前回の CTS を `Cancel` + `Dispose` してから新しい CTS を生成
+- `Task.Run` の本体を `try/catch (OperationCanceledException)` で明示的にキャッチしてキャンセルを正常系として処理
+
+### 73. 容量ガード指標を Reading 文字数にも拡張 ✅ v0.6.0
+
+**課題**: #70 のガードは `Display` 合計文字数のみで、`Reading`（読み仮名）の総文字数はチェックしていなかった。大量の読み文字列はメモリ使用量・置換処理コストに直結する。
+
+**v0.6.0 実装**:
+- `totalReadingChars = imported.Sum(en => en.Reading.Length)` を追加
+- 判定: `imported.Count > 1000 || totalDisplayChars > 10_000 || totalReadingChars > 10_000`
+- 警告メッセージに表記文字数・読み文字数を両方表示
+
+### 74. 監査 CSV ローテーション（月次アーカイブ）
+
+**課題**: `AuditLogger` は追記のみで、サイズ管理・世代管理がない。長期運用で `audit.csv` が肥大化する。
+
+**提案**:
+- 月次ローテーション: `audit_YYYYMM.csv` 形式で月が変わったら新ファイルに切替
+- またはサイズ閾値（例: 10MB 超）でローテーション
+- `Record` 呼び出し時に現在月と最終書き込み月を比較してファイル名を動的決定
+
+**優先度**: 低中（長期運用でのみ顕在化）
+
+### 75. 読みルール有効ファイルパスをダイアログ上に表示 ✅ v0.6.0
+
+**課題**: フォールバック保存先切替はログ警告のみで UI に表示がなかった。現場での問い合わせ（「どのファイルが使われているのか」）が発生しやすい。
+
+**v0.6.0 実装**:
+- `TextRuleDialog.xaml`: DataGrid 下に `x:Name="TxtRulesPathLabel"` TextBlock を追加
+- コンストラクタで `TxtRulesPathLabel.Text = $"設定ファイル: {rulesPath}"` をセット（有効パスが一目でわかる）
+- 注記文言も「保存後、再生停止中は即時反映。再生中の場合は次回エンジン切替またはアプリ再起動時に反映。」に更新（v0.5.9 の即時反映実装を反映）
+
+---
+
 ## v0.5.4 実装済み提案（#60）
 
 ### 60. 辞書照合の Aho-Corasick アルゴリズム導入 ✅ v0.5.4

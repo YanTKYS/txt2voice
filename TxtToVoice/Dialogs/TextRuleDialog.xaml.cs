@@ -31,11 +31,16 @@ namespace TxtToVoice.Dialogs
                 _viewModels.Add(new TextRuleViewModel(rule));
 
             RuleGrid.ItemsSource = _viewModels;
+            TxtRulesPathLabel.Text = $"設定ファイル: {rulesPath}";
+
+            // ダイアログ終了時に必ず CTS をクリーンアップする (#72)
+            Closed += (_, _) => { _previewCts?.Cancel(); _previewCts?.Dispose(); _previewCts = null; };
         }
 
         private void TxtTestInput_TextChanged(object sender, TextChangedEventArgs e)
         {
             _previewCts?.Cancel();
+            _previewCts?.Dispose();
             _previewCts = new CancellationTokenSource();
             var token = _previewCts.Token;
 
@@ -49,23 +54,25 @@ namespace TxtToVoice.Dialogs
 
             _ = Task.Run(async () =>
             {
-                await Task.Delay(300, token).ConfigureAwait(false);
-                if (token.IsCancellationRequested) return;
-
-                string result = input;
-                foreach (var (pattern, replacement, enabled) in snapshot)
+                try
                 {
-                    if (!enabled || string.IsNullOrEmpty(pattern)) continue;
-                    try
-                    {
-                        var rx = new Regex(pattern, RegexOptions.None, TimeSpan.FromMilliseconds(500));
-                        result = rx.Replace(result, replacement);
-                    }
-                    catch { /* 無効なパターンまたはタイムアウト — スキップ */ }
-                }
+                    await Task.Delay(300, token).ConfigureAwait(false);
 
-                if (!token.IsCancellationRequested)
+                    string result = input;
+                    foreach (var (pattern, replacement, enabled) in snapshot)
+                    {
+                        if (!enabled || string.IsNullOrEmpty(pattern)) continue;
+                        try
+                        {
+                            var rx = new Regex(pattern, RegexOptions.None, TimeSpan.FromMilliseconds(500));
+                            result = rx.Replace(result, replacement);
+                        }
+                        catch { /* 無効なパターンまたは Regex タイムアウト — スキップ */ }
+                    }
+
                     Dispatcher.Invoke(() => { if (!token.IsCancellationRequested) TxtTestResult.Text = result; });
+                }
+                catch (OperationCanceledException) { /* デバウンスキャンセル — 無視 */ }
             }, token);
         }
 

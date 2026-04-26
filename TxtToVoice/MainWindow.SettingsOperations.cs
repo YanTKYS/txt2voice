@@ -95,8 +95,11 @@ namespace TxtToVoice
             var dlg = new Dialogs.TextRuleDialog(PathConfig.EffectiveTextRulesPath) { Owner = this };
             if (dlg.ShowDialog() == true && _playback == PlaybackState.Idle)
             {
-                // ルール保存後、アイドル中はエンジンを即時差し替えて変更を反映する
+                // ルール保存後、アイドル中はエンジンを即時差し替えて変更を反映する (#71)
                 _speechService.ReplaceEngine(SpeechEngineFactory.Create(_speechEngineType));
+                InitializeVoiceCombo();
+                _speechService.SetRate((int)SldRate.Value);
+                _speechService.SetVolume((int)SldVolume.Value);
                 Logger.Info("読みルール変更によりエンジンを即時再起動しました。");
             }
         }
