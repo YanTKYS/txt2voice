@@ -5,19 +5,10 @@
 
 ---
 
-## 優先度：中
-
-| # | 概要 | 詳細 |
-|---|---|---|
-| 51 | OpenJTalk 音声品質評価・レポート | 評価セット（S1〜S4）・採点表は `docs/improvement-proposals.md` に固定済み。実施は v0.5.x で予定。 |
-
----
-
 ## 優先度：低〜中（v0.5.x）
 
 | # | 概要 | 詳細 |
 |---|---|---|
-| 55 | 音声品質評価の定例化 | リリース前チェックリストに組み込む。詳細 #55（improvement-proposals）。 |
 | 60 | 辞書照合 Aho-Corasick 導入 | 辞書エントリが 1,000 件超を想定する前に設計着手。詳細 #60。 |
 
 ---
@@ -57,3 +48,5 @@
 | 66 | TextPreprocessor フェーズ5（コロン時刻 HH:MM → X時X分展開） | v0.5.0 |
 | 49b | SourceForge Cloudflare 恒久対応（GitHub Release asset 方針A） | v0.5.1 |
 | 61 | TextPreprocessor 外部ルール定義（`Data/text_rules.json` 外部化） | v0.5.2 |
+| 51 | OpenJTalk 音声品質評価 CI インフラ整備（VoiceQualityEvalTests + artifact） | v0.5.3 |
+| 55 | 音声品質評価の定例化（`docs/release-checklist.md` 新規作成） | v0.5.3 |

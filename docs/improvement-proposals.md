@@ -5,6 +5,31 @@
 
 ---
 
+## v0.5.3 実装済み提案（#51・#55）
+
+### 51. OpenJTalk 音声品質評価・レポート ✅ v0.5.3（インフラ整備）
+
+**v0.5.3 実装内容（CI インフラ整備）**:
+- `TxtToVoice.Tests/Services/VoiceQualityEvalTests.cs` — S1〜S4 固定原稿を WAV 合成する `[VoiceQualityEval]` テストを追加
+  - 環境変数 `VOICE_EVAL_OUTPUT_DIR` で出力先を指定可能（未設定時は `%TEMP%\txtvoice-eval`）
+  - `[SkippableFact]` + `[Trait("Category", "RequiresEngine")]` + `[Trait("Category", "VoiceQualityEval")]` の 2 カテゴリで管理
+- `openjtalk-engine-test.yml` — VoiceQualityEval テスト実行ステップとアーティファクトアップロードを追加
+  - RequiresEngine 完了後に `dotnet test --filter "Category=VoiceQualityEval"` を実行（`continue-on-error: true`）
+  - S1〜S4 の WAV ファイルをアーティファクト `voice-quality-eval-wavs`（保持 30 日）としてアップロード
+- 聴取評価は人間が実施し、結果を `docs/release-checklist.md` の採点表に記入する
+
+**ステータス**: CI インフラ整備済み・聴取評価は各リリース前に実施
+
+### 55. 音声品質評価の定例化 ✅ v0.5.3
+
+**v0.5.3 実装内容**:
+- `docs/release-checklist.md` を新規作成
+  - ビルド・テスト・バージョン・配布パッケージの必須チェック項目
+  - 音声品質評価セクション（WAV 生成手順・評価原稿 S1〜S4・採点表・合否基準）
+  - リリース前に全チェックボックスを確認してからタグを打つ運用を明文化
+
+---
+
 ## v0.5.1 実装済み提案（#49b）
 
 ### 49b. SourceForge Cloudflare 恒久対応（GitHub Release 方針A）✅ v0.5.1
