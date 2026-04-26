@@ -142,60 +142,33 @@ jobs:
         run: |
           $meiFile = "mei_normal.htsvoice"
 
-          # --- 方針1: 前バージョンの release asset を転用（最も確実）---
+          # --- 方針1: 前バージョンの release asset を転用 ---
+          # gh release list --json はアセット情報を返さないため gh api を使用する
           $found = $false
           try {
-            $releases = gh release list --limit 10 --json tagName,assets 2>$null | ConvertFrom-Json
+            $releases = gh api /repos/YanTKYS/txt2voice/releases --paginate 2>$null | ConvertFrom-Json
             foreach ($rel in $releases) {
-              if ($rel.tagName -eq "${{ env.RELEASE_TAG }}") { continue }
+              if ($rel.tag_name -eq "${{ env.RELEASE_TAG }}") { continue }
               $asset = $rel.assets | Where-Object { $_.name -eq $meiFile }
               if ($asset) {
-                Write-Host "前バージョン $($rel.tagName) から転用します"
-                gh release download $rel.tagName --asset $meiFile -D . --clobber 2>$null
+                Write-Host "前バージョン $($rel.tag_name) から転用します"
+                gh release download $rel.tag_name --asset $meiFile -D . --clobber 2>$null
                 if ((Test-Path $meiFile) -and (Get-Item $meiFile).Length -gt 100000) {
                   $found = $true
-                  Write-Host "[OK] 転用完了: $($rel.tagName) -> $meiFile"
+                  Write-Host "[OK] 転用完了: $($rel.tag_name) -> $meiFile"
                   break
                 }
               }
             }
-          } catch { Write-Host "[!!] 前バージョン asset 取得失敗: $_" }
-
-          # --- 方針2: SourceForge からダウンロード（初回リリース時）---
-          if (-not $found) {
-            $tmpDir = Join-Path $env:USERPROFILE "voice-dl"
-            New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null
-            $mmdZip  = Join-Path $tmpDir "MMDAgent_Example-1.8.zip"
-            $mmdWork = Join-Path $tmpDir "MMDAgent_Example-1.8"
-            $headers = @{ 'User-Agent' = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
-
-            foreach ($url in @(
-              "https://jaist.dl.sourceforge.net/project/mmdagent/MMDAgent_Example/MMDAgent_Example-1.8/MMDAgent_Example-1.8.zip",
-              "https://downloads.sourceforge.net/project/mmdagent/MMDAgent_Example/MMDAgent_Example-1.8/MMDAgent_Example-1.8.zip",
-              "https://umnmirror.dl.sourceforge.net/project/mmdagent/MMDAgent_Example/MMDAgent_Example-1.8/MMDAgent_Example-1.8.zip"
-            )) {
-              try {
-                Write-Host "SourceForge ダウンロード試行: $url"
-                Invoke-WebRequest -Uri $url -OutFile $mmdZip -UseBasicParsing -MaximumRedirection 10 -Headers $headers
-                if ((Test-Path $mmdZip) -and (Get-Item $mmdZip).Length -gt 1MB) { break }
-              } catch { Write-Host "  失敗: $_" }
-            }
-
-            if ((Test-Path $mmdZip) -and (Get-Item $mmdZip).Length -gt 1MB) {
-              Expand-Archive -Path $mmdZip -DestinationPath $tmpDir -Force
-              $hts = Get-ChildItem $mmdWork -Filter $meiFile -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
-              if ($hts) {
-                Copy-Item $hts.FullName $meiFile -Force
-                $found = $true
-                Write-Host "[OK] SourceForge から取得: $meiFile"
-              }
-            }
+          } catch {
+            Write-Host "[!!] 前バージョン asset 取得失敗: $_"
           }
 
           if ($found -and (Test-Path $meiFile)) {
             echo "MEI_VOICE_READY=true" >> $env:GITHUB_ENV
           } else {
-            Write-Host "::warning::$meiFile の取得に失敗。release asset には含まれません。"
+            Write-Host "::warning::$meiFile が前バージョンの asset に見つかりませんでした。release asset には含まれません。"
+            Write-Host "初回リリース時は release-notes/bootstrap-voice.md の手順で手動追加してください。"
           }
 
       - name: GitHub Release を作成
