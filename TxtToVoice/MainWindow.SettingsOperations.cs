@@ -90,6 +90,12 @@ namespace TxtToVoice
         // 設定ダイアログ
         // ----------------------------------------------------------------
 
+        private void MenuTextRules_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new Dialogs.TextRuleDialog(PathConfig.TextRulesPath) { Owner = this };
+            dlg.ShowDialog();
+        }
+
         private void MenuSettings_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new SettingsDialog(

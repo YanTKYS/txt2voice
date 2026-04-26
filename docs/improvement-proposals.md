@@ -123,16 +123,16 @@
 - Phase 5 を Phase 4 の直前で実行（展開後は Phase 4 が読み仮名化）
 - xUnit テスト 7 件追加（基本変換・除外ケース）
 
-### 67. TextRule 運用 UI（設定→読みルール 画面）
+### 67. TextRule 運用 UI（設定→読みルール 画面）✅
 
 **課題**: `text_rules.json` 外部化は実装済みだが、同梱ルールが全て `enabled: false` で現場での ON/OFF 導線がない。テキストエディタ操作が前提となっており、保守性・誤操作リスクが高い。  
-**提案**: 設定ウィンドウに「読みルール」タブを追加し、ルール一覧の表示・有効/無効切替・テスト入力（変換プレビュー）を提供する。  
-**スコープ**:
-- `TextRule` リストを DataGrid で表示（`Pattern` / `Replacement` / `Description` / `Enabled` 列）
-- `Enabled` チェックボックスをその場で切替 → `text_rules.json` に自動保存
-- テスト入力欄: 任意テキストを入力してリアルタイムで変換結果を確認できる
-- 辞書 UI（`DictionaryOperations`）の実装パターンを流用できる  
-**優先度**: 低〜中（#61 外部化の運用価値を最大化するため、ルール数が増える前に整備推奨）
+
+**v0.5.8 実装**:
+- ファイルメニューに「読みルール(_L)...」を追加し、`TextRuleDialog` を開く
+- `TextRuleDialog`: DataGrid でルール一覧（`Enabled` / `Pattern` / `Replacement` / `Description`）を表示。`Enabled` チェックボックスのみ編集可
+- 「保存して閉じる」で `TextRuleLoader.SaveRaw()` により `text_rules.json` に書き出し
+- テスト入力欄: 任意テキストを入力して有効なルールを順番に適用した変換結果をリアルタイム表示（500ms タイムアウト付き Regex を使用）
+- `TextRuleLoader.LoadRaw()` / `SaveRaw()` を Core に追加し、UI と IO を疎結合に保つ
 
 ### 68. TextRuleLoader Regex タイムアウト ✅
 

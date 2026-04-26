@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -83,6 +84,37 @@ namespace TxtToVoice.Services
                 }
             }
             return compiled;
+        }
+
+        /// <summary>
+        /// text_rules.json を生の <see cref="TextRule"/> リスト（disabled 含む）として読み込む。
+        /// ファイル不在・JSON エラー時は空リストを返す。
+        /// </summary>
+        public static List<TextRule> LoadRaw(string filePath)
+        {
+            if (!File.Exists(filePath)) return new List<TextRule>();
+            try
+            {
+                string json = File.ReadAllText(filePath, Encoding.UTF8);
+                return JsonSerializer.Deserialize<List<TextRule>>(json, JsonOptions)
+                       ?? new List<TextRule>();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"テキストルール JSON 解析エラー (LoadRaw): {filePath} / {ex.Message}");
+                return new List<TextRule>();
+            }
+        }
+
+        /// <summary>
+        /// <see cref="TextRule"/> リストを text_rules.json に書き出す（インデント整形）。
+        /// </summary>
+        public static void SaveRaw(string filePath, IEnumerable<TextRule> rules)
+        {
+            var options = new JsonSerializerOptions { WriteIndented = true };
+            string json = JsonSerializer.Serialize(rules.ToList(), options);
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+            File.WriteAllText(filePath, json, Encoding.UTF8);
         }
     }
 }
