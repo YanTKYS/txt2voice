@@ -1,3 +1,4 @@
+using System;
 using System.Windows;
 using TxtToVoice.Services;
 
@@ -43,7 +44,7 @@ namespace TxtToVoice.Dialogs
             // 保持期間 ComboBox の初期選択
             foreach (System.Windows.Controls.ComboBoxItem item in CmbAuditRetention.Items)
             {
-                if ((int)item.Tag == auditRetentionMonths)
+                if (Convert.ToInt32(item.Tag) == auditRetentionMonths)
                 { CmbAuditRetention.SelectedItem = item; break; }
             }
             if (CmbAuditRetention.SelectedItem == null)

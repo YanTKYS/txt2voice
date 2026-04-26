@@ -22,15 +22,28 @@ namespace TxtToVoice.Dialogs
         /// <summary>保存が正常完了したことをマークする。ウィンドウを閉じてもキャンセルしない。</summary>
         public void MarkCompleted() => _completed = true;
 
-        /// <summary>
-        /// フェーズラベルを更新する（UI スレッド・バックグラウンドスレッドいずれからも呼び出し可）。
-        /// </summary>
+        /// <summary>フェーズラベルを更新する（UI / バックグラウンドスレッド両対応）。</summary>
         public void UpdatePhase(string message)
         {
             if (!Dispatcher.CheckAccess())
                 Dispatcher.Invoke(() => TxtPhase.Text = message);
             else
                 TxtPhase.Text = message;
+        }
+
+        /// <summary>進捗率（0〜100）を更新する（UI / バックグラウンドスレッド両対応）。</summary>
+        public void UpdateProgress(int percent)
+        {
+            if (!Dispatcher.CheckAccess())
+                Dispatcher.Invoke(() => ApplyProgress(percent));
+            else
+                ApplyProgress(percent);
+        }
+
+        private void ApplyProgress(int percent)
+        {
+            ProgBar.Value = percent;
+            TxtPercent.Text = $"{percent}%";
         }
 
         private void BtnCancel_Click(object sender, RoutedEventArgs e)

@@ -133,5 +133,45 @@ namespace TxtToVoice.Tests.Services
             // 800ms に続けて 400ms が挿入されていないことを確認
             Assert.DoesNotContain("<break time=\"800ms\"/><break time=\"400ms\"/>", result);
         }
+
+        // ----------------------------------------------------------------
+        // ポーズ強度（pauseStrength）
+        // ----------------------------------------------------------------
+
+        [Fact]
+        public void Build_PauseStrength0_HalfDuration()
+        {
+            string result = SsmlBuilder.Build("終わり。次へ", pauseStrength: 0);
+            Assert.Contains("終わり。<break time=\"300ms\"/>次へ", result);
+        }
+
+        [Fact]
+        public void Build_PauseStrength0_CommaHalfDuration()
+        {
+            string result = SsmlBuilder.Build("えーと、次は", pauseStrength: 0);
+            Assert.Contains("えーと、<break time=\"100ms\"/>次は", result);
+        }
+
+        [Fact]
+        public void Build_PauseStrength2_OneAndHalfDuration()
+        {
+            string result = SsmlBuilder.Build("終わり。次へ", pauseStrength: 2);
+            Assert.Contains("終わり。<break time=\"900ms\"/>次へ", result);
+        }
+
+        [Fact]
+        public void Build_PauseStrength2_BlankLineOneAndHalf()
+        {
+            string result = SsmlBuilder.Build("段落1\n\n段落2", pauseStrength: 2);
+            Assert.Contains("<break time=\"1200ms\"/>段落2", result);
+        }
+
+        [Fact]
+        public void Build_PauseStrength1_SameAsDefault()
+        {
+            // strength=1 は既定と同一結果であることを確認
+            Assert.Equal(SsmlBuilder.Build("終わり。次へ"),
+                         SsmlBuilder.Build("終わり。次へ", pauseStrength: 1));
+        }
     }
 }

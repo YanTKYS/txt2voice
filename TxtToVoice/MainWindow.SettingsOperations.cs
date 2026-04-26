@@ -43,6 +43,8 @@ namespace TxtToVoice
             _deleteLogOnExit          = s.DeleteLogOnExit;
             _speechEngineType         = s.SpeechEngineType;
             _auditRetentionMonths     = s.AuditRetentionMonths;
+            // SSML ポーズ強度
+            CmbSsmlStrength.SelectedIndex = Math.Clamp(s.SsmlPauseStrength, 0, 2);
             // プレビュー設定
             ChkAutoPreview.IsChecked    = s.AutoPreviewEnabled;
             _annotatedPreview           = s.AnnotatedPreviewMode;
@@ -94,7 +96,8 @@ namespace TxtToVoice
                 _recentFiles,
                 _auditRetentionMonths,
                 ChkAutoPreview.IsChecked == true,
-                _annotatedPreview);
+                _annotatedPreview,
+                CmbSsmlStrength.SelectedIndex);
 
         // ----------------------------------------------------------------
         // 設定ダイアログ

@@ -54,7 +54,7 @@ namespace TxtToVoice
             if (useSsml)
             {
                 _positionMap = null; // SSML モード時はハイライト無効
-                _speechService.SpeakSsmlAsync(SsmlBuilder.Build(speechText));
+                _speechService.SpeakSsmlAsync(SsmlBuilder.Build(speechText, CmbSsmlStrength.SelectedIndex));
             }
             else
             {
@@ -269,6 +269,12 @@ namespace TxtToVoice
             SaveCurrentSettings();
         }
 
+        private void CmbSsmlStrength_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_speechService is null) return;
+            SaveCurrentSettings();
+        }
+
         private void ChkHighlight_Changed(object sender, RoutedEventArgs e)
         {
             if (_speechService is null) return;
@@ -296,7 +302,7 @@ namespace TxtToVoice
 
             bool useSsml = ChkSsml.IsChecked == true;
             string speechText = _dictService.ApplyDictionary(rawText);
-            string content = useSsml ? SsmlBuilder.Build(speechText) : speechText;
+            string content = useSsml ? SsmlBuilder.Build(speechText, CmbSsmlStrength.SelectedIndex) : speechText;
 
             var dlg = new SaveFileDialog
             {
@@ -320,13 +326,20 @@ namespace TxtToVoice
 
             using var cts = new CancellationTokenSource();
             var progressDialog = new Dialogs.SaveProgressDialog(cts) { Owner = this };
-            var progress = new Progress<string>(msg => progressDialog.UpdatePhase(msg));
+            progressDialog.UpdateProgress(5);
+            var progress = new Progress<string>(msg =>
+            {
+                progressDialog.UpdatePhase(msg);
+                int pct = msg.Contains("エンコード") ? 70 : 30;
+                progressDialog.UpdateProgress(pct);
+            });
             progressDialog.Show();
 
             try
             {
                 await _speechService.SaveToFileAsync(content, dlg.FileName, format,
                     isSsml: useSsml, progress: progress, ct: cts.Token);
+                progressDialog.UpdateProgress(100);
                 progressDialog.MarkCompleted();
                 AuditLogger.Record(_speechEngineType, format.ToString().ToLowerInvariant(),
                     success: true, outputPath: dlg.FileName);

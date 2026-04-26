@@ -536,11 +536,27 @@
                         </Grid>
 
                         <!-- SSML ポーズ挿入 -->
-                        <CheckBox Grid.Row="4" x:Name="ChkSsml"
-                                  Content="句読点・改行に自動ポーズを挿入する（SSML モード）"
-                                  FontSize="12" VerticalContentAlignment="Center"
-                                  Checked="ChkSsml_Changed" Unchecked="ChkSsml_Changed"
-                                  ToolTip="有効にすると句読点（。！？、）や改行の後に自然な間が入ります。&#10;※ SSML モード中は読み上げ位置ハイライトが無効になります。"/>
+                        <StackPanel Grid.Row="4">
+                            <CheckBox x:Name="ChkSsml"
+                                      Content="句読点・改行に自動ポーズを挿入する（SSML モード）"
+                                      FontSize="12" VerticalContentAlignment="Center"
+                                      Checked="ChkSsml_Changed" Unchecked="ChkSsml_Changed"
+                                      ToolTip="有効にすると句読点（。！？、）や改行の後に自然な間が入ります。&#10;※ SSML モード中は読み上げ位置ハイライトが無効になります。"/>
+                            <DockPanel Margin="18,4,0,0"
+                                       IsEnabled="{Binding IsChecked, ElementName=ChkSsml}">
+                                <TextBlock Text="ポーズ強度："
+                                           VerticalAlignment="Center"
+                                           FontSize="11" Foreground="#555"
+                                           Margin="0,0,6,0"/>
+                                <ComboBox x:Name="CmbSsmlStrength" Width="120" FontSize="11"
+                                          SelectionChanged="CmbSsmlStrength_SelectionChanged"
+                                          ToolTip="句読点・改行後のポーズの長さを調整します">
+                                    <ComboBoxItem Content="短め"/>
+                                    <ComboBoxItem Content="標準（既定）" IsSelected="True"/>
+                                    <ComboBoxItem Content="長め"/>
+                                </ComboBox>
+                            </DockPanel>
+                        </StackPanel>
 
                         <!-- 読み上げ位置ハイライト -->
                         <CheckBox Grid.Row="6" x:Name="ChkHighlight"

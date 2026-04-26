@@ -94,6 +94,13 @@ namespace TxtToVoice.Models
         // プレビュー設定
         // ----------------------------------------------------------------
 
+        /// <summary>
+        /// SSML ポーズ強度（0=短め / 1=標準 / 2=長め、デフォルト: 1）。
+        /// SsmlBuilder.Build() の pauseStrength パラメータに渡す値。
+        /// </summary>
+        [JsonPropertyName("ssmlPauseStrength")]
+        public int SsmlPauseStrength { get; set; } = 1;
+
         /// <summary>自動プレビュー更新（ChkAutoPreview）が有効かどうか（デフォルト: false）</summary>
         [JsonPropertyName("autoPreviewEnabled")]
         public bool AutoPreviewEnabled { get; set; } = false;
