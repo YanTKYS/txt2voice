@@ -65,7 +65,7 @@ namespace TxtToVoice.Dialogs
                 }
 
                 if (!token.IsCancellationRequested)
-                    Dispatcher.InvokeAsync(() => { if (!token.IsCancellationRequested) TxtTestResult.Text = result; });
+                    Dispatcher.Invoke(() => { if (!token.IsCancellationRequested) TxtTestResult.Text = result; });
             }, token);
         }
 
