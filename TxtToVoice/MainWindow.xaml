@@ -370,12 +370,12 @@
                                 <Button x:Name="BtnMoveUp" Content="↑"
                                         Style="{StaticResource BtnPrimary}"
                                         Click="BtnMoveUp_Click"
-                                        ToolTip="選択したエントリを1つ上に移動（絞り込み中は無効）"
+                                        ToolTip="選択したエントリを1つ上に移動 (Ctrl+Shift+↑)&#10;絞り込み中は無効"
                                         Padding="7,3"/>
                                 <Button x:Name="BtnMoveDown" Content="↓"
                                         Style="{StaticResource BtnPrimary}"
                                         Click="BtnMoveDown_Click"
-                                        ToolTip="選択したエントリを1つ下に移動（絞り込み中は無効）"
+                                        ToolTip="選択したエントリを1つ下に移動 (Ctrl+Shift+↓)&#10;絞り込み中は無効"
                                         Padding="7,3"/>
                                 <Button Content="CSV読込" Style="{StaticResource BtnPrimary}"
                                         Click="MenuImportCsv_Click"
@@ -625,7 +625,7 @@
                                 <LineBreak/>
                                 <Run>Ctrl+O=ファイルを開く　Ctrl+P=プレビュー更新　Ctrl+S=音声保存</Run>
                                 <LineBreak/>
-                                <Run>辞書一覧：Ins=追加　F2=編集　Del=削除</Run>
+                                <Run>辞書一覧：Ins=追加　F2=編集　Del=削除　Ctrl+Shift+↑↓=移動</Run>
                                 <LineBreak/>
                                 <Run FontStyle="Italic">テキストを選択してF5を押すと選択範囲のみ読み上げます</Run>
                             </TextBlock>

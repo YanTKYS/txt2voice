@@ -192,8 +192,8 @@ namespace TxtToVoice
 
         private void EditSelectedEntry()
         {
-            int idx = DgDictionary.SelectedIndex;
-            if (idx < 0 || idx >= _dictService.Entries.Count) return;
+            int idx = GetSelectedEntryIndex();
+            if (idx < 0) return;
 
             var entry = _dictService.Entries[idx];
             Action<string>? speakAction = _speechService.IsAvailable ? _speechService.SpeakAsync : null;
@@ -202,13 +202,15 @@ namespace TxtToVoice
             {
                 _dictService.UpdateEntry(idx, dlg.Result);
                 SaveDictionaryAndRefresh();
+                DgDictionary.SelectedItem = dlg.Result;
+                DgDictionary.ScrollIntoView(DgDictionary.SelectedItem);
                 SetStatus($"辞書を更新しました: 「{dlg.Result.Display}」→「{dlg.Result.Reading}」");
             }
         }
 
         private void BtnDeleteEntry_Click(object sender, RoutedEventArgs e)
         {
-            int idx = DgDictionary.SelectedIndex;
+            int idx = GetSelectedEntryIndex();
             if (idx < 0) return;
 
             var entry  = _dictService.Entries[idx];
@@ -222,17 +224,22 @@ namespace TxtToVoice
             {
                 _dictService.RemoveEntry(idx);
                 SaveDictionaryAndRefresh();
+                if (DgDictionary.Items.Count > 0)
+                    DgDictionary.SelectedIndex = Math.Min(idx, DgDictionary.Items.Count - 1);
                 SetStatus($"辞書から削除しました: 「{entry.Display}」");
             }
         }
 
         private void DgDictionary_KeyDown(object sender, KeyEventArgs e)
         {
+            bool ctrlShift = Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift);
             switch (e.Key)
             {
                 case Key.Insert: BtnAddEntry_Click(sender, e);    e.Handled = true; break;
                 case Key.F2:     EditSelectedEntry();              e.Handled = true; break;
                 case Key.Delete: BtnDeleteEntry_Click(sender, e); e.Handled = true; break;
+                case Key.Up   when ctrlShift: BtnMoveUp_Click(sender, e);   e.Handled = true; break;
+                case Key.Down when ctrlShift: BtnMoveDown_Click(sender, e); e.Handled = true; break;
             }
         }
 
