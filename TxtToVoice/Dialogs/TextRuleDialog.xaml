@@ -24,7 +24,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- ツールバー: 追加 / 編集 / 削除 -->
+        <!-- ツールバー: 追加 / 編集 / 削除 / ↑↓ -->
         <StackPanel Grid.Row="0" Orientation="Horizontal">
             <Button x:Name="BtnAddRule" Content="追加"
                     Width="60" Height="26" Margin="0,0,4,0"
@@ -36,10 +36,20 @@
                     Click="BtnEditRule_Click"
                     ToolTip="選択したルールを編集"/>
             <Button x:Name="BtnDeleteRule" Content="削除"
-                    Width="60" Height="26"
+                    Width="60" Height="26" Margin="0,0,12,0"
                     IsEnabled="False"
                     Click="BtnDeleteRule_Click"
                     ToolTip="選択したルールを削除"/>
+            <Button x:Name="BtnMoveRuleUp" Content="↑"
+                    Width="44" Height="26" Margin="0,0,4,0"
+                    IsEnabled="False"
+                    Click="BtnMoveRuleUp_Click"
+                    ToolTip="選択したルールを1つ上に移動 (Ctrl+Shift+↑)"/>
+            <Button x:Name="BtnMoveRuleDown" Content="↓"
+                    Width="44" Height="26"
+                    IsEnabled="False"
+                    Click="BtnMoveRuleDown_Click"
+                    ToolTip="選択したルールを1つ下に移動 (Ctrl+Shift+↓)"/>
         </StackPanel>
 
         <!-- ルール一覧 DataGrid -->
@@ -58,7 +68,8 @@
                   FontSize="12"
                   BorderThickness="1"
                   BorderBrush="#CCC"
-                  SelectionChanged="RuleGrid_SelectionChanged">
+                  SelectionChanged="RuleGrid_SelectionChanged"
+                  PreviewKeyDown="RuleGrid_PreviewKeyDown">
             <DataGrid.Columns>
                 <DataGridCheckBoxColumn Header="有効"
                                         Binding="{Binding Enabled, UpdateSourceTrigger=PropertyChanged}"

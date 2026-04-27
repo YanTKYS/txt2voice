@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using TxtToVoice.Models;
 using TxtToVoice.Services;
 
@@ -38,8 +39,10 @@ namespace TxtToVoice.Dialogs
         private void RuleGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             bool hasSelection = RuleGrid.SelectedItem != null;
-            BtnEditRule.IsEnabled   = hasSelection;
-            BtnDeleteRule.IsEnabled = hasSelection;
+            BtnEditRule.IsEnabled    = hasSelection;
+            BtnDeleteRule.IsEnabled  = hasSelection;
+            BtnMoveRuleUp.IsEnabled  = hasSelection;
+            BtnMoveRuleDown.IsEnabled = hasSelection;
         }
 
         private void BtnAddRule_Click(object sender, RoutedEventArgs e)
@@ -76,6 +79,39 @@ namespace TxtToVoice.Dialogs
             _viewModels.RemoveAt(idx);
             if (_viewModels.Count > 0)
                 RuleGrid.SelectedIndex = Math.Min(idx, _viewModels.Count - 1);
+        }
+
+        private void BtnMoveRuleUp_Click(object sender, RoutedEventArgs e)
+        {
+            int idx = GetSelectedRuleIndex();
+            if (idx <= 0) return;
+            _viewModels.Move(idx, idx - 1);
+            RuleGrid.SelectedIndex = idx - 1;
+            RuleGrid.ScrollIntoView(_viewModels[idx - 1]);
+        }
+
+        private void BtnMoveRuleDown_Click(object sender, RoutedEventArgs e)
+        {
+            int idx = GetSelectedRuleIndex();
+            if (idx < 0 || idx >= _viewModels.Count - 1) return;
+            _viewModels.Move(idx, idx + 1);
+            RuleGrid.SelectedIndex = idx + 1;
+            RuleGrid.ScrollIntoView(_viewModels[idx + 1]);
+        }
+
+        private void RuleGrid_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyboardDevice.Modifiers != (ModifierKeys.Control | ModifierKeys.Shift)) return;
+            if (e.Key == Key.Up)
+            {
+                BtnMoveRuleUp_Click(sender, new RoutedEventArgs());
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Down)
+            {
+                BtnMoveRuleDown_Click(sender, new RoutedEventArgs());
+                e.Handled = true;
+            }
         }
 
         private int GetSelectedRuleIndex()
