@@ -2,14 +2,16 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="読みルール設定"
-        Height="560" Width="640"
-        MinHeight="420" MinWidth="520"
+        Height="600" Width="640"
+        MinHeight="460" MinWidth="520"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
         Background="#F0F2F5">
 
     <Grid Margin="16,12,16,12">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="4"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="12"/>
@@ -22,21 +24,41 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
+        <!-- ツールバー: 追加 / 編集 / 削除 -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal">
+            <Button x:Name="BtnAddRule" Content="追加"
+                    Width="60" Height="26" Margin="0,0,4,0"
+                    Click="BtnAddRule_Click"
+                    ToolTip="新しいルールを追加"/>
+            <Button x:Name="BtnEditRule" Content="編集"
+                    Width="60" Height="26" Margin="0,0,4,0"
+                    IsEnabled="False"
+                    Click="BtnEditRule_Click"
+                    ToolTip="選択したルールを編集"/>
+            <Button x:Name="BtnDeleteRule" Content="削除"
+                    Width="60" Height="26"
+                    IsEnabled="False"
+                    Click="BtnDeleteRule_Click"
+                    ToolTip="選択したルールを削除"/>
+        </StackPanel>
+
         <!-- ルール一覧 DataGrid -->
-        <DataGrid Grid.Row="0"
+        <DataGrid Grid.Row="2"
                   x:Name="RuleGrid"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
                   CanUserDeleteRows="False"
                   CanUserReorderColumns="False"
                   CanUserResizeRows="False"
+                  CanUserSortColumns="False"
                   HeadersVisibility="Column"
                   SelectionMode="Single"
                   GridLinesVisibility="Horizontal"
                   RowHeaderWidth="0"
                   FontSize="12"
                   BorderThickness="1"
-                  BorderBrush="#CCC">
+                  BorderBrush="#CCC"
+                  SelectionChanged="RuleGrid_SelectionChanged">
             <DataGrid.Columns>
                 <DataGridCheckBoxColumn Header="有効"
                                         Binding="{Binding Enabled, UpdateSourceTrigger=PropertyChanged}"
@@ -57,7 +79,7 @@
         </DataGrid>
 
         <!-- 有効ファイルパス + 注記 (#75) -->
-        <StackPanel Grid.Row="1" Margin="0,3,0,0">
+        <StackPanel Grid.Row="3" Margin="0,3,0,0">
             <TextBlock x:Name="TxtRulesPathLabel"
                        FontSize="10" Foreground="#888"
                        TextTrimming="CharacterEllipsis"/>
@@ -67,10 +89,10 @@
         </StackPanel>
 
         <!-- テスト入力ヘッダー -->
-        <TextBlock Grid.Row="3" Text="テスト入力" FontWeight="SemiBold" FontSize="12"/>
+        <TextBlock Grid.Row="5" Text="テスト入力" FontWeight="SemiBold" FontSize="12"/>
 
         <!-- 入力欄 -->
-        <Grid Grid.Row="5">
+        <Grid Grid.Row="7">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="46"/>
                 <ColumnDefinition Width="*"/>
@@ -81,7 +103,7 @@
         </Grid>
 
         <!-- 変換結果 + 無効ルール診断 (#79) -->
-        <StackPanel Grid.Row="7">
+        <StackPanel Grid.Row="9">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="46"/>
@@ -98,7 +120,7 @@
         </StackPanel>
 
         <!-- ボタン -->
-        <StackPanel Grid.Row="9" Orientation="Horizontal" HorizontalAlignment="Right">
+        <StackPanel Grid.Row="11" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button x:Name="BtnOk" Content="保存して閉じる"
                     Width="120" Height="28" Margin="0,0,8,0"
                     IsDefault="True"

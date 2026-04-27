@@ -1,0 +1,92 @@
+<Window x:Class="TxtToVoice.Dialogs.TextRuleEntryDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="読みルール編集"
+        Height="300" Width="460"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False">
+
+    <Window.Resources>
+        <Style TargetType="Label">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="0,0,4,0"/>
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Height" Value="28"/>
+        </Style>
+        <Style x:Key="DialogButton" TargetType="Button">
+            <Setter Property="Width" Value="90"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Margin" Value="6,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="20,16,20,16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="8"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="80"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- パターン -->
+        <Label Grid.Row="0" Grid.Column="0" Content="パターン：" HorizontalAlignment="Right"/>
+        <TextBox Grid.Row="0" Grid.Column="1" x:Name="TxtPattern"
+                 ToolTip="正規表現パターン（例：（\d+）月）"
+                 TextChanged="TxtPattern_TextChanged"/>
+
+        <!-- 置換後 -->
+        <Label Grid.Row="2" Grid.Column="0" Content="置換後：" HorizontalAlignment="Right"/>
+        <TextBox Grid.Row="2" Grid.Column="1" x:Name="TxtReplacement"
+                 ToolTip="置換後テキスト（例：$1がつ）。空にすると一致部分を削除。"/>
+
+        <!-- 説明 -->
+        <Label Grid.Row="4" Grid.Column="0" Content="説明：" HorizontalAlignment="Right"/>
+        <TextBox Grid.Row="4" Grid.Column="1" x:Name="TxtDescription"
+                 ToolTip="このルールの説明・用途（任意）"/>
+
+        <!-- 有効 -->
+        <Label Grid.Row="6" Grid.Column="0" Content="有効：" HorizontalAlignment="Right"/>
+        <CheckBox Grid.Row="6" Grid.Column="1" x:Name="ChkEnabled"
+                  IsChecked="True" VerticalAlignment="Center"
+                  Content="このルールを有効にする"/>
+
+        <!-- バリデーションエラー -->
+        <TextBlock Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="2"
+                   x:Name="TxtError"
+                   FontSize="11" Foreground="#CC0000"
+                   Visibility="Collapsed"
+                   TextWrapping="Wrap"/>
+
+        <!-- ボタン -->
+        <StackPanel Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="2"
+                    Orientation="Horizontal" HorizontalAlignment="Right"
+                    Margin="0,8,0,0">
+            <Button x:Name="BtnOk" Content="OK" IsDefault="True"
+                    Style="{StaticResource DialogButton}"
+                    Background="#2C5F8A" Foreground="White" BorderThickness="0"
+                    Click="BtnOk_Click"/>
+            <Button x:Name="BtnCancel" Content="キャンセル" IsCancel="True"
+                    Style="{StaticResource DialogButton}"
+                    Click="BtnCancel_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

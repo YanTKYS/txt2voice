@@ -12,10 +12,6 @@ using TxtToVoice.Services;
 
 namespace TxtToVoice.Dialogs
 {
-    /// <summary>
-    /// text_rules.json のルール一覧を DataGrid で表示し、有効/無効を切替・保存するダイアログ。
-    /// テスト入力欄で変換結果をリアルタイムプレビューできる（300ms デバウンス）。
-    /// </summary>
     public partial class TextRuleDialog : Window
     {
         private readonly string _rulesPath;
@@ -36,6 +32,61 @@ namespace TxtToVoice.Dialogs
             // ダイアログ終了時に必ず CTS をクリーンアップする (#72)
             Closed += (_, _) => { _previewCts?.Cancel(); _previewCts?.Dispose(); _previewCts = null; };
         }
+
+        // ── ツールバー ──────────────────────────────────────────
+
+        private void RuleGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            bool hasSelection = RuleGrid.SelectedItem != null;
+            BtnEditRule.IsEnabled   = hasSelection;
+            BtnDeleteRule.IsEnabled = hasSelection;
+        }
+
+        private void BtnAddRule_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new TextRuleEntryDialog { Owner = this };
+            if (dlg.ShowDialog() != true || dlg.Result == null) return;
+
+            var vm = new TextRuleViewModel(dlg.Result);
+            _viewModels.Add(vm);
+            RuleGrid.SelectedItem = vm;
+            RuleGrid.ScrollIntoView(vm);
+        }
+
+        private void BtnEditRule_Click(object sender, RoutedEventArgs e)
+        {
+            int idx = GetSelectedRuleIndex();
+            if (idx < 0) return;
+
+            var vm  = _viewModels[idx];
+            var dlg = new TextRuleEntryDialog(vm.ToModel()) { Owner = this };
+            if (dlg.ShowDialog() != true || dlg.Result == null) return;
+
+            vm.Pattern     = dlg.Result.Pattern;
+            vm.Replacement = dlg.Result.Replacement;
+            vm.Description = dlg.Result.Description;
+            vm.Enabled     = dlg.Result.Enabled;
+        }
+
+        private void BtnDeleteRule_Click(object sender, RoutedEventArgs e)
+        {
+            int idx = GetSelectedRuleIndex();
+            if (idx < 0) return;
+
+            _viewModels.RemoveAt(idx);
+            if (_viewModels.Count > 0)
+                RuleGrid.SelectedIndex = Math.Min(idx, _viewModels.Count - 1);
+        }
+
+        private int GetSelectedRuleIndex()
+        {
+            if (RuleGrid.SelectedItem is not TextRuleViewModel selected) return -1;
+            for (int i = 0; i < _viewModels.Count; i++)
+                if (ReferenceEquals(_viewModels[i], selected)) return i;
+            return -1;
+        }
+
+        // ── テスト入力プレビュー ────────────────────────────────
 
         private void TxtTestInput_TextChanged(object sender, TextChangedEventArgs e)
         {
@@ -97,6 +148,8 @@ namespace TxtToVoice.Dialogs
             }, token);
         }
 
+        // ── 保存 / キャンセル ───────────────────────────────────
+
         private void BtnOk_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -134,40 +187,57 @@ namespace TxtToVoice.Dialogs
         private void BtnCancel_Click(object sender, RoutedEventArgs e) => DialogResult = false;
     }
 
-    /// <summary>DataGrid バインディング用ViewModel。Enabled のみ編集可。</summary>
+    /// <summary>DataGrid バインディング用ViewModel。全フィールド編集可。</summary>
     internal sealed class TextRuleViewModel : INotifyPropertyChanged
     {
-        public string Pattern     { get; }
-        public string Replacement { get; }
-        public string Description { get; }
+        private string _pattern;
+        private string _replacement;
+        private string _description;
+        private bool   _enabled;
 
-        private bool _enabled;
+        public string Pattern
+        {
+            get => _pattern;
+            set { _pattern = value; OnPropertyChanged(nameof(Pattern)); }
+        }
+
+        public string Replacement
+        {
+            get => _replacement;
+            set { _replacement = value; OnPropertyChanged(nameof(Replacement)); }
+        }
+
+        public string Description
+        {
+            get => _description;
+            set { _description = value; OnPropertyChanged(nameof(Description)); }
+        }
+
         public bool Enabled
         {
             get => _enabled;
-            set
-            {
-                _enabled = value;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Enabled)));
-            }
+            set { _enabled = value; OnPropertyChanged(nameof(Enabled)); }
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
+        private void OnPropertyChanged(string name)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
         public TextRuleViewModel(TextRule rule)
         {
-            Pattern     = rule.Pattern;
-            Replacement = rule.Replacement;
-            Description = rule.Description;
-            _enabled    = rule.Enabled;
+            _pattern     = rule.Pattern;
+            _replacement = rule.Replacement;
+            _description = rule.Description;
+            _enabled     = rule.Enabled;
         }
 
         public TextRule ToModel() => new()
         {
-            Pattern     = Pattern,
-            Replacement = Replacement,
-            Description = Description,
-            Enabled     = Enabled,
+            Pattern     = _pattern,
+            Replacement = _replacement,
+            Description = _description,
+            Enabled     = _enabled,
         };
     }
 }
