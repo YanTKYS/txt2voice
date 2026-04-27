@@ -169,6 +169,7 @@
                 <Separator x:Name="SepAfterRecentFiles"/>
                 <MenuItem Header="設定(_T)..." Click="MenuSettings_Click"/>
                 <MenuItem Header="読みルール(_L)..." Click="MenuTextRules_Click"/>
+                <MenuItem Header="テンプレート(_M)..." Click="BtnInsertTemplate_Click"/>
                 <Separator/>
                 <MenuItem Header="終了(_X)" Click="MenuExit_Click"/>
             </MenuItem>
@@ -219,6 +220,10 @@
                             <Button Content="ファイルを開く" Style="{StaticResource BtnPrimary}"
                                     Click="BtnOpenFile_Click"
                                     ToolTip="テキストファイルを読み込む (Ctrl+O)"
+                                    Padding="10,4"/>
+                            <Button Content="テンプレート" Style="{StaticResource BtnPrimary}"
+                                    Click="BtnInsertTemplate_Click"
+                                    ToolTip="テンプレートから原稿テキストを挿入します"
                                     Padding="10,4"/>
                             <Button Content="クリア" Style="{StaticResource BtnDanger}"
                                     Click="BtnClearText_Click"

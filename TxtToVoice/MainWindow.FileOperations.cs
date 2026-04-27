@@ -21,6 +21,17 @@ namespace TxtToVoice
         private void BtnOpenFile_Click(object sender, RoutedEventArgs e)  => OpenFile();
         private void MenuExit_Click(object sender, RoutedEventArgs e)     => Close();
 
+        private void BtnInsertTemplate_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new Dialogs.TemplateManagerDialog(PathConfig.TemplatesPath) { Owner = this };
+            if (dlg.ShowDialog() != true || dlg.Result == null) return;
+
+            // 選択中のテキストを置換、未選択の場合はカーソル位置に挿入
+            TxtInput.SelectedText = dlg.Result;
+            TxtInput.Focus();
+            SetStatus("テンプレートを挿入しました。");
+        }
+
         private void Window_DragOver(object sender, DragEventArgs e)
         {
             e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop)

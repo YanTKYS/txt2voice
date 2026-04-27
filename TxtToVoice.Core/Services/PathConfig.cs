@@ -96,6 +96,9 @@ namespace TxtToVoice.Services
         public static string EffectiveTextRulesPath =>
             File.Exists(UserTextRulesPath) ? UserTextRulesPath : TextRulesPath;
 
+        /// <summary>原稿テンプレート JSON ファイルのフルパス。</summary>
+        public static string TemplatesPath => Path.Combine(DataDirectory, "templates.json");
+
         // ----------------------------------------------------------------
         // 書き込みテスト
         // ----------------------------------------------------------------
