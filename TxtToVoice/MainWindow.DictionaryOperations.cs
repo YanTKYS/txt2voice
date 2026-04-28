@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -103,6 +104,9 @@ namespace TxtToVoice
         // プレビュー
         // ----------------------------------------------------------------
 
+        private List<(int Index, int Length)> _previewMatches = new();
+        private int _previewMatchCurrentIndex = -1;
+
         private void BtnApplyDictionary_Click(object sender, RoutedEventArgs e) => ApplyAndPreview();
 
         private void BtnCopyPreview_Click(object sender, RoutedEventArgs e)
@@ -125,6 +129,7 @@ namespace TxtToVoice
                 ? _dictService.ApplyDictionaryWithAnnotation(input)
                 : _dictService.ApplyDictionary(input);
 
+            UpdatePreviewMatchCount();
             SetStatus("辞書を適用してプレビューを更新しました。");
         }
 
@@ -135,6 +140,50 @@ namespace TxtToVoice
             if (_dictService is null) return;
             if (!string.IsNullOrEmpty(TxtInput.Text))
                 ApplyAndPreview();
+            else
+                UpdatePreviewMatchCount();
+        }
+
+        private void UpdatePreviewMatchCount()
+        {
+            string text = TxtPreview.Text;
+            _previewMatches.Clear();
+            _previewMatchCurrentIndex = -1;
+
+            if (_annotatedPreview && !string.IsNullOrEmpty(text))
+            {
+                foreach (Match m in Regex.Matches(text, @"【[^】]*】"))
+                    _previewMatches.Add((m.Index, m.Length));
+            }
+
+            int count = _previewMatches.Count;
+            TxtPreviewMatchCount.Text = count == 0 ? "" : $"変換 {count} 件";
+            BtnPreviewPrev.IsEnabled  = count > 0;
+            BtnPreviewNext.IsEnabled  = count > 0;
+        }
+
+        private void BtnPreviewNext_Click(object sender, RoutedEventArgs e)
+        {
+            if (_previewMatches.Count == 0) return;
+            _previewMatchCurrentIndex = (_previewMatchCurrentIndex + 1) % _previewMatches.Count;
+            JumpToPreviewMatch(_previewMatchCurrentIndex);
+        }
+
+        private void BtnPreviewPrev_Click(object sender, RoutedEventArgs e)
+        {
+            if (_previewMatches.Count == 0) return;
+            _previewMatchCurrentIndex = (_previewMatchCurrentIndex - 1 + _previewMatches.Count) % _previewMatches.Count;
+            JumpToPreviewMatch(_previewMatchCurrentIndex);
+        }
+
+        private void JumpToPreviewMatch(int idx)
+        {
+            var (start, len) = _previewMatches[idx];
+            TxtPreview.Focus();
+            TxtPreview.Select(start, len);
+            int lineIdx = TxtPreview.GetLineIndexFromCharacterIndex(start);
+            if (lineIdx >= 0) TxtPreview.ScrollToLine(lineIdx);
+            TxtPreviewMatchCount.Text = $"変換 {idx + 1} / {_previewMatches.Count} 件";
         }
 
         // ----------------------------------------------------------------

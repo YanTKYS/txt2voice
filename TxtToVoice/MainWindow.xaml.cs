@@ -152,9 +152,11 @@ namespace TxtToVoice
             {
                 switch (e.Key)
                 {
-                    case Key.O: OpenFile();        e.Handled = true; break;
-                    case Key.P: ApplyAndPreview(); e.Handled = true; break;
-                    case Key.S: SaveAudio();       e.Handled = true; break;
+                    case Key.O: OpenFile();                                                  e.Handled = true; break;
+                    case Key.P: ApplyAndPreview();                                           e.Handled = true; break;
+                    case Key.S: SaveAudio();                                                 e.Handled = true; break;
+                    case Key.T: BtnInsertTemplate_Click(sender, new RoutedEventArgs());      e.Handled = true; break;
+                    case Key.L: MenuTextRules_Click(sender, new RoutedEventArgs());          e.Handled = true; break;
                 }
                 return;
             }
@@ -178,7 +180,9 @@ namespace TxtToVoice
                 "【ショートカットキー一覧】\n\n" +
                 "Ctrl+O  : テキストファイルを開く\n" +
                 "Ctrl+P  : 辞書を適用してプレビュー更新\n" +
-                "Ctrl+S  : 音声ファイルとして保存（WAV/MP3/MP4）\n\n" +
+                "Ctrl+S  : 音声ファイルとして保存（WAV/MP3/MP4）\n" +
+                "Ctrl+T  : テンプレートを挿入\n" +
+                "Ctrl+L  : 読みルール編集ダイアログを開く\n\n" +
                 "F5      : 読み上げ開始（選択中は選択範囲のみ）\n" +
                 "F6      : 一時停止\n" +
                 "F7      : 再開\n" +

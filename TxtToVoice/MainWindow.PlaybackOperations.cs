@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using Microsoft.Win32;
+using TxtToVoice.Dialogs;
 using TxtToVoice.Models;
 using TxtToVoice.Services;
 
@@ -21,6 +23,8 @@ namespace TxtToVoice
         private SpeechPositionMap? _positionMap;
         private int _speechOriginOffset;
         private DateTime _lastProgressLog = DateTime.MinValue;
+        private List<PlaybackProfile> _profiles = new();
+        private bool _suppressProfileSelection = false;
 
         // 蛍光イエロー — システム選択色（青）と明確に区別できる「蛍光ペン」色
         private static readonly SolidColorBrush HighlightBrush =
@@ -282,6 +286,105 @@ namespace TxtToVoice
             if (ChkHighlight.IsChecked == false && _playback.IsSpeaking)
                 ClearReadingHighlight();
             SaveCurrentSettings();
+        }
+
+        // ----------------------------------------------------------------
+        // 再生プロファイル (#103)
+        // ----------------------------------------------------------------
+
+        internal void LoadProfiles()
+        {
+            _profiles = ProfileService.Load(PathConfig.ProfilesPath);
+            _suppressProfileSelection = true;
+            CmbProfile.ItemsSource = null;
+            CmbProfile.ItemsSource = _profiles;
+            CmbProfile.SelectedIndex = -1;
+            _suppressProfileSelection = false;
+        }
+
+        private void CmbProfile_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_suppressProfileSelection) return;
+            if (CmbProfile.SelectedItem is not PlaybackProfile profile) return;
+            ApplyProfile(profile);
+        }
+
+        private void ApplyProfile(PlaybackProfile profile)
+        {
+            if (_speechService is null) return;
+
+            int voiceIdx = CmbVoice.Items.IndexOf(profile.VoiceName);
+            if (voiceIdx >= 0) CmbVoice.SelectedIndex = voiceIdx;
+
+            SldRate.Value   = profile.Rate;
+            SldVolume.Value = profile.Volume;
+
+            ChkSsml.IsChecked = profile.SsmlEnabled;
+            if (profile.SsmlEnabled && CmbSsmlStrength.Items.Count > profile.SsmlStrength)
+                CmbSsmlStrength.SelectedIndex = profile.SsmlStrength;
+
+            SaveCurrentSettings();
+        }
+
+        private void BtnProfileSave_Click(object sender, RoutedEventArgs e)
+        {
+            string currentVoice = CmbVoice.SelectedItem as string ?? "";
+            string defaultName = CmbProfile.SelectedItem is PlaybackProfile sel ? sel.Name : "";
+
+            var dlg = new InputDialog("プロファイルを保存", "プロファイル名を入力してください：", defaultName)
+            {
+                Owner = this
+            };
+            if (dlg.ShowDialog() != true) return;
+
+            string name = dlg.Result;
+            if (string.IsNullOrWhiteSpace(name)) return;
+
+            int existing = _profiles.FindIndex(p => p.Name == name);
+            var newProfile = new PlaybackProfile
+            {
+                Name         = name,
+                VoiceName    = currentVoice,
+                Rate         = (int)SldRate.Value,
+                Volume       = (int)SldVolume.Value,
+                SsmlEnabled  = ChkSsml.IsChecked == true,
+                SsmlStrength = CmbSsmlStrength.SelectedIndex
+            };
+
+            if (existing >= 0)
+                _profiles[existing] = newProfile;
+            else
+                _profiles.Add(newProfile);
+
+            ProfileService.Save(PathConfig.ProfilesPath, _profiles);
+
+            _suppressProfileSelection = true;
+            CmbProfile.ItemsSource = null;
+            CmbProfile.ItemsSource = _profiles;
+            CmbProfile.SelectedItem = _profiles.FirstOrDefault(p => p.Name == name);
+            _suppressProfileSelection = false;
+
+            SetStatus($"プロファイル「{name}」を保存しました。");
+        }
+
+        private void BtnProfileDelete_Click(object sender, RoutedEventArgs e)
+        {
+            if (CmbProfile.SelectedItem is not PlaybackProfile profile) return;
+
+            if (MessageBox.Show($"プロファイル「{profile.Name}」を削除しますか？",
+                    "プロファイル削除", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
+
+            _profiles.Remove(profile);
+            ProfileService.Save(PathConfig.ProfilesPath, _profiles);
+
+            _suppressProfileSelection = true;
+            CmbProfile.ItemsSource = null;
+            CmbProfile.ItemsSource = _profiles;
+            CmbProfile.SelectedIndex = -1;
+            _suppressProfileSelection = false;
+
+            SetStatus($"プロファイル「{profile.Name}」を削除しました。");
         }
 
         // ----------------------------------------------------------------

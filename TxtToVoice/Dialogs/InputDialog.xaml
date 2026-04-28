@@ -1,0 +1,34 @@
+<Window x:Class="TxtToVoice.Dialogs.InputDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Height="140" Width="380"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False">
+
+    <Grid Margin="16,14,16,14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="8"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" x:Name="TxtPrompt" FontSize="13"/>
+
+        <TextBox Grid.Row="2" x:Name="TxtValue"
+                 FontSize="13" Padding="4,3" Height="28"
+                 TextChanged="TxtValue_TextChanged"/>
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="BtnOk" Content="OK" IsDefault="True"
+                    Width="70" Height="28" Margin="0,0,8,0"
+                    Background="#2C5F8A" Foreground="White" BorderThickness="0"
+                    Click="BtnOk_Click"/>
+            <Button Content="キャンセル" IsCancel="True"
+                    Width="80" Height="28"
+                    Click="BtnCancel_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

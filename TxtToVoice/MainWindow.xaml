@@ -309,6 +309,7 @@
 
                     <TextBox Grid.Row="1" x:Name="TxtPreview"
                              Style="{StaticResource PreviewBox}"
+                             IsInactiveSelectionHighlightEnabled="True"
                              ToolTip="辞書適用後のテキストプレビュー。【元表記→読み】形式で変換箇所を確認できます。"/>
 
                     <Border Grid.Row="2" Background="#E4E8EE" Padding="8,4">
@@ -319,6 +320,26 @@
                                     FontSize="11" Padding="10,2"
                                     VerticalAlignment="Center"
                                     ToolTip="プレビューテキストをクリップボードにコピーします"/>
+                            <!-- 変換箇所ナビゲーション (#104) -->
+                            <StackPanel Orientation="Horizontal"
+                                        DockPanel.Dock="Right"
+                                        VerticalAlignment="Center"
+                                        Margin="0,0,6,0">
+                                <Button x:Name="BtnPreviewPrev" Content="◀"
+                                        Width="24" Height="20" FontSize="10" Padding="2,0"
+                                        Margin="0,0,2,0"
+                                        Click="BtnPreviewPrev_Click"
+                                        ToolTip="前の変換箇所へ移動"/>
+                                <TextBlock x:Name="TxtPreviewMatchCount"
+                                           Text="" VerticalAlignment="Center"
+                                           FontSize="11" Foreground="#555"
+                                           MinWidth="50" TextAlignment="Center"/>
+                                <Button x:Name="BtnPreviewNext" Content="▶"
+                                        Width="24" Height="20" FontSize="10" Padding="2,0"
+                                        Margin="2,0,0,0"
+                                        Click="BtnPreviewNext_Click"
+                                        ToolTip="次の変換箇所へ移動"/>
+                            </StackPanel>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <RadioButton x:Name="RbPreviewAnnotated"
                                              Content="【変換箇所を表示】"
@@ -484,6 +505,8 @@
                     <Grid Grid.Row="1" Margin="10,8,10,8">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="6"/>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="8"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="6"/>
@@ -496,8 +519,33 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <!-- 音声選択 -->
+                        <!-- 再生プロファイル (#103) -->
                         <DockPanel Grid.Row="0">
+                            <TextBlock Text="プロファイル："
+                                       VerticalAlignment="Center"
+                                       MinWidth="44" FontSize="12" Margin="0,0,4,0"/>
+                            <Button x:Name="BtnProfileDelete" Content="削除"
+                                    DockPanel.Dock="Right"
+                                    Width="44" Height="24" FontSize="11"
+                                    Margin="4,0,0,0"
+                                    Click="BtnProfileDelete_Click"
+                                    ToolTip="選択中のプロファイルを削除"/>
+                            <Button x:Name="BtnProfileSave" Content="保存"
+                                    DockPanel.Dock="Right"
+                                    Width="44" Height="24" FontSize="11"
+                                    Margin="4,0,0,0"
+                                    Click="BtnProfileSave_Click"
+                                    ToolTip="現在の設定（音声・速度・音量・SSML）をプロファイルとして保存"/>
+                            <ComboBox x:Name="CmbProfile"
+                                      DisplayMemberPath="Name"
+                                      SelectionChanged="CmbProfile_SelectionChanged"
+                                      VerticalContentAlignment="Center"
+                                      FontSize="12" Height="24"
+                                      ToolTip="再生プロファイルを選択して設定を一括適用します"/>
+                        </DockPanel>
+
+                        <!-- 音声選択 -->
+                        <DockPanel Grid.Row="2">
                             <TextBlock Text="音声：" VerticalAlignment="Center"
                                        MinWidth="44" FontSize="12" Margin="0,0,4,0"/>
                             <ComboBox x:Name="CmbVoice"
@@ -508,7 +556,7 @@
                         </DockPanel>
 
                         <!-- 速度・音量スライダー -->
-                        <Grid Grid.Row="2">
+                        <Grid Grid.Row="4">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="16"/>
@@ -551,7 +599,7 @@
                         </Grid>
 
                         <!-- SSML ポーズ挿入 -->
-                        <StackPanel Grid.Row="4">
+                        <StackPanel Grid.Row="6">
                             <CheckBox x:Name="ChkSsml"
                                       Content="句読点・改行に自動ポーズを挿入する（SSML モード）"
                                       FontSize="12" VerticalContentAlignment="Center"
@@ -574,7 +622,7 @@
                         </StackPanel>
 
                         <!-- 読み上げ位置ハイライト -->
-                        <CheckBox Grid.Row="6" x:Name="ChkHighlight"
+                        <CheckBox Grid.Row="8" x:Name="ChkHighlight"
                                   IsChecked="True"
                                   Content="読み上げ中の位置を蛍光色でハイライト表示する"
                                   FontSize="12" VerticalContentAlignment="Center"
@@ -582,7 +630,7 @@
                                   ToolTip="読み上げ中の単語を蛍光イエローでハイライト表示します。&#10;蛍光色はテキスト選択（青）とは異なるため、誤操作との混同を防ぎます。&#10;※ SSML モード中は無効です。"/>
 
                         <!-- 再生ボタン群 -->
-                        <WrapPanel Grid.Row="8" Orientation="Horizontal">
+                        <WrapPanel Grid.Row="10" Orientation="Horizontal">
                             <Button x:Name="BtnPlay"
                                     Content="▶ 読み上げ開始"
                                     Style="{StaticResource BtnSuccess}"
@@ -619,7 +667,7 @@
                         </WrapPanel>
 
                         <!-- ショートカットキー案内 -->
-                        <Border Grid.Row="10"
+                        <Border Grid.Row="12"
                                 Background="#E8EEF4"
                                 CornerRadius="3"
                                 Padding="8,5">
@@ -629,6 +677,8 @@
                                 <Run>F5=開始　F6=一時停止　F7=再開　F8=停止</Run>
                                 <LineBreak/>
                                 <Run>Ctrl+O=ファイルを開く　Ctrl+P=プレビュー更新　Ctrl+S=音声保存</Run>
+                                <LineBreak/>
+                                <Run>Ctrl+T=テンプレート挿入　Ctrl+L=読みルール編集</Run>
                                 <LineBreak/>
                                 <Run>辞書一覧：Ins=追加　F2=編集　Del=削除　Ctrl+Shift+↑↓=移動</Run>
                                 <LineBreak/>

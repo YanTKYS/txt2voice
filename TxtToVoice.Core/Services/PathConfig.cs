@@ -99,6 +99,9 @@ namespace TxtToVoice.Services
         /// <summary>原稿テンプレート JSON ファイルのフルパス。</summary>
         public static string TemplatesPath => Path.Combine(DataDirectory, "templates.json");
 
+        /// <summary>再生プロファイル JSON ファイルのフルパス。</summary>
+        public static string ProfilesPath => Path.Combine(DataDirectory, "profiles.json");
+
         // ----------------------------------------------------------------
         // 書き込みテスト
         // ----------------------------------------------------------------
