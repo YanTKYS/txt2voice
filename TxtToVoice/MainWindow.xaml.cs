@@ -155,8 +155,8 @@ namespace TxtToVoice
                     case Key.O: OpenFile();                                                  e.Handled = true; break;
                     case Key.P: ApplyAndPreview();                                           e.Handled = true; break;
                     case Key.S: SaveAudio();                                                 e.Handled = true; break;
-                    case Key.T: BtnInsertTemplate_Click(sender, new RoutedEventArgs());      e.Handled = true; break;
-                    case Key.L: MenuTextRules_Click(sender, new RoutedEventArgs());          e.Handled = true; break;
+                    case Key.T: BtnInsertTemplate_Click(this, new RoutedEventArgs());      e.Handled = true; break;
+                    case Key.L: MenuTextRules_Click(this, new RoutedEventArgs());          e.Handled = true; break;
                 }
                 return;
             }
