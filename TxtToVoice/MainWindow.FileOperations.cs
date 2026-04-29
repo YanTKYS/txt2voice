@@ -141,10 +141,9 @@ namespace TxtToVoice
                     MessageBoxImage.Question);
                 if (ans != MessageBoxResult.Yes) return;
 
-                var knownContents = Services.OperationalPackService.ListContents(dlg.FileName);
-                string? textRules = knownContents.Contains(Services.OperationalPackService.EntryTextRules)
+                string? textRules = contents.Contains(Services.OperationalPackService.EntryTextRules)
                     ? PathConfig.UserTextRulesPath : null;
-                string? savePresets = knownContents.Contains(Services.OperationalPackService.EntryPresets)
+                string? savePresets = contents.Contains(Services.OperationalPackService.EntryPresets)
                     ? PathConfig.SavePresetsPath : null;
 
                 Services.OperationalPackService.Import(

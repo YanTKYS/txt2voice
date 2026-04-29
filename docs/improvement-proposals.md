@@ -5,7 +5,138 @@
 
 ---
 
-## v0.7.9 以降の機能追加候補（2026-04-29 整理）
+## 技術的負債解消候補（2026-04-29 レビュー整理）
+
+レビュアーから寄せられた5件の技術的負債指摘を評価した。
+機能追加の前提条件になるもの・バグ相当のもの・設計改善として方向性は正しいが現段階では過剰なものに分類する。
+
+---
+
+### TD-1 SpeechService / ISpeechEngine の再生 API を awaitable 化【採用・高優先】
+
+**指摘内容**: `SpeakAsync` / `SpeakSsmlAsync` が `void` で fire-and-forget。完了制御・エラー伝播・将来の読み上げキュー実装を難しくしている。
+
+**現状確認**:
+- `ISpeechEngine.SpeakAsync(string text): void` — 完了は `SpeakCompleted` イベントでのみ通知
+- `ISpeechEngine.SpeakSsmlAsync(string ssml): void` — 同上
+- `SaveToFileAsync` は `Task` で awaitable（非対称な設計）
+- `SpeakCompleted` イベントを `SynchronizationContext.Post` で UI スレッドへ転送
+
+**評価**: 妥当。`Task` 戻り値に移行すると `await` による完了待機が可能になり、#126 読み上げキューの実装前提を満たせる。ただし影響範囲が大きい:
+- `ISpeechEngine` のインターフェース変更
+- `SystemSpeechEngine`（`SpeakAsync` = WaitHandle ベース）、`WinRtSpeechEngine`（MediaElement）、`OpenJTalkEngine`（Process）それぞれでの Task 化
+- `SpeechService` および `MainWindow.PlaybackOperations` の呼び出し側の変更
+
+**実装方針**:
+- `ISpeechEngine`: `SpeakAsync(string text, CancellationToken ct = default): Task` に変更
+- 完了イベントは廃止か内部実装の詳細に降格
+- `SpeechService.SpeakAsync` も `Task` を返すよう変更（呼び出し側は `async void` イベントハンドラで `await` する）
+- バックグラウンドスレッドとの同期は TaskCompletionSource を使用
+
+**備考**: TD-5（SynchronizationContext 抽象化）とセットで実施すると効率的。独立バージョン（例: v0.8.x）で集中して対応する。
+
+---
+
+### TD-4a OperationalPackService — ListContents の2重呼び出し修正【採用・今すぐ修正】
+
+**指摘内容**: UI 側で `ListContents()` を2回呼んで条件分岐している。
+
+**現状確認** (`MainWindow.FileOperations.cs`):
+```csharp
+var contents     = OperationalPackService.ListContents(dlg.FileName); // 1回目: 確認ダイアログ用
+// ... MessageBox.Show(fileList) ...
+var knownContents = OperationalPackService.ListContents(dlg.FileName); // 2回目: 同じ結果を再取得（冗長）
+```
+
+**評価**: バグ相当の冗長。`contents` を再利用すれば済む。即修正。
+
+**実装**: `MenuPackImport_Click` 内で `contents` 変数を `knownContents` と統合する（1行変更）。
+
+---
+
+### TD-4b OperationalPackService — ValidatePack/ApplyPack の2段階 API 化【見送り】
+
+**指摘内容**: `ValidatePack()` (検証結果 DTO) → `ApplyPack()` (適用) の2段階 API に分けると、エラー処理が単純化してテストしやすくなる。
+
+**評価**: 方向性は理解できるが、現在の `ListContents` は「ZIP に含まれるファイル名を返す」だけで詳細検証は行っておらず、分離する複雑さがない。将来、スキーマバージョン検証・互換性チェック等が加わった段階で分離を検討する。
+
+**判断**: 見送り。
+
+---
+
+### TD-2 MainWindow の責務分割（Application Service / UseCase 層）【部分採用・低優先】
+
+**指摘内容**: MainWindow.*.cs が大型化し、UIイベントと業務ロジックが密結合。UseCase 層を導入して MainWindow は「入力→呼び出し→結果表示」に限定すべき。
+
+**現状確認**（行数）:
+- `MainWindow.PlaybackOperations.cs`: 668 行
+- `MainWindow.DictionaryOperations.cs`: 639 行
+- `MainWindow.FileOperations.cs`: 557 行
+- `MainWindow.xaml.cs`: 307 行
+- `MainWindow.SettingsOperations.cs`: 185 行
+
+**評価**: ファイルは partial class でアルファベット系統に分離されており、一定の整理はできている。WPF アプリで MVVM/MVP を導入していない現構造では、ある程度の UI-ロジック結合は許容範囲内。  
+UseCase 層の本格導入（全面リファクタリング）は regression リスクが高く、機能追加のペースを落とす。
+
+**部分採用の方針**:
+- 大規模リファクタリングは行わない
+- 新機能追加・修正のタイミングで、`DictionaryService` や `OperationalPackService` に寄せられる処理を少しずつ移す
+- 例: 辞書 CSV インポートのバリデーション処理を `DictionaryService` 内に統合する等
+
+**判断**: 全面 UseCase 層導入は見送り。段階的整理は継続する。
+
+---
+
+### TD-3 辞書編集ロジックのトランザクション化（Command + Undo スタック）【見送り】
+
+**指摘内容**: 現在の Undo は1段スナップショットで、操作ごとのスナップショット管理が散在。`DictionaryCommand` + 共通 Undo スタックに寄せると仕様変更に強くなる。
+
+**現状確認**:
+- `_dictUndoSnapshot: List<DictionaryEntry>?` — 1段のみ
+- `ClearDictUndoSnapshot()` が7箇所で呼ばれている（追加・編集・インポート時に破棄）
+- スナップショット保存は一括削除・優先度一括変更の2操作のみ
+
+**評価**: Command パターン + Undo スタックは多段 Undo が必要になった時点で整備するべき。現状の「一括操作1段のみ Undo」でユーザーニーズを満たしており、多段 Undo の要求は現時点では確認されていない。`ClearDictUndoSnapshot()` の散在は確かに煩雑だが、追加呼び出しが必要な理由（不整合防止）は明確で意図的な設計。
+
+**判断**: 多段 Undo の具体的な要求が出た段階で着手。現段階では見送り。
+
+---
+
+### TD-5 UIスレッド依存のテスト容易性改善（SynchronizationContext 抽象化）【見送り・TD-1 と連動】
+
+**指摘内容**: `SpeechService` が `SynchronizationContext.Current` に依存しており、テスト時の再現性・制御性が下がる。`IDispatcher` インターフェース化で注入するとユニットテストの信頼性が上がる。
+
+**現状確認**:
+```csharp
+// SpeechService.cs
+private void RaiseOnUiThread(Action action)
+{
+    if (_uiContext != null)
+        _uiContext.Post(_ => action(), null);
+    else
+        action(); // null 時は直接呼び出し → テスト時に活用可能
+}
+```
+
+**評価**: `_uiContext == null` の場合は直接呼び出す設計がすでに入っており、テスト環境（WPF ランタイムなし）ではそのまま動作する。完全なモック注入には至っていないが、最低限のテスタビリティはある。  
+TD-1（`SpeakAsync` Task 化）が完了すると、イベントディスパッチ経路が変わり本問題が部分的に解消される見込み。
+
+**判断**: TD-1 と合わせて将来対応。単独では優先しない。
+
+---
+
+## 採用サマリ
+
+| 番号 | 内容 | 判断 | タイミング |
+|---|---|---|---|
+| TD-1 | SpeakAsync / SpeakSsmlAsync → Task 戻り値 | **採用** | 独立バージョンで実施（#126 前提） |
+| TD-4a | ListContents 2重呼び出しを修正 | **採用** | 今すぐ修正 |
+| TD-4b | ValidatePack/ApplyPack 2段階 API 化 | **見送り** | 将来 ZIP 検証が複雑化したら再評価 |
+| TD-2 | UseCase 層導入 | **部分採用** | 大規模リファクタリングは見送り、段階的整理 |
+| TD-3 | 辞書 Command + Undo スタック | **見送り** | 多段 Undo 需要確定時に着手 |
+| TD-5 | SynchronizationContext 抽象化 | **見送り** | TD-1 完了後に合わせて対応 |
+
+
 
 v0.7.8 までで UI/UX の主要改善（再生プロファイル / 段落・セクションナビ / セクション再生 / 一括保存 / 辞書一括操作・Undo / 運用パック）はかなり充実した。
 監査・運用ログ系は本番運用後の課題として保留し、**機能追加・体感改善を優先する方針**で次の打ち手を整理する。
