@@ -405,7 +405,7 @@
                                         Padding="8,3"/>
                                 <Button Content="編集" Style="{StaticResource BtnPrimary}"
                                         Click="BtnEditEntry_Click"
-                                        ToolTip="選択したエントリを編集 (F2)"
+                                        ToolTip="選択したエントリをダイアログで編集（優先順位も変更可）&#10;セルを直接クリックまたは F2 でインライン編集もできます"
                                         Padding="8,3"/>
                                 <Button Content="削除" Style="{StaticResource BtnDanger}"
                                         Click="BtnDeleteEntry_Click"
@@ -455,7 +455,6 @@
 
                     <DataGrid Grid.Row="2" x:Name="DgDictionary"
                               AutoGenerateColumns="False"
-                              IsReadOnly="True"
                               SelectionMode="Single"
                               GridLinesVisibility="Horizontal"
                               AlternatingRowBackground="#F0F5FF"
@@ -469,7 +468,9 @@
                               CanUserSortColumns="True"
                               HeadersVisibility="Column"
                               MouseDoubleClick="DgDictionary_MouseDoubleClick"
-                              KeyDown="DgDictionary_KeyDown">
+                              KeyDown="DgDictionary_KeyDown"
+                              CellEditEnding="DgDictionary_CellEditEnding"
+                              RowEditEnding="DgDictionary_RowEditEnding">
                         <DataGrid.ColumnHeaderStyle>
                             <Style TargetType="DataGridColumnHeader">
                                 <Setter Property="Background"  Value="#D8E4EF"/>
@@ -491,6 +492,7 @@
                                                 Width="*"/>
                             <DataGridTextColumn Header="優先"
                                                 Binding="{Binding Priority}"
+                                                IsReadOnly="True"
                                                 Width="52"/>
                         </DataGrid.Columns>
                     </DataGrid>
@@ -698,7 +700,7 @@
                                 <LineBreak/>
                                 <Run>Ctrl+T=テンプレート挿入　Ctrl+L=読みルール編集</Run>
                                 <LineBreak/>
-                                <Run>辞書一覧：Ins=追加　F2=編集　Del=削除　Ctrl+Shift+↑↓=移動</Run>
+                                <Run>辞書一覧：Ins=追加ダイアログ　F2/セルクリック=セル編集　ダブルクリック=ダイアログ編集　Del=削除　Ctrl+Shift+↑↓=移動</Run>
                                 <LineBreak/>
                                 <Run FontStyle="Italic">テキストを選択してF5を押すと選択範囲のみ読み上げます</Run>
                             </TextBlock>

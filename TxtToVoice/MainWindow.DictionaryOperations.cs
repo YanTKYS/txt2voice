@@ -202,8 +202,14 @@ namespace TxtToVoice
             }
         }
 
-        private void BtnEditEntry_Click(object sender, RoutedEventArgs e)       => EditSelectedEntry();
-        private void DgDictionary_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e) => EditSelectedEntry();
+        private void BtnEditEntry_Click(object sender, RoutedEventArgs e) => EditSelectedEntry();
+
+        private void DgDictionary_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            // インライン編集中の場合はキャンセルしてからダイアログを開く
+            DgDictionary.CancelEdit();
+            EditSelectedEntry();
+        }
 
         private void BtnMoveUp_Click(object sender, RoutedEventArgs e)
         {
@@ -282,14 +288,65 @@ namespace TxtToVoice
         private void DgDictionary_KeyDown(object sender, KeyEventArgs e)
         {
             bool ctrlShift = Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift);
+
+            // セル編集中（TextBox がフォーカス）は Ins / Del / 移動ショートカットを無視する
+            if (e.OriginalSource is System.Windows.Controls.TextBox) return;
+
             switch (e.Key)
             {
                 case Key.Insert: BtnAddEntry_Click(sender, e);    e.Handled = true; break;
-                case Key.F2:     EditSelectedEntry();              e.Handled = true; break;
                 case Key.Delete: BtnDeleteEntry_Click(sender, e); e.Handled = true; break;
                 case Key.Up   when ctrlShift: BtnMoveUp_Click(sender, e);   e.Handled = true; break;
                 case Key.Down when ctrlShift: BtnMoveDown_Click(sender, e); e.Handled = true; break;
             }
+        }
+
+        // ----------------------------------------------------------------
+        // 辞書インライン編集 (#107)
+        // ----------------------------------------------------------------
+
+        private void DgDictionary_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+        {
+            if (e.EditAction != DataGridEditAction.Commit) return;
+            if (e.EditingElement is not System.Windows.Controls.TextBox tb) return;
+            if (e.Row.Item is not Models.DictionaryEntry entry) return;
+
+            string colHeader = e.Column.Header as string ?? "";
+            string newVal    = tb.Text.Trim();
+
+            if ((colHeader == "表記" || colHeader == "読み") && string.IsNullOrWhiteSpace(newVal))
+            {
+                e.Cancel = true;
+                MessageBox.Show($"「{colHeader}」は空にできません。",
+                    "入力エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
+                Dispatcher.BeginInvoke(() => DgDictionary.CancelEdit());
+                return;
+            }
+
+            if (colHeader == "表記")
+            {
+                bool dup = _entries.Any(en => !ReferenceEquals(en, entry) && en.Display == newVal);
+                if (dup)
+                {
+                    e.Cancel = true;
+                    MessageBox.Show($"「{newVal}」は既に辞書に登録されています。",
+                        "重複エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    Dispatcher.BeginInvoke(() => DgDictionary.CancelEdit());
+                }
+            }
+        }
+
+        private void DgDictionary_RowEditEnding(object sender, DataGridRowEditEndingEventArgs e)
+        {
+            if (e.EditAction != DataGridEditAction.Commit) return;
+            // バインディングのコミットを待ってから保存する
+            Dispatcher.BeginInvoke(() =>
+            {
+                _dictService.Invalidate();
+                _dictService.Save();
+                if (!string.IsNullOrEmpty(TxtInput.Text))
+                    ApplyAndPreview();
+            }, System.Windows.Threading.DispatcherPriority.Background);
         }
 
         // ----------------------------------------------------------------

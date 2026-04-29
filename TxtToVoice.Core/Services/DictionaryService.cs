@@ -44,6 +44,12 @@ namespace TxtToVoice.Services
 
         public void Save() => _persistence.Save(_entries);
 
+        /// <summary>
+        /// DataGrid インライン編集など、エントリのプロパティを直接変更した後にキャッシュを無効化する。
+        /// 次回の ApplyDictionary 呼び出し時に Aho-Corasick を再構築する。
+        /// </summary>
+        public void Invalidate() => InvalidateCache();
+
         public void AddEntry(DictionaryEntry entry)
         {
             _entries.Add(entry);
