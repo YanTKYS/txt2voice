@@ -67,6 +67,111 @@ namespace TxtToVoice
             return result;
         }
 
+        // ----------------------------------------------------------------
+        // 運用パック エクスポート / インポート (#118)
+        // ----------------------------------------------------------------
+
+        private void MenuPackExport_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new SaveFileDialog
+            {
+                Title      = "運用パックのエクスポート",
+                Filter     = "運用パック (*.zip)|*.zip",
+                DefaultExt = "zip",
+                FileName   = $"txtvoice_pack_{DateTime.Now:yyyyMMdd}"
+            };
+            if (dlg.ShowDialog() != true) return;
+
+            try
+            {
+                string? textRules = File.Exists(PathConfig.UserTextRulesPath)
+                    ? PathConfig.UserTextRulesPath : null;
+
+                Services.OperationalPackService.Export(
+                    dlg.FileName,
+                    PathConfig.DictionaryPath,
+                    PathConfig.TemplatesPath,
+                    PathConfig.SettingsPath,
+                    textRules);
+
+                SetStatus($"運用パックをエクスポートしました: {Path.GetFileName(dlg.FileName)}");
+                MessageBox.Show(
+                    $"運用パックを書き出しました。\n\n{dlg.FileName}",
+                    "エクスポート完了",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"運用パックエクスポートエラー: {ex.Message}");
+                MessageBox.Show(
+                    $"エクスポートに失敗しました。\n\n{ex.Message}",
+                    "エクスポートエラー",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+
+        private void MenuPackImport_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog
+            {
+                Title      = "運用パックのインポート",
+                Filter     = "運用パック (*.zip)|*.zip",
+                DefaultExt = "zip"
+            };
+            if (dlg.ShowDialog() != true) return;
+
+            try
+            {
+                var contents = Services.OperationalPackService.ListContents(dlg.FileName);
+                if (contents.Count == 0)
+                {
+                    MessageBox.Show("このファイルには有効なデータが含まれていません。",
+                        "インポートエラー", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                string fileList = string.Join("\n", contents.Select(c => $"  ・{c}"));
+                var ans = MessageBox.Show(
+                    $"以下のファイルを現在のデータに上書きしますか？\n\n{fileList}",
+                    "運用パック インポート確認",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+                if (ans != MessageBoxResult.Yes) return;
+
+                string? textRules = Services.OperationalPackService.ListContents(dlg.FileName)
+                    .Contains(Services.OperationalPackService.EntryTextRules)
+                    ? PathConfig.UserTextRulesPath : null;
+
+                Services.OperationalPackService.Import(
+                    dlg.FileName,
+                    PathConfig.DictionaryPath,
+                    PathConfig.TemplatesPath,
+                    PathConfig.SettingsPath,
+                    textRules);
+
+                // データの再読み込み
+                LoadDictionary();
+                LoadSettings();
+                SetStatus($"運用パックをインポートしました: {Path.GetFileName(dlg.FileName)}");
+                MessageBox.Show(
+                    "運用パックを読み込みました。\n設定・辞書・テンプレートを再適用しました。",
+                    "インポート完了",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"運用パックインポートエラー: {ex.Message}");
+                MessageBox.Show(
+                    $"インポートに失敗しました。\n\n{ex.Message}",
+                    "インポートエラー",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+
         private void Window_DragOver(object sender, DragEventArgs e)
         {
             e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop)
@@ -313,12 +418,29 @@ namespace TxtToVoice
         {
             if (_suppressSectionSelection) return;
             int idx = CmbSection.SelectedIndex;
+            BtnSectionPlay.IsEnabled = idx >= 0 && idx < _sections.Count;
             if (idx < 0 || idx >= _sections.Count) return;
 
             int offset = _sections[idx].CharOffset;
             TxtInput.Select(offset, 0);
             TxtInput.ScrollToLine(TxtInput.GetLineIndexFromCharacterIndex(offset));
             TxtInput.Focus();
+        }
+
+        private void BtnSectionPlay_Click(object sender, RoutedEventArgs e)
+        {
+            if (_playback.IsSpeaking) return;
+            int idx = CmbSection.SelectedIndex;
+            if (idx < 0 || idx >= _sections.Count) return;
+
+            int start = _sections[idx].CharOffset;
+            int end   = idx + 1 < _sections.Count
+                ? _sections[idx + 1].CharOffset
+                : TxtInput.Text.Length;
+
+            TxtInput.Select(start, end - start);
+            TxtInput.Focus();
+            StartSpeech();
         }
 
         private void BtnParaNext_Click(object sender, RoutedEventArgs e)

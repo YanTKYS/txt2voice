@@ -18,6 +18,33 @@ namespace TxtToVoice
     public partial class MainWindow
     {
         // ----------------------------------------------------------------
+        // 辞書 Undo（1段）
+        // ----------------------------------------------------------------
+
+        private List<Models.DictionaryEntry>? _dictUndoSnapshot = null;
+
+        private void SaveDictUndoSnapshot()
+        {
+            _dictUndoSnapshot = _dictService.Entries.Select(e => e.Clone()).ToList();
+            BtnDictUndo.IsEnabled = true;
+        }
+
+        private void ClearDictUndoSnapshot()
+        {
+            _dictUndoSnapshot = null;
+            BtnDictUndo.IsEnabled = false;
+        }
+
+        private void BtnDictUndo_Click(object sender, RoutedEventArgs e)
+        {
+            if (_dictUndoSnapshot == null) return;
+            _dictService.ReplaceAll(_dictUndoSnapshot);
+            ClearDictUndoSnapshot();
+            SaveDictionaryAndRefresh();
+            SetStatus("辞書の変更を元に戻しました。");
+        }
+
+        // ----------------------------------------------------------------
         // 辞書の読み込み・一覧更新
         // ----------------------------------------------------------------
 
@@ -197,6 +224,7 @@ namespace TxtToVoice
             if (dlg.ShowDialog() == true && dlg.Result != null)
             {
                 _dictService.AddEntry(dlg.Result);
+                ClearDictUndoSnapshot();
                 SaveDictionaryAndRefresh();
                 SetStatus($"辞書に追加しました: 「{dlg.Result.Display}」→「{dlg.Result.Reading}」");
             }
@@ -267,6 +295,7 @@ namespace TxtToVoice
             if (dlg.ShowDialog() == true && dlg.Result != null)
             {
                 _dictService.UpdateEntry(idx, dlg.Result);
+                ClearDictUndoSnapshot();
                 SaveDictionaryAndRefresh();
                 DgDictionary.SelectedItem = dlg.Result;
                 DgDictionary.ScrollIntoView(DgDictionary.SelectedItem);
@@ -288,6 +317,7 @@ namespace TxtToVoice
             if (MessageBox.Show(msg, "削除確認", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
                 return;
 
+            SaveDictUndoSnapshot();
             // 後ろのインデックスから削除して前方インデックスがずれないようにする
             var indices = selected
                 .Select(entry => { int i = -1; for (int k = 0; k < _dictService.Entries.Count; k++) if (ReferenceEquals(_dictService.Entries[k], entry)) { i = k; break; } return i; })
@@ -327,6 +357,7 @@ namespace TxtToVoice
             if (MessageBox.Show(confirmMsg, "優先度一括変更", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
                 return;
 
+            SaveDictUndoSnapshot();
             foreach (var entry in selected)
                 entry.Priority = newPriority;
 
@@ -392,6 +423,7 @@ namespace TxtToVoice
             // バインディングのコミットを待ってから保存する
             Dispatcher.BeginInvoke(() =>
             {
+                ClearDictUndoSnapshot();
                 _dictService.Invalidate();
                 _dictService.Save();
                 if (!string.IsNullOrEmpty(TxtInput.Text))
@@ -471,6 +503,7 @@ namespace TxtToVoice
                 {
                     // 全置換: 重複チェック不要
                     _dictService.ReplaceAll(imported);
+                    ClearDictUndoSnapshot();
                     SaveDictionaryAndRefresh();
                     SetStatus($"CSV インポート完了（全置換）: {imported.Count} 件");
                 }
@@ -514,6 +547,7 @@ namespace TxtToVoice
                         if (mergeAnswer == MessageBoxResult.Yes)
                             foreach (var item in duplicates) _dictService.UpdateByDisplay(item);
 
+                        ClearDictUndoSnapshot();
                         SaveDictionaryAndRefresh();
                         string overwriteNote = mergeAnswer == MessageBoxResult.Yes
                             ? $"重複 {duplicates.Count} 件上書き"

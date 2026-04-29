@@ -5,6 +5,58 @@
 
 ---
 
+## v0.7.8 実装済み提案（#116・#117・#118 + 一括保存サマリ強化）
+
+### #116 セクション再生 ✅ v0.7.8
+
+**課題**: セクションジャンプ後に手動で F5 を押す必要があり、1アクション余計。
+
+**v0.7.8 実装**:
+- `BtnSectionPlay` ボタンを `PnlSectionNav` 内に追加（ドロップダウンの右隣）
+- `CmbSection_SelectionChanged` でセクション選択時に有効化
+- `BtnSectionPlay_Click`: 選択セクションの CharOffset〜次セクション（またはテキスト末尾）を `TxtInput.Select()` で選択し `StartSpeech()` を呼び出す
+
+### #117 辞書一括操作 Undo（1段） ✅ v0.7.8
+
+**課題**: 一括削除・優先度一括変更の誤操作を即座に戻せない。
+
+**v0.7.8 実装**:
+- `_dictUndoSnapshot: List<DictionaryEntry>?` フィールドを追加
+- `SaveDictUndoSnapshot()`: 操作確定直前にエントリを全 `.Clone()` して保存、`BtnDictUndo.IsEnabled = true`
+- `ClearDictUndoSnapshot()`: 個別追加/編集/インライン編集/CSV インポート後に呼び出し
+- `BtnDictUndo_Click`: `_dictService.ReplaceAll(snapshot)` → 再保存・再描画
+- スナップショット取得タイミング: 確認ダイアログ通過後、実際の削除/変更前
+
+### #118 運用パック入出力 ✅ v0.7.8
+
+**課題**: 閉域運用で複数端末に設定を展開する際、ファイルを個別にコピーする必要があった。
+
+**v0.7.8 実装**:
+- `OperationalPackService` を新規作成（`System.IO.Compression.ZipFile` 使用、NuGet 追加不要）
+  - `Export()`: dictionary.json / templates.json / settings.json（機微データ除去）/ text_rules.json（存在時）を ZIP化
+  - `Import()`: ZIP を展開して各ファイルを上書きコピー
+  - `ListContents()`: インポート前のプレビュー用（既知ファイルのみ列挙）
+- ファイルメニューに「運用パック エクスポート」「インポート」を追加
+- インポート後: `LoadDictionary()` + `LoadSettings()` を自動実行
+
+### 一括保存サマリ強化 ✅ v0.7.8
+
+**課題**: 一括保存完了の MessageBox からパスをコピーできない。
+
+**v0.7.8 実装**:
+- `BatchSaveResultDialog`（新規）: 読み取り専用 TextBox にパス一覧、「パスをコピー」ボタンで `Clipboard.SetText()`
+- エラー情報も同一ダイアログに表示
+
+---
+
+## v0.7.8 見送り判断記録（2026-04-29）
+
+| 提案 | 判断 | 理由 |
+|---|---|---|
+| 辞書影響プレビューの詳細化（件数→該当語句/行） | **見送り** | 確認ダイアログが肥大化するリスク。現在の件数表示（#115）で判断材料として十分。詳細表示が必要なら専用「影響確認」ダイアログを別途設計すべき。 |
+
+---
+
 ## v0.7.7 実装済み提案（#113・#114・#115）
 
 ### #113 セクションナビ（ジャンプ） ✅ v0.7.7

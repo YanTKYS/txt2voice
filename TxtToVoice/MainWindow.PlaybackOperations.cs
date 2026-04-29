@@ -578,24 +578,9 @@ namespace TxtToVoice
             BtnSaveWav.IsEnabled   = true;
             BtnBatchSave.IsEnabled = true;
 
+            new Dialogs.BatchSaveResultDialog(saved, errors) { Owner = this }.ShowDialog();
             if (saved.Count > 0)
-            {
-                string fileList = string.Join("\n", saved.Select(Path.GetFileName));
                 SetStatus($"一括保存完了: {saved.Count} ファイル");
-                MessageBox.Show(
-                    $"以下のファイルを保存しました。\n\n{fileList}",
-                    "一括保存完了",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
-            }
-            if (errors.Count > 0)
-            {
-                MessageBox.Show(
-                    $"以下の形式で保存に失敗しました。\n\n{string.Join("\n", errors)}",
-                    "一括保存エラー",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-            }
         }
     }
 }

@@ -171,6 +171,11 @@
                 <MenuItem Header="読みルール(_L)..." Click="MenuTextRules_Click"/>
                 <MenuItem Header="テンプレート(_M)..." Click="BtnInsertTemplate_Click"/>
                 <Separator/>
+                <MenuItem Header="運用パック エクスポート(_P)..." Click="MenuPackExport_Click"
+                          ToolTip="辞書・テンプレート・設定を ZIP にまとめて書き出す"/>
+                <MenuItem Header="運用パック インポート(_Q)..." Click="MenuPackImport_Click"
+                          ToolTip="ZIP から辞書・テンプレート・設定を読み込む（上書き）"/>
+                <Separator/>
                 <MenuItem Header="終了(_X)" Click="MenuExit_Click"/>
             </MenuItem>
 
@@ -262,6 +267,13 @@
                         <TextBlock Text="セクション："
                                    FontSize="11" Foreground="#555"
                                    VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <Button x:Name="BtnSectionPlay" Content="▶ 再生"
+                                Style="{StaticResource BtnPrimary}"
+                                DockPanel.Dock="Right"
+                                IsEnabled="False"
+                                Click="BtnSectionPlay_Click"
+                                Padding="8,2" Height="24" Margin="6,0,0,0"
+                                ToolTip="このセクションのテキストを選択して読み上げます"/>
                         <ComboBox x:Name="CmbSection"
                                   FontSize="12" Height="24"
                                   SelectionChanged="CmbSection_SelectionChanged"
@@ -438,6 +450,12 @@
                                         IsEnabled="False"
                                         Click="BtnBatchPriority_Click"
                                         ToolTip="選択した全エントリの優先度を一括変更"
+                                        Padding="8,3"/>
+                                <Button x:Name="BtnDictUndo" Content="元に戻す"
+                                        Style="{StaticResource BtnPrimary}"
+                                        IsEnabled="False"
+                                        Click="BtnDictUndo_Click"
+                                        ToolTip="直前の一括削除または優先度一括変更を元に戻す"
                                         Padding="8,3"/>
                                 <Button x:Name="BtnMoveUp" Content="↑"
                                         Style="{StaticResource BtnPrimary}"
