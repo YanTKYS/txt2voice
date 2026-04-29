@@ -582,6 +582,8 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="4"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="4"/>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="6"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
@@ -766,8 +768,30 @@
                                     FontSize="13" Padding="10,6"/>
                         </WrapPanel>
 
-                        <!-- ショートカットキー案内 -->
+                        <!-- 読み上げ進捗インジケータ (#119) -->
                         <Border Grid.Row="12"
+                                x:Name="BrdSpeechProgress"
+                                Visibility="Collapsed"
+                                Background="#EEF3F8"
+                                CornerRadius="3"
+                                Padding="6,5">
+                            <DockPanel>
+                                <TextBlock x:Name="TxtSpeechRemaining"
+                                           DockPanel.Dock="Right"
+                                           FontSize="11" Foreground="#555"
+                                           VerticalAlignment="Center"
+                                           MinWidth="90"
+                                           TextAlignment="Right"/>
+                                <ProgressBar x:Name="PbSpeechProgress"
+                                             Height="8"
+                                             Minimum="0" Maximum="100"
+                                             Value="0"
+                                             VerticalAlignment="Center"/>
+                            </DockPanel>
+                        </Border>
+
+                        <!-- ショートカットキー案内 -->
+                        <Border Grid.Row="14"
                                 Background="#E8EEF4"
                                 CornerRadius="3"
                                 Padding="8,5">

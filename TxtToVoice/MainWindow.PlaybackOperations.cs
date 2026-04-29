@@ -22,6 +22,7 @@ namespace TxtToVoice
 
         private SpeechPositionMap? _positionMap;
         private int _speechOriginOffset;
+        private int _speechTotalChars;
         private DateTime _lastProgressLog = DateTime.MinValue;
         private List<PlaybackProfile> _profiles = new();
         private bool _suppressProfileSelection = false;
@@ -56,6 +57,12 @@ namespace TxtToVoice
 
             bool useSsml = ChkSsml.IsChecked == true;
             var (speechText, map) = _dictService.ApplyDictionaryForSpeech(rawText);
+
+            _speechTotalChars = rawText.Length;
+            BrdSpeechProgress.Visibility       = Visibility.Visible;
+            PbSpeechProgress.IsIndeterminate   = useSsml;
+            PbSpeechProgress.Value             = 0;
+            TxtSpeechRemaining.Text            = useSsml ? "読み上げ中..." : "";
 
             if (useSsml)
             {
@@ -114,6 +121,7 @@ namespace TxtToVoice
             _positionMap = null;
             UpdatePlaybackButtons();
             ClearReadingHighlight();
+            ResetSpeechProgress();
             SetStatus("読み上げ完了。");
         }
 
@@ -123,6 +131,7 @@ namespace TxtToVoice
             _positionMap = null;
             UpdatePlaybackButtons();
             ClearReadingHighlight();
+            ResetSpeechProgress();
             MessageBox.Show(
                 $"読み上げ中にエラーが発生しました。\n\n{message}",
                 "読み上げエラー",
@@ -170,6 +179,25 @@ namespace TxtToVoice
                 Logger.Info($"[進捗] {absEnd} / {total} 文字");
                 _lastProgressLog = now;
             }
+
+            // 進捗インジケータ更新 (#119)
+            if (total > 0)
+            {
+                PbSpeechProgress.Value = (double)absEnd / total * 100;
+                double cps          = 5.0 * Math.Pow(2.0, SldRate.Value / 6.0);
+                int    remainSecs   = (int)Math.Ceiling((total - absEnd) / cps);
+                TxtSpeechRemaining.Text = remainSecs <= 0 ? "残り 0 秒" :
+                    remainSecs < 60 ? $"残り {remainSecs} 秒" :
+                    $"残り {remainSecs / 60} 分 {remainSecs % 60} 秒";
+            }
+        }
+
+        private void ResetSpeechProgress()
+        {
+            BrdSpeechProgress.Visibility     = Visibility.Collapsed;
+            PbSpeechProgress.IsIndeterminate = false;
+            PbSpeechProgress.Value           = 0;
+            TxtSpeechRemaining.Text          = "";
         }
 
         /// <summary>ハイライト（蛍光色選択）を解除し、SelectionBrush をシステム既定に戻す。</summary>
