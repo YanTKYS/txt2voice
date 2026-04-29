@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -13,6 +14,13 @@ namespace TxtToVoice
 {
     public partial class MainWindow
     {
+        // ----------------------------------------------------------------
+        // フィールド（ファイル・段落ナビ専用）
+        // ----------------------------------------------------------------
+
+        private List<(int Start, int Length)> _paragraphs = new();
+        private int _currentParagraphIdx = -1;
+
         // ----------------------------------------------------------------
         // ファイルメニュー
         // ----------------------------------------------------------------
@@ -90,9 +98,24 @@ namespace TxtToVoice
         /// <summary>指定パスのテキストを TxtInput に読み込み、最近使ったファイルに追加する。</summary>
         private void LoadFileIntoInput(string path)
         {
+            if (!ConfirmDiscardText()) return;
             TxtInput.Text = ReadTextFileWithFallback(path);
             SetStatus($"ファイルを読み込みました: {Path.GetFileName(path)}");
             AddRecentFile(path);
+        }
+
+        /// <summary>
+        /// TxtInput に内容がある場合、破棄確認ダイアログを表示する (#108)。
+        /// 空の場合または Yes 選択時に true を返す。
+        /// </summary>
+        private bool ConfirmDiscardText()
+        {
+            if (string.IsNullOrEmpty(TxtInput.Text)) return true;
+            return MessageBox.Show(
+                "現在の入力テキストを破棄して、新しいファイルを読み込みますか？",
+                "確認",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question) == MessageBoxResult.Yes;
         }
 
         private const int MaxRecentFiles = 5;
@@ -158,6 +181,7 @@ namespace TxtToVoice
         {
             TxtCharCount.Text = $"{TxtInput.Text.Length:N0} 文字";
             UpdateEstimatedTime();
+            UpdateParagraphs();
 
             if (ChkAutoPreview.IsChecked != true) return;
             _autoPreviewCts?.Cancel();
@@ -173,6 +197,76 @@ namespace TxtToVoice
                 }
                 catch (OperationCanceledException) { }
             }, token);
+        }
+
+        // ----------------------------------------------------------------
+        // 段落ナビゲーション (#106)
+        // ----------------------------------------------------------------
+
+        /// <summary>
+        /// TxtInput の内容を行（"\n" 区切り）に分割し、空行を除いて _paragraphs を構築する。
+        /// テキスト変更のたびに呼び出す。
+        /// </summary>
+        private void UpdateParagraphs()
+        {
+            _paragraphs.Clear();
+            _currentParagraphIdx = -1;
+            string text = TxtInput.Text;
+
+            int pos = 0;
+            while (pos <= text.Length)
+            {
+                int nlIdx = text.IndexOf('\n', pos);
+                int lineEnd = nlIdx >= 0 ? nlIdx : text.Length;
+
+                // \r\n 対応: 末尾 \r を除いた実コンテンツ長
+                int contentEnd = lineEnd;
+                if (contentEnd > pos && text[contentEnd - 1] == '\r') contentEnd--;
+
+                if (contentEnd > pos && !string.IsNullOrWhiteSpace(text.Substring(pos, contentEnd - pos)))
+                    _paragraphs.Add((pos, contentEnd - pos));
+
+                if (nlIdx < 0) break;
+                pos = nlIdx + 1;
+            }
+
+            int count = _paragraphs.Count;
+            TxtParaNav.Text        = count > 0 ? $"0/{count}" : "";
+            BtnParaPrev.IsEnabled  = false;
+            BtnParaNext.IsEnabled  = count > 0;
+        }
+
+        private void BtnParaNext_Click(object sender, RoutedEventArgs e)
+        {
+            if (_paragraphs.Count == 0) return;
+            int next = _currentParagraphIdx + 1;
+            if (next >= _paragraphs.Count) return;
+            NavigateToParagraph(next);
+        }
+
+        private void BtnParaPrev_Click(object sender, RoutedEventArgs e)
+        {
+            if (_paragraphs.Count == 0) return;
+            int prev = _currentParagraphIdx - 1;
+            if (prev < 0) return;
+            NavigateToParagraph(prev);
+        }
+
+        private void NavigateToParagraph(int idx)
+        {
+            if (idx < 0 || idx >= _paragraphs.Count) return;
+            _currentParagraphIdx = idx;
+            var (start, len) = _paragraphs[idx];
+
+            TxtInput.Focus();
+            TxtInput.Select(start, len);
+            int lineIdx = TxtInput.GetLineIndexFromCharacterIndex(start);
+            if (lineIdx >= 0) TxtInput.ScrollToLine(lineIdx);
+
+            int count = _paragraphs.Count;
+            TxtParaNav.Text       = $"{idx + 1}/{count}";
+            BtnParaPrev.IsEnabled = idx > 0;
+            BtnParaNext.IsEnabled = idx < count - 1;
         }
 
         // ----------------------------------------------------------------
