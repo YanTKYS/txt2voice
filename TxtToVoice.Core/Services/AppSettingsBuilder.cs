@@ -32,7 +32,8 @@ namespace TxtToVoice.Services
             bool annotatedPreviewMode = true,
             int ssmlPauseStrength = 1,
             string saveFilePrefix = "kouhou",
-            string fileNameTemplate = "{prefix}_{datetime}")
+            string fileNameTemplate = "{prefix}_{datetime}",
+            IEnumerable<string>? batchSaveFormats = null)
         {
             bool persistText   = isExit && saveLastInputText && !clearSensitiveDataOnExit;
             bool persistRecent = isExit
@@ -63,7 +64,9 @@ namespace TxtToVoice.Services
                 SaveFilePrefix           = string.IsNullOrWhiteSpace(saveFilePrefix)
                                            ? "kouhou" : saveFilePrefix.Trim(),
                 FileNameTemplate         = string.IsNullOrWhiteSpace(fileNameTemplate)
-                                           ? "{prefix}_{datetime}" : fileNameTemplate.Trim()
+                                           ? "{prefix}_{datetime}" : fileNameTemplate.Trim(),
+                BatchSaveFormats         = batchSaveFormats != null
+                                           ? new List<string>(batchSaveFormats) : new List<string> { "mp3" }
             };
         }
     }

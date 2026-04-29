@@ -119,6 +119,13 @@ namespace TxtToVoice.Models
         [JsonPropertyName("autoPreviewEnabled")]
         public bool AutoPreviewEnabled { get; set; } = false;
 
+        /// <summary>
+        /// 一括保存で出力する形式リスト（"mp3" / "wav" / "mp4"）。空リストは一括保存無効。
+        /// デフォルト: ["mp3"]
+        /// </summary>
+        [JsonPropertyName("batchSaveFormats")]
+        public List<string> BatchSaveFormats { get; set; } = new() { "mp3" };
+
         /// <summary>プレビューを注釈付き（【元表記→読み】）で表示するかどうか（デフォルト: true）</summary>
         [JsonPropertyName("annotatedPreviewMode")]
         public bool AnnotatedPreviewMode { get; set; } = true;

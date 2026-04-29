@@ -206,6 +206,7 @@
             <Grid Grid.Column="0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
@@ -251,15 +252,32 @@
                     </DockPanel>
                 </Border>
 
+                <!-- セクションナビ (#113) — 見出し行が検出されたときのみ表示 -->
+                <Border Grid.Row="1" x:Name="PnlSectionNav"
+                        Visibility="Collapsed"
+                        Background="#EEF2F7"
+                        BorderBrush="#C8CDD4" BorderThickness="0,0,0,1"
+                        Padding="6,4">
+                    <DockPanel>
+                        <TextBlock Text="セクション："
+                                   FontSize="11" Foreground="#555"
+                                   VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <ComboBox x:Name="CmbSection"
+                                  FontSize="12" Height="24"
+                                  SelectionChanged="CmbSection_SelectionChanged"
+                                  ToolTip="見出し行を選択してジャンプ"/>
+                    </DockPanel>
+                </Border>
+
                 <!-- テキスト入力エリア -->
-                <TextBox Grid.Row="1" x:Name="TxtInput"
+                <TextBox Grid.Row="2" x:Name="TxtInput"
                          Style="{StaticResource ManuscriptBox}"
                          TextChanged="TxtInput_TextChanged"
                          IsInactiveSelectionHighlightEnabled="True"
                          ToolTip="読み上げる原稿をここに入力または貼り付けてください。&#10;テキストを選択して読み上げ開始すると、選択範囲のみ読み上げます。"/>
 
                 <!-- フッター: 文字数 + 想定読み上げ時間 + 自動プレビュー + プレビュー更新ボタン -->
-                <Border Grid.Row="2" Background="#E4E8EE" Padding="8,5">
+                <Border Grid.Row="3" Background="#E4E8EE" Padding="8,5">
                     <DockPanel>
                         <TextBlock x:Name="TxtCharCount"
                                    Text="0 文字"
@@ -694,6 +712,12 @@
                                     Style="{StaticResource BtnPrimary}"
                                     Click="BtnSaveWav_Click"
                                     ToolTip="辞書補正後のテキストを音声ファイルとして保存します (Ctrl+S)&#10;WAV / MP3 / MP4(AAC) を選択できます"
+                                    FontSize="13" Padding="14,6" Height="34"/>
+                            <Button x:Name="BtnBatchSave"
+                                    Content="一括保存"
+                                    Style="{StaticResource BtnPrimary}"
+                                    Click="BtnBatchSave_Click"
+                                    ToolTip="設定で選択した複数形式を同時に保存します&#10;（設定 → 音声保存ファイル名 → 一括保存形式）"
                                     FontSize="13" Padding="14,6" Height="34"/>
                         </WrapPanel>
 

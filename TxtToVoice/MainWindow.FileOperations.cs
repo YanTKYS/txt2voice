@@ -22,6 +22,8 @@ namespace TxtToVoice
 
         private List<(int Start, int Length)> _paragraphs = new();
         private int _currentParagraphIdx = -1;
+        private List<(string Title, int CharOffset)> _sections = new();
+        private bool _suppressSectionSelection;
 
         // ----------------------------------------------------------------
         // ファイルメニュー
@@ -208,6 +210,8 @@ namespace TxtToVoice
             UpdateEstimatedTime();
             UpdateParagraphs();
 
+            UpdateSections();
+
             if (ChkAutoPreview.IsChecked != true) return;
             _autoPreviewCts?.Cancel();
             _autoPreviewCts?.Dispose();
@@ -259,6 +263,62 @@ namespace TxtToVoice
             TxtParaNav.Text        = count > 0 ? $"0/{count}" : "";
             BtnParaPrev.IsEnabled  = false;
             BtnParaNext.IsEnabled  = count > 0;
+        }
+
+        // ----------------------------------------------------------------
+        // セクションナビゲーション (#113)
+        // ----------------------------------------------------------------
+
+        // 見出し候補: 行頭が ■/◆/●/▶ または 第N章/節、または 【...】 で始まる行
+        private static readonly Regex SectionHeadPattern = new(
+            @"^\s*(■|◆|●|▶|第\d+[章節部]|【[^】]+】)",
+            RegexOptions.Compiled);
+
+        private void UpdateSections()
+        {
+            _sections.Clear();
+            string text = TxtInput.Text;
+            int pos = 0;
+            while (pos <= text.Length)
+            {
+                int nlIdx   = text.IndexOf('\n', pos);
+                int lineEnd = nlIdx >= 0 ? nlIdx : text.Length;
+                int contentEnd = lineEnd;
+                if (contentEnd > pos && text[contentEnd - 1] == '\r') contentEnd--;
+
+                if (contentEnd > pos)
+                {
+                    string line = text.Substring(pos, contentEnd - pos);
+                    if (SectionHeadPattern.IsMatch(line))
+                    {
+                        string title = line.Length > 40 ? line[..37] + "…" : line;
+                        _sections.Add((title.Trim(), pos));
+                    }
+                }
+                if (nlIdx < 0) break;
+                pos = nlIdx + 1;
+            }
+
+            _suppressSectionSelection = true;
+            CmbSection.Items.Clear();
+            foreach (var (title, _) in _sections)
+                CmbSection.Items.Add(title);
+            PnlSectionNav.Visibility = _sections.Count > 0
+                ? System.Windows.Visibility.Visible
+                : System.Windows.Visibility.Collapsed;
+            _suppressSectionSelection = false;
+        }
+
+        private void CmbSection_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_suppressSectionSelection) return;
+            int idx = CmbSection.SelectedIndex;
+            if (idx < 0 || idx >= _sections.Count) return;
+
+            int offset = _sections[idx].CharOffset;
+            TxtInput.Select(offset, 0);
+            TxtInput.ScrollToLine(TxtInput.GetLineIndexFromCharacterIndex(offset));
+            TxtInput.Focus();
         }
 
         private void BtnParaNext_Click(object sender, RoutedEventArgs e)

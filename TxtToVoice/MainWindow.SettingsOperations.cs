@@ -45,6 +45,7 @@ namespace TxtToVoice
             _auditRetentionMonths     = s.AuditRetentionMonths;
             _saveFilePrefix           = s.SaveFilePrefix;
             _fileNameTemplate         = s.FileNameTemplate;
+            _batchSaveFormats         = s.BatchSaveFormats;
             // SSML ポーズ強度
             CmbSsmlStrength.SelectedIndex = Math.Clamp(s.SsmlPauseStrength, 0, 2);
             // プレビュー設定
@@ -102,7 +103,8 @@ namespace TxtToVoice
                 _annotatedPreview,
                 CmbSsmlStrength.SelectedIndex,
                 _saveFilePrefix,
-                _fileNameTemplate);
+                _fileNameTemplate,
+                _batchSaveFormats);
 
         // ----------------------------------------------------------------
         // 設定ダイアログ
@@ -137,7 +139,7 @@ namespace TxtToVoice
                 _saveLastInputText, _saveRecentFiles,
                 _clearSensitiveDataOnExit, _deleteLogOnExit,
                 _speechEngineType, _auditRetentionMonths,
-                _saveFilePrefix, _fileNameTemplate)
+                _saveFilePrefix, _fileNameTemplate, _batchSaveFormats)
             {
                 Owner = this
             };
@@ -153,6 +155,7 @@ namespace TxtToVoice
             _auditRetentionMonths     = dlg.AuditRetentionMonths;
             _saveFilePrefix           = dlg.SaveFilePrefix;
             _fileNameTemplate         = dlg.FileNameTemplate;
+            _batchSaveFormats         = dlg.BatchSaveFormats;
 
             // 監査モードの変化を Logger にも即時反映する
             Logger.SuppressInfo = _clearSensitiveDataOnExit;

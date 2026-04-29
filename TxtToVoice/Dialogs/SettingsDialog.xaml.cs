@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using TxtToVoice.Services;
@@ -34,11 +36,15 @@ namespace TxtToVoice.Dialogs
         /// <summary>ファイル名命名テンプレート（OK 押下後に確定）</summary>
         public string FileNameTemplate { get; private set; } = "{prefix}_{datetime}";
 
+        /// <summary>一括保存形式リスト（OK 押下後に確定）</summary>
+        public List<string> BatchSaveFormats { get; private set; } = new() { "mp3" };
+
         public SettingsDialog(bool saveLastInputText, bool saveRecentFiles,
             bool clearSensitiveDataOnExit, bool deleteLogOnExit,
             string speechEngineType, int auditRetentionMonths = 13,
             string saveFilePrefix = "kouhou",
-            string fileNameTemplate = "{prefix}_{datetime}")
+            string fileNameTemplate = "{prefix}_{datetime}",
+            IEnumerable<string>? batchSaveFormats = null)
         {
             InitializeComponent();
             ChkSaveLastInputText.IsChecked        = saveLastInputText;
@@ -61,6 +67,11 @@ namespace TxtToVoice.Dialogs
             TxtSaveFilePrefix.Text    = saveFilePrefix;
             TxtFileNameTemplate.Text  = fileNameTemplate;
             UpdateFileNamePreview();
+
+            var formats = batchSaveFormats?.ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string> { "mp3" };
+            ChkBatchMp3.IsChecked = formats.Contains("mp3");
+            ChkBatchWav.IsChecked = formats.Contains("wav");
+            ChkBatchMp4.IsChecked = formats.Contains("mp4");
         }
 
         private void TxtSaveFilePrefix_TextChanged(object sender, TextChangedEventArgs e)
@@ -91,6 +102,10 @@ namespace TxtToVoice.Dialogs
                               ? "kouhou" : TxtSaveFilePrefix.Text.Trim();
             FileNameTemplate  = string.IsNullOrWhiteSpace(TxtFileNameTemplate.Text)
                               ? "{prefix}_{datetime}" : TxtFileNameTemplate.Text.Trim();
+            BatchSaveFormats = new List<string>();
+            if (ChkBatchMp3.IsChecked == true) BatchSaveFormats.Add("mp3");
+            if (ChkBatchWav.IsChecked == true) BatchSaveFormats.Add("wav");
+            if (ChkBatchMp4.IsChecked == true) BatchSaveFormats.Add("mp4");
             DialogResult = true;
         }
 

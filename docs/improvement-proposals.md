@@ -5,6 +5,52 @@
 
 ---
 
+## v0.7.7 実装済み提案（#113・#114・#115）
+
+### #113 セクションナビ（ジャンプ） ✅ v0.7.7
+
+**課題**: 段落ナビは行単位で細かすぎ、長文広報で「章」レベルの移動ができない。
+
+**v0.7.7 実装**:
+- `SectionHeadPattern` 正規表現（`■|◆|●|▶|第\d+[章節部]|【[^】]+】` で始まる行）でセクション行を検出
+- `UpdateSections()` を `TxtInput_TextChanged` から毎回呼び出し
+- `CmbSection` ComboBox に見出し一覧を表示、選択時に該当位置へジャンプ
+- 見出しが0件なら `PnlSectionNav` は `Visibility.Collapsed`（画面を占有しない）
+- 「このセクションのみ再生」は v0.7.8 以降
+
+### #114 音声一括保存 ✅ v0.7.7
+
+**課題**: 配布先ごとに異なる形式が必要な場合、毎回手動で保存し直す必要がある。
+
+**v0.7.7 実装**:
+- `AppSettings.BatchSaveFormats: List<string>` を追加（デフォルト `["mp3"]`）
+- SettingsDialog「一括保存形式」に MP3/WAV/MP4 チェックボックスを追加
+- `BtnBatchSave` ボタン（「音声保存」の右隣）を追加
+- `BatchSaveAudio()`: ファイル名ベース（拡張子なし）を1回指定、形式ごとに SaveToFileAsync を順次実行
+  - 各形式の進捗は SaveProgressDialog で表示
+  - 完了後に保存ファイル一覧をメッセージボックスで通知
+
+### #115 辞書削除・優先度変更の影響プレビュー ✅ v0.7.7
+
+**課題**: 誤って重要なエントリを削除・変更した場合に原稿への影響が分からない。
+
+**v0.7.7 実装**:
+- `DictionaryService.CountOccurrences(text, entries)` を追加（単純文字列検索でヒット件数を合算）
+- `BtnDeleteEntry_Click`: 削除確認メッセージに「現在の原稿で X 件マッチ」を追記
+- `BtnBatchPriority_Click`: 優先度入力後の変更確認ダイアログに同様のヒット件数を表示
+
+---
+
+## v0.7.7 見送り判断記録（2026-04-29）
+
+| 提案 | 判断 | 理由 |
+|---|---|---|
+| 1) 読み上げキュー（複数範囲を連続再生） | **見送り** | 各エンジン（SAPI/WinRT/OpenJTalk）の「再生完了」通知の統一が必要。SpeechService の現設計は `SaveToFileAsync` は awaitable だが `SpeakAsync` は fire-and-forget。キュー制御を安全に実装するには SpeechService の設計変更が必要。 |
+| 4) テンプレート変数入力補助 | **見送り** | 「前回値候補」は履歴ストレージ設計が必要、「予約変数ボタン」は PlaceholderDialog の小改良で済むが `{date}` 等は FileNameBuilder 側の概念と混在する。設計を整理してから v0.7.8 でまとめる。 |
+| ショートカット拡張 | **見送り** | TextBox フォーカス中の `Ctrl+↑↓` 干渉リスクが前回評価から変化なし。 |
+
+---
+
 ## v0.7.6 実装済み提案（#111・#112）
 
 ### #111 辞書一括操作 ✅ v0.7.6

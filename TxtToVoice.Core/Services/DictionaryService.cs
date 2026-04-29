@@ -119,6 +119,24 @@ namespace TxtToVoice.Services
         // テキスト置換
         // ----------------------------------------------------------------
 
+        /// <summary>text 中で entries の Display 値が何回出現するかを単純文字列検索で返す。</summary>
+        public int CountOccurrences(string text, IEnumerable<DictionaryEntry> entries)
+        {
+            if (string.IsNullOrEmpty(text)) return 0;
+            int total = 0;
+            foreach (var entry in entries)
+            {
+                if (string.IsNullOrEmpty(entry.Display)) continue;
+                int start = 0;
+                while ((start = text.IndexOf(entry.Display, start, StringComparison.Ordinal)) >= 0)
+                {
+                    total++;
+                    start += entry.Display.Length;
+                }
+            }
+            return total;
+        }
+
         /// <summary>
         /// テキストに辞書を適用し、読み上げ用テキストを返す。
         /// </summary>

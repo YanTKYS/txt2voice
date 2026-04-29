@@ -25,6 +25,7 @@ namespace TxtToVoice
         private DateTime _lastProgressLog = DateTime.MinValue;
         private List<PlaybackProfile> _profiles = new();
         private bool _suppressProfileSelection = false;
+        private List<string> _batchSaveFormats = new() { "mp3" };
 
         // 蛍光イエロー — システム選択色（青）と明確に区別できる「蛍光ペン」色
         private static readonly SolidColorBrush HighlightBrush =
@@ -391,7 +392,8 @@ namespace TxtToVoice
         // 音声保存（WAV / MP3 / MP4）— 非同期
         // ----------------------------------------------------------------
 
-        private void BtnSaveWav_Click(object sender, RoutedEventArgs e) => SaveAudio();
+        private void BtnSaveWav_Click(object sender, RoutedEventArgs e)  => SaveAudio();
+        private void BtnBatchSave_Click(object sender, RoutedEventArgs e) => BatchSaveAudio();
 
         private async void SaveAudio()
         {
@@ -475,6 +477,124 @@ namespace TxtToVoice
             {
                 progressDialog.Close();
                 BtnSaveWav.IsEnabled = true;
+            }
+        }
+
+        // ----------------------------------------------------------------
+        // 一括保存（#114）
+        // ----------------------------------------------------------------
+
+        private async void BatchSaveAudio()
+        {
+            if (_batchSaveFormats.Count == 0)
+            {
+                MessageBox.Show(
+                    "一括保存する形式が選択されていません。\n設定ダイアログで保存形式を選択してください。",
+                    "一括保存", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            string rawText = TxtInput.Text;
+            if (string.IsNullOrWhiteSpace(rawText))
+            {
+                MessageBox.Show("保存するテキストがありません。",
+                    "一括保存", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            string suggestedName = FileNameBuilder.Build(
+                _fileNameTemplate, _saveFilePrefix, TxtInput.Text, DateTimeOffset.Now);
+            var dlg = new SaveFileDialog
+            {
+                Title      = "一括保存先とファイル名（拡張子は自動付加）",
+                Filter     = "すべてのファイル (*.*)|*.*",
+                FileName   = suggestedName,
+                DefaultExt = ""
+            };
+            if (dlg.ShowDialog() != true) return;
+
+            string dir      = Path.GetDirectoryName(dlg.FileName) ?? ".";
+            string baseName = Path.GetFileNameWithoutExtension(dlg.FileName);
+
+            bool useSsml    = ChkSsml.IsChecked == true;
+            string speechText = _dictService.ApplyDictionary(rawText);
+            string content    = useSsml ? SsmlBuilder.Build(speechText, CmbSsmlStrength.SelectedIndex) : speechText;
+
+            BtnSaveWav.IsEnabled   = false;
+            BtnBatchSave.IsEnabled = false;
+            SetStatus("一括保存中...");
+
+            var errors   = new List<string>();
+            var saved    = new List<string>();
+
+            foreach (string fmt in _batchSaveFormats)
+            {
+                AudioFormat format = fmt switch
+                {
+                    "mp3" => AudioFormat.Mp3,
+                    "mp4" => AudioFormat.Mp4,
+                    _     => AudioFormat.Wav
+                };
+                string outPath = Path.Combine(dir, $"{baseName}.{fmt}");
+
+                using var cts = new CancellationTokenSource();
+                var progressDialog = new Dialogs.SaveProgressDialog(cts) { Owner = this };
+                progressDialog.UpdateProgress(5);
+                progressDialog.Title = $"一括保存 ({fmt.ToUpperInvariant()})";
+                var progress = new Progress<string>(msg =>
+                {
+                    progressDialog.UpdatePhase(msg);
+                    progressDialog.UpdateProgress(msg.Contains("エンコード") ? 70 : 30);
+                });
+                progressDialog.Show();
+
+                try
+                {
+                    await _speechService.SaveToFileAsync(content, outPath, format,
+                        isSsml: useSsml, progress: progress, ct: cts.Token);
+                    progressDialog.UpdateProgress(100);
+                    progressDialog.MarkCompleted();
+                    AuditLogger.Record(_speechEngineType, fmt, success: true, outputPath: outPath);
+                    saved.Add(outPath);
+                }
+                catch (OperationCanceledException)
+                {
+                    try { File.Delete(outPath); } catch { /* 無視 */ }
+                    SetStatus("一括保存をキャンセルしました。");
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"[{TtvErrorCode.SaveFailed}] 一括保存エラー ({fmt}): {ex.Message}");
+                    AuditLogger.Record(_speechEngineType, fmt, success: false, errorCode: TtvErrorCode.SaveFailed);
+                    errors.Add($"{fmt.ToUpperInvariant()}: {ex.Message}");
+                }
+                finally
+                {
+                    progressDialog.Close();
+                }
+            }
+
+            BtnSaveWav.IsEnabled   = true;
+            BtnBatchSave.IsEnabled = true;
+
+            if (saved.Count > 0)
+            {
+                string fileList = string.Join("\n", saved.Select(Path.GetFileName));
+                SetStatus($"一括保存完了: {saved.Count} ファイル");
+                MessageBox.Show(
+                    $"以下のファイルを保存しました。\n\n{fileList}",
+                    "一括保存完了",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            if (errors.Count > 0)
+            {
+                MessageBox.Show(
+                    $"以下の形式で保存に失敗しました。\n\n{string.Join("\n", errors)}",
+                    "一括保存エラー",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
         }
     }

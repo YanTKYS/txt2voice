@@ -279,9 +279,11 @@ namespace TxtToVoice
             var selected = DgDictionary.SelectedItems.Cast<Models.DictionaryEntry>().ToList();
             if (selected.Count == 0) return;
 
+            int hitCount = _dictService.CountOccurrences(TxtInput.Text, selected);
+            string hitInfo = hitCount > 0 ? $"\n\n現在の原稿でこれらのエントリは {hitCount} 件マッチしています。" : "";
             string msg = selected.Count == 1
-                ? $"「{selected[0].Display}」→「{selected[0].Reading}」を辞書から削除しますか？"
-                : $"選択した {selected.Count} 件のエントリを辞書から削除しますか？";
+                ? $"「{selected[0].Display}」→「{selected[0].Reading}」を辞書から削除しますか？{hitInfo}"
+                : $"選択した {selected.Count} 件のエントリを辞書から削除しますか？{hitInfo}";
 
             if (MessageBox.Show(msg, "削除確認", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
                 return;
@@ -318,6 +320,12 @@ namespace TxtToVoice
                 MessageBox.Show("優先度には整数を入力してください。", "入力エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
+
+            int hitCount = _dictService.CountOccurrences(TxtInput.Text, selected);
+            string hitInfo = hitCount > 0 ? $"\n（現在の原稿で {hitCount} 件マッチ）" : "";
+            string confirmMsg = $"選択した {selected.Count} 件の優先度を {newPriority} に変更しますか？{hitInfo}";
+            if (MessageBox.Show(confirmMsg, "優先度一括変更", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
 
             foreach (var entry in selected)
                 entry.Priority = newPriority;

@@ -71,6 +71,22 @@
                             </DockPanel>
                             <TextBlock FontSize="10" Foreground="#666" Margin="0,4,0,0"
                                        Text="※ 空白のみの場合はそれぞれ既定値に戻ります。"/>
+
+                            <Separator Margin="0,8,0,6"/>
+
+                            <!-- 一括保存形式 (#114) -->
+                            <TextBlock Text="一括保存形式（複数選択可）："
+                                       FontSize="12" Margin="0,0,0,4"/>
+                            <StackPanel Orientation="Horizontal">
+                                <CheckBox x:Name="ChkBatchMp3" Content="MP3"
+                                          FontSize="12" Margin="0,0,12,0" VerticalContentAlignment="Center"/>
+                                <CheckBox x:Name="ChkBatchWav" Content="WAV"
+                                          FontSize="12" Margin="0,0,12,0" VerticalContentAlignment="Center"/>
+                                <CheckBox x:Name="ChkBatchMp4" Content="MP4(AAC)"
+                                          FontSize="12" VerticalContentAlignment="Center"/>
+                            </StackPanel>
+                            <TextBlock FontSize="10" Foreground="#666" Margin="0,4,0,0"
+                                       Text="「一括保存」ボタンで選択した形式を同時出力します。"/>
                         </StackPanel>
                     </GroupBox>
 
