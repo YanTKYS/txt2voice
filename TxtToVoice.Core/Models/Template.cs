@@ -1,3 +1,4 @@
+using System;
 using System.Text.Json.Serialization;
 
 namespace TxtToVoice.Models
@@ -9,5 +10,11 @@ namespace TxtToVoice.Models
 
         [JsonPropertyName("content")]
         public string Content { get; init; } = "";
+
+        [JsonPropertyName("lastUsedAt")]
+        public DateTimeOffset? LastUsedAt { get; init; }
+
+        [JsonPropertyName("usageCount")]
+        public int UsageCount { get; init; }
     }
 }

@@ -1,19 +1,35 @@
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Windows;
 
 namespace TxtToVoice.Dialogs
 {
     public partial class PlaceholderDialog : Window
     {
+        // 予約変数 → 現在時刻に基づく初期値ファクトリ (#121)
+        private static readonly Dictionary<string, Func<string>> ReservedVariables
+            = new(StringComparer.OrdinalIgnoreCase)
+            {
+                ["today"]   = () => DateTime.Now.ToString("yyyy年M月d日"),
+                ["now"]     = () => DateTime.Now.ToString("H:mm"),
+                ["month"]   = () => DateTime.Now.ToString("M月"),
+                ["year"]    = () => DateTime.Now.ToString("yyyy年"),
+                ["weekday"] = () => DateTime.Now.ToString("dddd", CultureInfo.GetCultureInfo("ja-JP")),
+            };
+
         private readonly List<PlaceholderItem> _items;
 
         public PlaceholderDialog(IEnumerable<string> placeholderNames)
         {
             InitializeComponent();
-            _items = placeholderNames.Select(name => new PlaceholderItem(name)).ToList();
+            _items = placeholderNames.Select(name =>
+            {
+                string initial = ReservedVariables.TryGetValue(name, out var factory) ? factory() : "";
+                return new PlaceholderItem(name, initial);
+            }).ToList();
             ItemsPlaceholders.ItemsSource = _items;
         }
 
@@ -28,7 +44,7 @@ namespace TxtToVoice.Dialogs
 
     internal sealed class PlaceholderItem : INotifyPropertyChanged
     {
-        private string _value = string.Empty;
+        private string _value;
 
         public string Name  { get; }
         public string Label => $"{{{Name}}}";
@@ -41,6 +57,10 @@ namespace TxtToVoice.Dialogs
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        public PlaceholderItem(string name) => Name = name;
+        public PlaceholderItem(string name, string initialValue = "")
+        {
+            Name   = name;
+            _value = initialValue;
+        }
     }
 }

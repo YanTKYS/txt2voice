@@ -30,6 +30,10 @@ namespace TxtToVoice.Dialogs
             var view = CollectionViewSource.GetDefaultView(_viewModels);
             view.Filter = FilterTemplate;
             TemplateGrid.ItemsSource = view;
+
+            // デフォルトは「最近使った順」
+            CmbSortOrder.SelectedIndex = 0;
+            ApplySort();
         }
 
         // ── 検索フィルター (#109) ──────────────────────────────
@@ -48,6 +52,36 @@ namespace TxtToVoice.Dialogs
 
         private void BtnFilterClear_Click(object sender, RoutedEventArgs e)
             => TxtFilter.Clear();
+
+        // ── ソート切替 (#120) ─────────────────────────────────
+
+        private void CmbSortOrder_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // ItemsSource 未設定の初期化タイミングは無視
+            if (TemplateGrid?.ItemsSource == null) return;
+            ApplySort();
+        }
+
+        private void ApplySort()
+        {
+            var view = CollectionViewSource.GetDefaultView(_viewModels);
+            view.SortDescriptions.Clear();
+            switch (CmbSortOrder.SelectedIndex)
+            {
+                case 0: // 最近使った順（未使用は末尾）
+                    view.SortDescriptions.Add(new SortDescription(nameof(TemplateViewModel.LastUsedAtSortKey), ListSortDirection.Descending));
+                    view.SortDescriptions.Add(new SortDescription(nameof(TemplateViewModel.Title), ListSortDirection.Ascending));
+                    break;
+                case 1: // タイトル順
+                    view.SortDescriptions.Add(new SortDescription(nameof(TemplateViewModel.Title), ListSortDirection.Ascending));
+                    break;
+                case 2: // 使用回数順
+                    view.SortDescriptions.Add(new SortDescription(nameof(TemplateViewModel.UsageCount), ListSortDirection.Descending));
+                    view.SortDescriptions.Add(new SortDescription(nameof(TemplateViewModel.Title), ListSortDirection.Ascending));
+                    break;
+            }
+            view.Refresh();
+        }
 
         // ── 選択変更 ──────────────────────────────────────────
 
@@ -111,6 +145,10 @@ namespace TxtToVoice.Dialogs
             int idx = GetSelectedIndex();
             if (idx < 0) return;
 
+            // 利用履歴を更新して保存 (#120)
+            _viewModels[idx].RecordUsage();
+            AutoSave();
+
             Result = _viewModels[idx].Content;
             DialogResult = true;
         }
@@ -149,6 +187,8 @@ namespace TxtToVoice.Dialogs
     {
         private string _title;
         private string _content;
+        private DateTimeOffset? _lastUsedAt;
+        private int _usageCount;
 
         public string Title
         {
@@ -162,6 +202,31 @@ namespace TxtToVoice.Dialogs
             set { _content = value; OnPropertyChanged(nameof(Content)); OnPropertyChanged(nameof(Preview)); }
         }
 
+        public DateTimeOffset? LastUsedAt
+        {
+            get => _lastUsedAt;
+            private set
+            {
+                _lastUsedAt = value;
+                OnPropertyChanged(nameof(LastUsedAt));
+                OnPropertyChanged(nameof(LastUsedAtSortKey));
+                OnPropertyChanged(nameof(LastUsedDisplay));
+            }
+        }
+
+        public int UsageCount
+        {
+            get => _usageCount;
+            private set { _usageCount = value; OnPropertyChanged(nameof(UsageCount)); }
+        }
+
+        // ソート用キー: null（未使用）は DateTimeOffset.MinValue 扱いで末尾に
+        public DateTimeOffset LastUsedAtSortKey => _lastUsedAt ?? DateTimeOffset.MinValue;
+
+        public string LastUsedDisplay => _lastUsedAt.HasValue
+            ? _lastUsedAt.Value.LocalDateTime.ToString("M/d HH:mm")
+            : "—";
+
         public string Preview => _content.Length > 60 ? _content[..57] + "…" : _content;
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -169,8 +234,26 @@ namespace TxtToVoice.Dialogs
         private void OnPropertyChanged(string name)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
-        public TemplateViewModel(Template t) { _title = t.Title; _content = t.Content; }
+        public TemplateViewModel(Template t)
+        {
+            _title      = t.Title;
+            _content    = t.Content;
+            _lastUsedAt = t.LastUsedAt;
+            _usageCount = t.UsageCount;
+        }
 
-        public Template ToModel() => new() { Title = _title, Content = _content };
+        public void RecordUsage()
+        {
+            LastUsedAt = DateTimeOffset.Now;
+            UsageCount = _usageCount + 1;
+        }
+
+        public Template ToModel() => new()
+        {
+            Title      = _title,
+            Content    = _content,
+            LastUsedAt = _lastUsedAt,
+            UsageCount = _usageCount,
+        };
     }
 }
