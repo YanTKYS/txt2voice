@@ -403,13 +403,23 @@
                                         Click="BtnAddEntry_Click"
                                         ToolTip="新しい辞書エントリを追加 (Ins)"
                                         Padding="8,3"/>
-                                <Button Content="編集" Style="{StaticResource BtnPrimary}"
+                                <Button x:Name="BtnEditEntry" Content="編集"
+                                        Style="{StaticResource BtnPrimary}"
+                                        IsEnabled="False"
                                         Click="BtnEditEntry_Click"
                                         ToolTip="選択したエントリをダイアログで編集（優先順位も変更可）&#10;セルを直接クリックまたは F2 でインライン編集もできます"
                                         Padding="8,3"/>
-                                <Button Content="削除" Style="{StaticResource BtnDanger}"
+                                <Button x:Name="BtnDeleteEntry" Content="削除"
+                                        Style="{StaticResource BtnDanger}"
+                                        IsEnabled="False"
                                         Click="BtnDeleteEntry_Click"
-                                        ToolTip="選択したエントリを削除 (Del)"
+                                        ToolTip="選択したエントリを削除 (Del)&#10;複数選択時は一括削除"
+                                        Padding="8,3"/>
+                                <Button x:Name="BtnBatchPriority" Content="優先度変更"
+                                        Style="{StaticResource BtnPrimary}"
+                                        IsEnabled="False"
+                                        Click="BtnBatchPriority_Click"
+                                        ToolTip="選択した全エントリの優先度を一括変更"
                                         Padding="8,3"/>
                                 <Button x:Name="BtnMoveUp" Content="↑"
                                         Style="{StaticResource BtnPrimary}"
@@ -455,7 +465,8 @@
 
                     <DataGrid Grid.Row="2" x:Name="DgDictionary"
                               AutoGenerateColumns="False"
-                              SelectionMode="Single"
+                              SelectionMode="Extended"
+                              SelectionChanged="DgDictionary_SelectionChanged"
                               GridLinesVisibility="Horizontal"
                               AlternatingRowBackground="#F0F5FF"
                               Background="White"

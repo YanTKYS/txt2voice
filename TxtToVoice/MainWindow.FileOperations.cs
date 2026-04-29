@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -34,10 +36,33 @@ namespace TxtToVoice
             var dlg = new Dialogs.TemplateManagerDialog(PathConfig.TemplatesPath) { Owner = this };
             if (dlg.ShowDialog() != true || dlg.Result == null) return;
 
-            // 選択中のテキストを置換、未選択の場合はカーソル位置に挿入
-            TxtInput.SelectedText = dlg.Result;
+            string content = dlg.Result;
+
+            // プレースホルダ {name} が含まれる場合は置換ダイアログを表示
+            var placeholders = ExtractPlaceholders(content);
+            if (placeholders.Count > 0)
+            {
+                var phDlg = new Dialogs.PlaceholderDialog(placeholders) { Owner = this };
+                if (phDlg.ShowDialog() != true) return;
+                content = phDlg.Apply(content);
+            }
+
+            TxtInput.SelectedText = content;
             TxtInput.Focus();
             SetStatus("テンプレートを挿入しました。");
+        }
+
+        /// <summary>{name} 形式のプレースホルダ名を出現順・重複なしで返す。</summary>
+        private static List<string> ExtractPlaceholders(string text)
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            var result = new List<string>();
+            foreach (Match m in Regex.Matches(text, @"\{([^}]+)\}"))
+            {
+                string name = m.Groups[1].Value;
+                if (seen.Add(name)) result.Add(name);
+            }
+            return result;
         }
 
         private void Window_DragOver(object sender, DragEventArgs e)

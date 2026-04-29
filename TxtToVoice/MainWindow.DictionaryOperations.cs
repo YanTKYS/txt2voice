@@ -202,6 +202,17 @@ namespace TxtToVoice
             }
         }
 
+        private void DgDictionary_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            int count = DgDictionary.SelectedItems.Count;
+            BtnEditEntry.IsEnabled        = count == 1;
+            BtnDeleteEntry.IsEnabled      = count >= 1;
+            BtnBatchPriority.IsEnabled    = count >= 1;
+            bool singleNoFilter = count == 1 && string.IsNullOrEmpty(TxtDictFilter.Text);
+            BtnMoveUp.IsEnabled   = singleNoFilter && GetSelectedEntryIndex() > 0;
+            BtnMoveDown.IsEnabled = singleNoFilter && GetSelectedEntryIndex() < _dictService.Entries.Count - 1;
+        }
+
         private void BtnEditEntry_Click(object sender, RoutedEventArgs e) => EditSelectedEntry();
 
         private void DgDictionary_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -265,24 +276,55 @@ namespace TxtToVoice
 
         private void BtnDeleteEntry_Click(object sender, RoutedEventArgs e)
         {
-            int idx = GetSelectedEntryIndex();
-            if (idx < 0) return;
+            var selected = DgDictionary.SelectedItems.Cast<Models.DictionaryEntry>().ToList();
+            if (selected.Count == 0) return;
 
-            var entry  = _dictService.Entries[idx];
-            var result = MessageBox.Show(
-                $"「{entry.Display}」→「{entry.Reading}」を辞書から削除しますか？",
-                "削除確認",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
+            string msg = selected.Count == 1
+                ? $"「{selected[0].Display}」→「{selected[0].Reading}」を辞書から削除しますか？"
+                : $"選択した {selected.Count} 件のエントリを辞書から削除しますか？";
 
-            if (result == MessageBoxResult.Yes)
+            if (MessageBox.Show(msg, "削除確認", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
+
+            // 後ろのインデックスから削除して前方インデックスがずれないようにする
+            var indices = selected
+                .Select(entry => { int i = -1; for (int k = 0; k < _dictService.Entries.Count; k++) if (ReferenceEquals(_dictService.Entries[k], entry)) { i = k; break; } return i; })
+                .Where(i => i >= 0)
+                .OrderByDescending(i => i);
+
+            int firstIdx = -1;
+            foreach (int i in indices)
             {
-                _dictService.RemoveEntry(idx);
-                SaveDictionaryAndRefresh();
-                if (DgDictionary.Items.Count > 0)
-                    DgDictionary.SelectedIndex = Math.Min(idx, DgDictionary.Items.Count - 1);
-                SetStatus($"辞書から削除しました: 「{entry.Display}」");
+                if (firstIdx < 0 || i < firstIdx) firstIdx = i;
+                _dictService.RemoveEntry(i);
             }
+
+            SaveDictionaryAndRefresh();
+            if (DgDictionary.Items.Count > 0)
+                DgDictionary.SelectedIndex = Math.Min(firstIdx, DgDictionary.Items.Count - 1);
+            SetStatus($"辞書から {selected.Count} 件削除しました。");
+        }
+
+        private void BtnBatchPriority_Click(object sender, RoutedEventArgs e)
+        {
+            var selected = DgDictionary.SelectedItems.Cast<Models.DictionaryEntry>().ToList();
+            if (selected.Count == 0) return;
+
+            var dlg = new InputDialog("優先度一括変更", "優先度を入力してください（数値が大きいほど優先）:", "0") { Owner = this };
+            if (dlg.ShowDialog() != true) return;
+
+            if (!int.TryParse(dlg.Result?.Trim(), out int newPriority))
+            {
+                MessageBox.Show("優先度には整数を入力してください。", "入力エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            foreach (var entry in selected)
+                entry.Priority = newPriority;
+
+            _dictService.Invalidate();
+            SaveDictionaryAndRefresh();
+            SetStatus($"{selected.Count} 件の優先度を {newPriority} に変更しました。");
         }
 
         private void DgDictionary_KeyDown(object sender, KeyEventArgs e)
