@@ -153,11 +153,35 @@ namespace TxtToVoice
             {
                 switch (e.Key)
                 {
-                    case Key.O: OpenFile();                                                  e.Handled = true; break;
-                    case Key.P: ApplyAndPreview();                                           e.Handled = true; break;
-                    case Key.S: SaveAudio();                                                 e.Handled = true; break;
-                    case Key.T: BtnInsertTemplate_Click(this, new RoutedEventArgs());      e.Handled = true; break;
-                    case Key.L: MenuTextRules_Click(this, new RoutedEventArgs());          e.Handled = true; break;
+                    case Key.O: OpenFile();                                               e.Handled = true; break;
+                    case Key.P: ApplyAndPreview();                                        e.Handled = true; break;
+                    case Key.S: SaveAudio();                                              e.Handled = true; break;
+                    case Key.T: BtnInsertTemplate_Click(this, new RoutedEventArgs());    e.Handled = true; break;
+                    case Key.L: MenuTextRules_Click(this, new RoutedEventArgs());        e.Handled = true; break;
+                }
+                return;
+            }
+
+            // Alt+Shift+↑↓ = セクションナビ前後 (#125)
+            if (e.KeyboardDevice.Modifiers == (ModifierKeys.Alt | ModifierKeys.Shift))
+            {
+                switch (e.Key)
+                {
+                    case Key.Up:   NavigateSectionByKeyboard(-1); e.Handled = true; break;
+                    case Key.Down: NavigateSectionByKeyboard(+1); e.Handled = true; break;
+                }
+                return;
+            }
+
+            // Alt+↑↓ = 段落ナビ前後、Alt+←→ = プレビューナビ (#125)
+            if (e.KeyboardDevice.Modifiers == ModifierKeys.Alt)
+            {
+                switch (e.Key)
+                {
+                    case Key.Up:    BtnParaPrev_Click(this, new RoutedEventArgs());     e.Handled = true; break;
+                    case Key.Down:  BtnParaNext_Click(this, new RoutedEventArgs());     e.Handled = true; break;
+                    case Key.Left:  BtnPreviewPrev_Click(this, new RoutedEventArgs());  e.Handled = true; break;
+                    case Key.Right: BtnPreviewNext_Click(this, new RoutedEventArgs());  e.Handled = true; break;
                 }
                 return;
             }
@@ -184,6 +208,9 @@ namespace TxtToVoice
                 "Ctrl+S  : 音声ファイルとして保存（WAV/MP3/MP4）\n" +
                 "Ctrl+T  : テンプレートを挿入\n" +
                 "Ctrl+L  : 読みルール編集ダイアログを開く\n\n" +
+                "Alt+↑/↓        : 段落ナビ（前/次）\n" +
+                "Alt+Shift+↑/↓  : セクションナビ（前/次）\n" +
+                "Alt+←/→        : プレビューナビ（前/次マッチ）\n\n" +
                 "F5      : 読み上げ開始（選択中は選択範囲のみ）\n" +
                 "F6      : 一時停止\n" +
                 "F7      : 再開\n" +

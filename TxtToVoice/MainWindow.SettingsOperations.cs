@@ -67,6 +67,7 @@ namespace TxtToVoice
             UpdateRecentFilesMenu();
             UpdateEstimatedTime();
             LoadProfiles();
+            LoadSavePresets();
             Logger.Info($"設定を読み込みました: Rate={s.Rate}, Volume={s.Volume}, Voice={s.VoiceName}, Ssml={s.SsmlPauseEnabled}");
         }
 

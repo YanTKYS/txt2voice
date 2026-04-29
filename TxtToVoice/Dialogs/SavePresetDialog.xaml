@@ -1,0 +1,117 @@
+<Window x:Class="TxtToVoice.Dialogs.SavePresetDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="保存プリセットの登録"
+        Width="420"
+        SizeToContent="Height"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Background="#F0F2F5">
+
+    <Window.Resources>
+        <Style x:Key="DialogButton" TargetType="Button">
+            <Setter Property="Width"    Value="90"/>
+            <Setter Property="Height"   Value="32"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Margin"   Value="6,0"/>
+            <Setter Property="Cursor"   Value="Hand"/>
+        </Style>
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="12"/>
+            <Setter Property="Foreground" Value="#333"/>
+            <Setter Property="Margin"     Value="0,0,0,4"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="16,14,16,14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- 0: 名前 -->
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="Auto"/> <!-- 2: 保存モード -->
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="Auto"/> <!-- 4: ファイル名テンプレート -->
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="Auto"/> <!-- 6: 一括保存形式（batch 時のみ） -->
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="Auto"/> <!-- 8: SSML ポーズ強度 -->
+            <RowDefinition Height="6"/>
+            <RowDefinition Height="Auto"/> <!-- 10: エラー -->
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/> <!-- 12: ボタン -->
+        </Grid.RowDefinitions>
+
+        <!-- 名前 -->
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="名前：" Style="{StaticResource FieldLabel}"/>
+            <TextBox x:Name="TxtName"
+                     FontSize="13" Padding="4,3" Height="28"
+                     MaxLength="50"
+                     TextChanged="TxtName_TextChanged"
+                     ToolTip="プリセットの名前（例: 週次広報MP3）"/>
+        </StackPanel>
+
+        <!-- 保存モード -->
+        <GroupBox Grid.Row="2" Header="保存モード" FontSize="12" Padding="8,6">
+            <StackPanel Orientation="Horizontal">
+                <RadioButton x:Name="RbSingle" Content="単体保存"
+                             IsChecked="True" FontSize="12"
+                             Checked="RbMode_Checked"/>
+                <RadioButton x:Name="RbBatch"  Content="一括保存（複数形式）"
+                             FontSize="12" Margin="20,0,0,0"
+                             Checked="RbMode_Checked"/>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- ファイル名テンプレート -->
+        <StackPanel Grid.Row="4">
+            <TextBlock Text="ファイル名テンプレート：" Style="{StaticResource FieldLabel}"/>
+            <TextBox x:Name="TxtTemplate"
+                     FontSize="12" Padding="4,3" Height="28"
+                     ToolTip="変数: {prefix} {date}=yyyyMMdd {time}=HHmmss {datetime}=yyyyMMdd_HHmmss {title}=原稿先頭行"/>
+            <TextBlock Text="変数: {prefix} {date} {time} {datetime} {title}"
+                       FontSize="10" Foreground="#777" Margin="0,3,0,0"/>
+        </StackPanel>
+
+        <!-- 一括保存形式（batch モード時のみ表示） -->
+        <GroupBox x:Name="GrpBatchFormats" Grid.Row="6"
+                  Header="一括保存形式" FontSize="12" Padding="8,6"
+                  Visibility="Collapsed">
+            <StackPanel Orientation="Horizontal">
+                <CheckBox x:Name="ChkMp3" Content="MP3" IsChecked="True" FontSize="12"/>
+                <CheckBox x:Name="ChkWav" Content="WAV" FontSize="12" Margin="16,0,0,0"/>
+                <CheckBox x:Name="ChkMp4" Content="MP4" FontSize="12" Margin="16,0,0,0"/>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- SSML ポーズ強度 -->
+        <DockPanel Grid.Row="8" LastChildFill="False">
+            <TextBlock Text="SSML ポーズ強度："
+                       Style="{StaticResource FieldLabel}"
+                       VerticalAlignment="Center"
+                       Margin="0,0,8,0"/>
+            <ComboBox x:Name="CmbSsmlStrength" Width="120" FontSize="12">
+                <ComboBoxItem Content="短め"/>
+                <ComboBoxItem Content="標準"/>
+                <ComboBoxItem Content="長め"/>
+            </ComboBox>
+        </DockPanel>
+
+        <!-- エラー -->
+        <TextBlock x:Name="TxtError" Grid.Row="10"
+                   FontSize="11" Foreground="#CC0000"
+                   Visibility="Collapsed"/>
+
+        <!-- ボタン -->
+        <StackPanel Grid.Row="12" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="BtnOk" Content="登録" IsDefault="True"
+                    Style="{StaticResource DialogButton}"
+                    Background="#2C5F8A" Foreground="White" BorderThickness="0"
+                    IsEnabled="False"
+                    Click="BtnOk_Click"/>
+            <Button Content="キャンセル" IsCancel="True"
+                    Style="{StaticResource DialogButton}"
+                    Click="BtnCancel_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

@@ -102,6 +102,9 @@ namespace TxtToVoice.Services
         /// <summary>再生プロファイル JSON ファイルのフルパス。</summary>
         public static string ProfilesPath => Path.Combine(DataDirectory, "profiles.json");
 
+        /// <summary>保存プリセット JSON ファイルのフルパス。</summary>
+        public static string SavePresetsPath => Path.Combine(DataDirectory, "save_presets.json");
+
         // ----------------------------------------------------------------
         // 書き込みテスト
         // ----------------------------------------------------------------

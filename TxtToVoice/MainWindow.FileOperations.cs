@@ -92,7 +92,8 @@ namespace TxtToVoice
                     PathConfig.DictionaryPath,
                     PathConfig.TemplatesPath,
                     PathConfig.SettingsPath,
-                    textRules);
+                    textRules,
+                    PathConfig.SavePresetsPath);
 
                 SetStatus($"運用パックをエクスポートしました: {Path.GetFileName(dlg.FileName)}");
                 MessageBox.Show(
@@ -140,16 +141,19 @@ namespace TxtToVoice
                     MessageBoxImage.Question);
                 if (ans != MessageBoxResult.Yes) return;
 
-                string? textRules = Services.OperationalPackService.ListContents(dlg.FileName)
-                    .Contains(Services.OperationalPackService.EntryTextRules)
+                var knownContents = Services.OperationalPackService.ListContents(dlg.FileName);
+                string? textRules = knownContents.Contains(Services.OperationalPackService.EntryTextRules)
                     ? PathConfig.UserTextRulesPath : null;
+                string? savePresets = knownContents.Contains(Services.OperationalPackService.EntryPresets)
+                    ? PathConfig.SavePresetsPath : null;
 
                 Services.OperationalPackService.Import(
                     dlg.FileName,
                     PathConfig.DictionaryPath,
                     PathConfig.TemplatesPath,
                     PathConfig.SettingsPath,
-                    textRules);
+                    textRules,
+                    savePresets);
 
                 // データの再読み込み
                 LoadDictionary();
@@ -441,6 +445,15 @@ namespace TxtToVoice
             TxtInput.Select(start, end - start);
             TxtInput.Focus();
             StartSpeech();
+        }
+
+        // CmbSection.SelectedIndex を変更することで CmbSection_SelectionChanged 経由でジャンプ (#125)
+        private void NavigateSectionByKeyboard(int delta)
+        {
+            if (_sections.Count == 0) return;
+            int next = CmbSection.SelectedIndex + delta;
+            if (next < 0 || next >= _sections.Count) return;
+            CmbSection.SelectedIndex = next;
         }
 
         private void BtnParaNext_Click(object sender, RoutedEventArgs e)

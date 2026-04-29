@@ -737,6 +737,33 @@
                                     Click="BtnBatchSave_Click"
                                     ToolTip="設定で選択した複数形式を同時に保存します&#10;（設定 → 音声保存ファイル名 → 一括保存形式）"
                                     FontSize="13" Padding="14,6" Height="34"/>
+                            <!-- 保存プリセット (#122) -->
+                            <Separator Width="2" Height="24" Background="#CCC"
+                                       Margin="4,5,4,5" VerticalAlignment="Center"/>
+                            <ComboBox x:Name="CmbSavePreset"
+                                      Width="130" Height="34"
+                                      DisplayMemberPath="Name"
+                                      SelectionChanged="CmbSavePreset_SelectionChanged"
+                                      ToolTip="保存プリセットを選択 → 「保存実行」で即時保存"/>
+                            <Button x:Name="BtnPresetExec"
+                                    Content="保存実行"
+                                    Height="34" IsEnabled="False"
+                                    Click="BtnPresetExec_Click"
+                                    ToolTip="選択したプリセット設定で保存を実行"
+                                    FontSize="13" Padding="10,6"/>
+                            <Button x:Name="BtnPresetRegister"
+                                    Content="登録"
+                                    Height="34"
+                                    Click="BtnPresetRegister_Click"
+                                    ToolTip="現在の設定を新しいプリセットとして登録"
+                                    FontSize="13" Padding="10,6"/>
+                            <Button x:Name="BtnPresetDelete"
+                                    Content="削除"
+                                    Style="{StaticResource BtnDanger}"
+                                    Height="34" IsEnabled="False"
+                                    Click="BtnPresetDelete_Click"
+                                    ToolTip="選択したプリセットを削除"
+                                    FontSize="13" Padding="10,6"/>
                         </WrapPanel>
 
                         <!-- ショートカットキー案内 -->
@@ -752,6 +779,8 @@
                                 <Run>Ctrl+O=ファイルを開く　Ctrl+P=プレビュー更新　Ctrl+S=音声保存</Run>
                                 <LineBreak/>
                                 <Run>Ctrl+T=テンプレート挿入　Ctrl+L=読みルール編集</Run>
+                                <LineBreak/>
+                                <Run>Alt+↑↓=段落ナビ　Alt+Shift+↑↓=セクションナビ　Alt+←→=プレビューナビ</Run>
                                 <LineBreak/>
                                 <Run>辞書一覧：Ins=追加ダイアログ　F2/セルクリック=セル編集　ダブルクリック=ダイアログ編集　Del=削除　Ctrl+Shift+↑↓=移動</Run>
                                 <LineBreak/>

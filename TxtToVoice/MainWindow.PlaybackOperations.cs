@@ -26,6 +26,7 @@ namespace TxtToVoice
         private List<PlaybackProfile> _profiles = new();
         private bool _suppressProfileSelection = false;
         private List<string> _batchSaveFormats = new() { "mp3" };
+        private List<SavePreset> _savePresets = new();
 
         // 蛍光イエロー — システム選択色（青）と明確に区別できる「蛍光ペン」色
         private static readonly SolidColorBrush HighlightBrush =
@@ -395,7 +396,7 @@ namespace TxtToVoice
         private void BtnSaveWav_Click(object sender, RoutedEventArgs e)  => SaveAudio();
         private void BtnBatchSave_Click(object sender, RoutedEventArgs e) => BatchSaveAudio();
 
-        private async void SaveAudio()
+        private async void SaveAudio(string? templateOverride = null)
         {
             string rawText = TxtInput.Text;
             if (string.IsNullOrWhiteSpace(rawText))
@@ -415,7 +416,7 @@ namespace TxtToVoice
                 Filter      = "MP3ファイル (*.mp3)|*.mp3|WAVファイル (*.wav)|*.wav|MP4ファイル (*.mp4)|*.mp4",
                 DefaultExt  = "mp3",
                 FilterIndex = 1,
-                FileName    = FileNameBuilder.Build(_fileNameTemplate, _saveFilePrefix, TxtInput.Text, DateTimeOffset.Now)
+                FileName    = FileNameBuilder.Build(templateOverride ?? _fileNameTemplate, _saveFilePrefix, TxtInput.Text, DateTimeOffset.Now)
             };
             if (dlg.ShowDialog() != true) return;
 
@@ -484,9 +485,10 @@ namespace TxtToVoice
         // 一括保存（#114）
         // ----------------------------------------------------------------
 
-        private async void BatchSaveAudio()
+        private async void BatchSaveAudio(string? templateOverride = null, List<string>? formatsOverride = null)
         {
-            if (_batchSaveFormats.Count == 0)
+            var formats = formatsOverride ?? _batchSaveFormats;
+            if (formats.Count == 0)
             {
                 MessageBox.Show(
                     "一括保存する形式が選択されていません。\n設定ダイアログで保存形式を選択してください。",
@@ -503,7 +505,7 @@ namespace TxtToVoice
             }
 
             string suggestedName = FileNameBuilder.Build(
-                _fileNameTemplate, _saveFilePrefix, TxtInput.Text, DateTimeOffset.Now);
+                templateOverride ?? _fileNameTemplate, _saveFilePrefix, TxtInput.Text, DateTimeOffset.Now);
             var dlg = new SaveFileDialog
             {
                 Title      = "一括保存先とファイル名（拡張子は自動付加）",
@@ -527,7 +529,7 @@ namespace TxtToVoice
             var errors   = new List<string>();
             var saved    = new List<string>();
 
-            foreach (string fmt in _batchSaveFormats)
+            foreach (string fmt in formats)
             {
                 AudioFormat format = fmt switch
                 {
@@ -581,6 +583,86 @@ namespace TxtToVoice
             new Dialogs.BatchSaveResultDialog(saved, errors) { Owner = this }.ShowDialog();
             if (saved.Count > 0)
                 SetStatus($"一括保存完了: {saved.Count} ファイル");
+        }
+
+        // ----------------------------------------------------------------
+        // 保存プリセット (#122)
+        // ----------------------------------------------------------------
+
+        internal void LoadSavePresets()
+        {
+            _savePresets = SavePresetService.Load(PathConfig.SavePresetsPath);
+            CmbSavePreset.ItemsSource = null;
+            CmbSavePreset.ItemsSource = _savePresets;
+            CmbSavePreset.SelectedIndex = -1;
+        }
+
+        private void CmbSavePreset_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            bool has = CmbSavePreset.SelectedItem is SavePreset;
+            BtnPresetExec.IsEnabled   = has;
+            BtnPresetDelete.IsEnabled = has;
+        }
+
+        private void BtnPresetExec_Click(object sender, RoutedEventArgs e)
+        {
+            if (CmbSavePreset.SelectedItem is not SavePreset preset) return;
+
+            // プリセットの SSML 強度を一時適用（content 生成は SaveAudio/BatchSaveAudio 内 SaveFileDialog 前に確定）
+            int prevSsml = CmbSsmlStrength.SelectedIndex;
+            CmbSsmlStrength.SelectedIndex = Math.Clamp(preset.SsmlStrength, 0, 2);
+
+            if (preset.SaveMode == "batch")
+                BatchSaveAudio(preset.FileNameTemplate, preset.BatchFormats);
+            else
+                SaveAudio(preset.FileNameTemplate);
+
+            // SaveFileDialog が閉じた後に復元（非同期保存処理は既に content をキャプチャ済み）
+            CmbSsmlStrength.SelectedIndex = prevSsml;
+        }
+
+        private void BtnPresetRegister_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new Dialogs.SavePresetDialog(_fileNameTemplate, CmbSsmlStrength.SelectedIndex, _batchSaveFormats)
+            { Owner = this };
+            if (dlg.ShowDialog() != true || dlg.Result == null) return;
+
+            var preset = dlg.Result;
+            int existing = _savePresets.FindIndex(p => p.Name == preset.Name);
+            if (existing >= 0)
+            {
+                if (MessageBox.Show($"同名のプリセット「{preset.Name}」が存在します。上書きしますか？",
+                    "確認", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                    return;
+                _savePresets[existing] = preset;
+            }
+            else
+            {
+                _savePresets.Add(preset);
+            }
+
+            SavePresetService.Save(PathConfig.SavePresetsPath, _savePresets);
+            CmbSavePreset.ItemsSource = null;
+            CmbSavePreset.ItemsSource = _savePresets;
+            CmbSavePreset.SelectedItem = _savePresets.Find(p => p.Name == preset.Name);
+            Logger.Info($"保存プリセット登録: {preset.Name}");
+            SetStatus($"プリセット「{preset.Name}」を登録しました。");
+        }
+
+        private void BtnPresetDelete_Click(object sender, RoutedEventArgs e)
+        {
+            if (CmbSavePreset.SelectedItem is not SavePreset preset) return;
+            if (MessageBox.Show($"プリセット「{preset.Name}」を削除しますか？",
+                "確認", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
+
+            _savePresets.Remove(preset);
+            SavePresetService.Save(PathConfig.SavePresetsPath, _savePresets);
+            CmbSavePreset.ItemsSource = null;
+            CmbSavePreset.ItemsSource = _savePresets;
+            CmbSavePreset.SelectedIndex = -1;
+            Logger.Info($"保存プリセット削除: {preset.Name}");
+            SetStatus($"プリセット「{preset.Name}」を削除しました。");
         }
     }
 }

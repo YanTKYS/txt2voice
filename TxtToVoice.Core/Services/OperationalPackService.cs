@@ -18,6 +18,7 @@ namespace TxtToVoice.Services
         public const string EntryTemplates   = "templates.json";
         public const string EntrySettings    = "settings.json";
         public const string EntryTextRules   = "text_rules.json";
+        public const string EntryPresets     = "save_presets.json";
 
         /// <summary>
         /// 指定パスのファイルをまとめて ZIP に書き出す。
@@ -28,7 +29,8 @@ namespace TxtToVoice.Services
             string dictionaryPath,
             string templatesPath,
             string settingsPath,
-            string? textRulesPath = null)
+            string? textRulesPath   = null,
+            string? savePresetsPath = null)
         {
             using var zip = ZipFile.Open(outputZipPath, ZipArchiveMode.Create);
 
@@ -38,6 +40,8 @@ namespace TxtToVoice.Services
 
             if (textRulesPath != null)
                 AddFileIfExists(zip, textRulesPath, EntryTextRules);
+            if (savePresetsPath != null)
+                AddFileIfExists(zip, savePresetsPath, EntryPresets);
         }
 
         /// <summary>
@@ -49,7 +53,8 @@ namespace TxtToVoice.Services
             string dictionaryPath,
             string templatesPath,
             string settingsPath,
-            string? textRulesPath = null)
+            string? textRulesPath   = null,
+            string? savePresetsPath = null)
         {
             var imported = new List<string>();
             using var zip = ZipFile.OpenRead(zipPath);
@@ -60,6 +65,8 @@ namespace TxtToVoice.Services
 
             if (textRulesPath != null)
                 ExtractEntry(zip, EntryTextRules, textRulesPath, imported);
+            if (savePresetsPath != null)
+                ExtractEntry(zip, EntryPresets, savePresetsPath, imported);
 
             return imported;
         }
@@ -68,7 +75,7 @@ namespace TxtToVoice.Services
         public static List<string> ListContents(string zipPath)
         {
             var known = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-                { EntryDictionary, EntryTemplates, EntrySettings, EntryTextRules };
+                { EntryDictionary, EntryTemplates, EntrySettings, EntryTextRules, EntryPresets };
             var result = new List<string>();
             using var zip = ZipFile.OpenRead(zipPath);
             foreach (var entry in zip.Entries)
