@@ -39,12 +39,16 @@ namespace TxtToVoice.Dialogs
         /// <summary>一括保存形式リスト（OK 押下後に確定）</summary>
         public List<string> BatchSaveFormats { get; private set; } = new() { "mp3" };
 
+        /// <summary>入力エリアに行番号を表示するかどうか（OK 押下後に確定）</summary>
+        public bool ShowLineNumbers { get; private set; }
+
         public SettingsDialog(bool saveLastInputText, bool saveRecentFiles,
             bool clearSensitiveDataOnExit, bool deleteLogOnExit,
             string speechEngineType, int auditRetentionMonths = 13,
             string saveFilePrefix = "kouhou",
             string fileNameTemplate = "{prefix}_{datetime}",
-            IEnumerable<string>? batchSaveFormats = null)
+            IEnumerable<string>? batchSaveFormats = null,
+            bool showLineNumbers = false)
         {
             InitializeComponent();
             ChkSaveLastInputText.IsChecked        = saveLastInputText;
@@ -72,6 +76,8 @@ namespace TxtToVoice.Dialogs
             ChkBatchMp3.IsChecked = formats.Contains("mp3");
             ChkBatchWav.IsChecked = formats.Contains("wav");
             ChkBatchMp4.IsChecked = formats.Contains("mp4");
+
+            ChkShowLineNumbers.IsChecked = showLineNumbers;
         }
 
         private void TxtSaveFilePrefix_TextChanged(object sender, TextChangedEventArgs e)
@@ -106,6 +112,7 @@ namespace TxtToVoice.Dialogs
             if (ChkBatchMp3.IsChecked == true) BatchSaveFormats.Add("mp3");
             if (ChkBatchWav.IsChecked == true) BatchSaveFormats.Add("wav");
             if (ChkBatchMp4.IsChecked == true) BatchSaveFormats.Add("mp4");
+            ShowLineNumbers = ChkShowLineNumbers.IsChecked == true;
             DialogResult = true;
         }
 

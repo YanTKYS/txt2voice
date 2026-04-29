@@ -53,6 +53,8 @@ namespace TxtToVoice
             _annotatedPreview           = s.AnnotatedPreviewMode;
             RbPreviewAnnotated.IsChecked = s.AnnotatedPreviewMode;
             RbPreviewClean.IsChecked     = !s.AnnotatedPreviewMode;
+            // 表示設定
+            ToggleLineNumbers(s.ShowLineNumbers);
             // 監査モードを Logger に即時反映（INFO ログ抑制）
             Logger.SuppressInfo = _clearSensitiveDataOnExit;
             // 前回セッションのテキストを復元（ポリシーが許可している場合のみ）
@@ -105,7 +107,8 @@ namespace TxtToVoice
                 CmbSsmlStrength.SelectedIndex,
                 _saveFilePrefix,
                 _fileNameTemplate,
-                _batchSaveFormats);
+                _batchSaveFormats,
+                _showLineNumbers);
 
         // ----------------------------------------------------------------
         // 設定ダイアログ
@@ -140,7 +143,8 @@ namespace TxtToVoice
                 _saveLastInputText, _saveRecentFiles,
                 _clearSensitiveDataOnExit, _deleteLogOnExit,
                 _speechEngineType, _auditRetentionMonths,
-                _saveFilePrefix, _fileNameTemplate, _batchSaveFormats)
+                _saveFilePrefix, _fileNameTemplate, _batchSaveFormats,
+                _showLineNumbers)
             {
                 Owner = this
             };
@@ -157,6 +161,7 @@ namespace TxtToVoice
             _saveFilePrefix           = dlg.SaveFilePrefix;
             _fileNameTemplate         = dlg.FileNameTemplate;
             _batchSaveFormats         = dlg.BatchSaveFormats;
+            ToggleLineNumbers(dlg.ShowLineNumbers);
 
             // 監査モードの変化を Logger にも即時反映する
             Logger.SuppressInfo = _clearSensitiveDataOnExit;

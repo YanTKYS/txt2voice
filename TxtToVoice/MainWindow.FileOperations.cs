@@ -317,8 +317,8 @@ namespace TxtToVoice
             TxtCharCount.Text = $"{TxtInput.Text.Length:N0} 文字";
             UpdateEstimatedTime();
             UpdateParagraphs();
-
             UpdateSections();
+            ScheduleLineNumberRefresh();
 
             if (ChkAutoPreview.IsChecked != true) return;
             _autoPreviewCts?.Cancel();

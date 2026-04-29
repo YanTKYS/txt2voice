@@ -90,6 +90,13 @@
                         </StackPanel>
                     </GroupBox>
 
+                    <!-- 表示設定 (#124) -->
+                    <GroupBox Header="表示設定" Padding="12,8,12,10" Margin="0,12,0,0">
+                        <CheckBox x:Name="ChkShowLineNumbers"
+                                  Content="入力エリアに行番号を表示する"
+                                  FontSize="12" Margin="0,2"/>
+                    </GroupBox>
+
                 </StackPanel>
             </TabItem>
 

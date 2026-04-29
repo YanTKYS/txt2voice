@@ -282,11 +282,30 @@
                 </Border>
 
                 <!-- テキスト入力エリア -->
-                <TextBox Grid.Row="2" x:Name="TxtInput"
-                         Style="{StaticResource ManuscriptBox}"
-                         TextChanged="TxtInput_TextChanged"
-                         IsInactiveSelectionHighlightEnabled="True"
-                         ToolTip="読み上げる原稿をここに入力または貼り付けてください。&#10;テキストを選択して読み上げ開始すると、選択範囲のみ読み上げます。"/>
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- 行番号カラム (#124) — 表示設定でトグル -->
+                    <Border x:Name="BrdLineNumbers"
+                            Grid.Column="0"
+                            Visibility="Collapsed"
+                            Background="#F5F5F5"
+                            BorderBrush="#C8C8C8"
+                            BorderThickness="0,0,1,0"
+                            Width="40">
+                        <Canvas x:Name="CvsLineNumbers"
+                                ClipToBounds="True"/>
+                    </Border>
+
+                    <TextBox Grid.Column="1" x:Name="TxtInput"
+                             Style="{StaticResource ManuscriptBox}"
+                             TextChanged="TxtInput_TextChanged"
+                             IsInactiveSelectionHighlightEnabled="True"
+                             ToolTip="読み上げる原稿をここに入力または貼り付けてください。&#10;テキストを選択して読み上げ開始すると、選択範囲のみ読み上げます。"/>
+                </Grid>
 
                 <!-- フッター: 文字数 + 想定読み上げ時間 + 自動プレビュー + プレビュー更新ボタン -->
                 <Border Grid.Row="3" Background="#E4E8EE" Padding="8,5">

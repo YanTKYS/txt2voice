@@ -129,5 +129,13 @@ namespace TxtToVoice.Models
         /// <summary>プレビューを注釈付き（【元表記→読み】）で表示するかどうか（デフォルト: true）</summary>
         [JsonPropertyName("annotatedPreviewMode")]
         public bool AnnotatedPreviewMode { get; set; } = true;
+
+        // ----------------------------------------------------------------
+        // 表示設定
+        // ----------------------------------------------------------------
+
+        /// <summary>入力エリアに行番号カラムを表示するかどうか（デフォルト: false）</summary>
+        [JsonPropertyName("showLineNumbers")]
+        public bool ShowLineNumbers { get; set; } = false;
     }
 }
