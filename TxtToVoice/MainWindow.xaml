@@ -365,7 +365,17 @@
                     <Border Grid.Row="0" Style="{StaticResource SubPanelHeader}">
                         <DockPanel>
                             <TextBlock Text="辞書補正後プレビュー（読み上げ確認）"
-                                       Style="{StaticResource PanelHeaderText}"/>
+                                       Style="{StaticResource PanelHeaderText}"
+                                       DockPanel.Dock="Left"/>
+                            <!-- 比較表示トグル (#123) -->
+                            <CheckBox x:Name="ChkCompare"
+                                      Content="比較表示"
+                                      DockPanel.Dock="Right"
+                                      FontSize="11" Foreground="White"
+                                      VerticalAlignment="Center"
+                                      Checked="ChkCompare_Changed"
+                                      Unchecked="ChkCompare_Changed"
+                                      ToolTip="辞書適用前後を左右に並べて比較表示します"/>
                             <TextBlock Text="※ 黄色背景は確認用。実際の読み上げには使用しません"
                                        FontSize="10" Foreground="#CCE0FF"
                                        VerticalAlignment="Center"
@@ -374,10 +384,35 @@
                         </DockPanel>
                     </Border>
 
-                    <TextBox Grid.Row="1" x:Name="TxtPreview"
-                             Style="{StaticResource PreviewBox}"
-                             IsInactiveSelectionHighlightEnabled="True"
-                             ToolTip="辞書適用後のテキストプレビュー。【元表記→読み】形式で変換箇所を確認できます。"/>
+                    <!-- プレビュー／比較ペイン (#123) -->
+                    <Grid Grid.Row="1" x:Name="GrdPreviewArea">
+                        <Grid.ColumnDefinitions>
+                            <!-- 比較左ペイン: 比較OFF時は Width=0 で非表示 -->
+                            <ColumnDefinition Width="0"/>
+                            <!-- 比較用スプリッター -->
+                            <ColumnDefinition Width="0"/>
+                            <!-- 辞書補正後プレビュー: 通常時は全幅 -->
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- 左ペイン: 辞書適用前の元テキスト -->
+                        <TextBox Grid.Column="0" x:Name="TxtCompareLeft"
+                                 Style="{StaticResource PreviewBox}"
+                                 IsReadOnly="True"
+                                 ToolTip="元テキスト（辞書適用前）—「比較表示」ON 時に表示"/>
+
+                        <!-- 比較用垂直スプリッター -->
+                        <GridSplitter Grid.Column="1"
+                                      HorizontalAlignment="Stretch"
+                                      Background="#BCC5D0"
+                                      ShowsPreview="True"/>
+
+                        <!-- 辞書補正後プレビュー（通常モードでは全幅） -->
+                        <TextBox Grid.Column="2" x:Name="TxtPreview"
+                                 Style="{StaticResource PreviewBox}"
+                                 IsInactiveSelectionHighlightEnabled="True"
+                                 ToolTip="辞書適用後のテキストプレビュー。【元表記→読み】形式で変換箇所を確認できます。"/>
+                    </Grid>
 
                     <Border Grid.Row="2" Background="#E4E8EE" Padding="8,4">
                         <DockPanel>

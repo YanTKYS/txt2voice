@@ -17,6 +17,66 @@ namespace TxtToVoice
         private ScrollViewer? _inputScrollViewer;
 
         // ----------------------------------------------------------------
+        // プレビュー比較ペイン (#123)
+        // ----------------------------------------------------------------
+
+        private bool _compareMode;
+        private bool _syncingScroll;
+        private ScrollViewer? _svCompareLeft;
+        private ScrollViewer? _svPreview;
+
+        private void ChkCompare_Changed(object sender, RoutedEventArgs e)
+            => ToggleCompareMode(ChkCompare.IsChecked == true);
+
+        internal void ToggleCompareMode(bool on)
+        {
+            _compareMode = on;
+            var star    = new GridLength(1, GridUnitType.Star);
+            var zero    = new GridLength(0);
+            var five    = new GridLength(5);
+
+            GrdPreviewArea.ColumnDefinitions[0].Width = on ? star : zero;
+            GrdPreviewArea.ColumnDefinitions[1].Width = on ? five : zero;
+
+            if (on)
+            {
+                TxtCompareLeft.Text = TxtInput.Text;
+                EnsureCompareScrollHook();
+            }
+        }
+
+        private void EnsureCompareScrollHook()
+        {
+            if (_svCompareLeft is not null && _svPreview is not null) return;
+
+            TxtCompareLeft.ApplyTemplate();
+            TxtPreview.ApplyTemplate();
+            _svCompareLeft = FindScrollViewer(TxtCompareLeft);
+            _svPreview     = FindScrollViewer(TxtPreview);
+
+            if (_svCompareLeft is not null)
+                _svCompareLeft.ScrollChanged += OnCompareLeftScrollChanged;
+            if (_svPreview is not null)
+                _svPreview.ScrollChanged += OnPreviewScrollChanged;
+        }
+
+        private void OnCompareLeftScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            if (_syncingScroll || e.VerticalChange == 0) return;
+            _syncingScroll = true;
+            _svPreview?.ScrollToVerticalOffset(e.VerticalOffset);
+            _syncingScroll = false;
+        }
+
+        private void OnPreviewScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            if (_syncingScroll || !_compareMode || e.VerticalChange == 0) return;
+            _syncingScroll = true;
+            _svCompareLeft?.ScrollToVerticalOffset(e.VerticalOffset);
+            _syncingScroll = false;
+        }
+
+        // ----------------------------------------------------------------
         // 行番号表示 (#124)
         // ----------------------------------------------------------------
 

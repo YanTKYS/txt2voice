@@ -319,6 +319,8 @@ namespace TxtToVoice
             UpdateParagraphs();
             UpdateSections();
             ScheduleLineNumberRefresh();
+            // 比較モード: 左ペインを元テキストで追従 (#123)
+            if (_compareMode) TxtCompareLeft.Text = TxtInput.Text;
 
             if (ChkAutoPreview.IsChecked != true) return;
             _autoPreviewCts?.Cancel();

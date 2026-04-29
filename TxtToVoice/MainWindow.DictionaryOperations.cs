@@ -156,6 +156,9 @@ namespace TxtToVoice
                 ? _dictService.ApplyDictionaryWithAnnotation(input)
                 : _dictService.ApplyDictionary(input);
 
+            // 比較モード: 左ペインを元テキストで同期 (#123)
+            if (_compareMode) TxtCompareLeft.Text = input;
+
             UpdatePreviewMatchCount();
             SetStatus("辞書を適用してプレビューを更新しました。");
         }
