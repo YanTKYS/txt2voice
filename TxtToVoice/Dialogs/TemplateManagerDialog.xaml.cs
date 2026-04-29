@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using TxtToVoice.Models;
 using TxtToVoice.Services;
@@ -26,8 +27,27 @@ namespace TxtToVoice.Dialogs
             foreach (var t in TemplateService.Load(templatesPath))
                 _viewModels.Add(new TemplateViewModel(t));
 
-            TemplateGrid.ItemsSource = _viewModels;
+            var view = CollectionViewSource.GetDefaultView(_viewModels);
+            view.Filter = FilterTemplate;
+            TemplateGrid.ItemsSource = view;
         }
+
+        // ── 検索フィルター (#109) ──────────────────────────────
+
+        private bool FilterTemplate(object obj)
+        {
+            if (obj is not TemplateViewModel vm) return true;
+            string filter = TxtFilter.Text.Trim();
+            if (filter.Length == 0) return true;
+            return vm.Title.Contains(filter, StringComparison.CurrentCultureIgnoreCase)
+                || vm.Content.Contains(filter, StringComparison.CurrentCultureIgnoreCase);
+        }
+
+        private void TxtFilter_TextChanged(object sender, TextChangedEventArgs e)
+            => CollectionViewSource.GetDefaultView(_viewModels).Refresh();
+
+        private void BtnFilterClear_Click(object sender, RoutedEventArgs e)
+            => TxtFilter.Clear();
 
         // ── 選択変更 ──────────────────────────────────────────
 

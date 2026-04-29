@@ -413,7 +413,7 @@ namespace TxtToVoice
                 Filter      = "MP3ファイル (*.mp3)|*.mp3|WAVファイル (*.wav)|*.wav|MP4ファイル (*.mp4)|*.mp4",
                 DefaultExt  = "mp3",
                 FilterIndex = 1,
-                FileName    = $"{_saveFilePrefix}_{DateTime.Now:yyyyMMdd_HHmmss}"
+                FileName    = FileNameBuilder.Build(_fileNameTemplate, _saveFilePrefix, TxtInput.Text, DateTimeOffset.Now)
             };
             if (dlg.ShowDialog() != true) return;
 

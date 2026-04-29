@@ -103,10 +103,17 @@ namespace TxtToVoice.Models
 
         /// <summary>
         /// 音声保存ダイアログのデフォルトファイル名プレフィックス（デフォルト: "kouhou"）。
-        /// 実際のファイル名は &lt;prefix&gt;_yyyyMMdd_HHmmss.ext になる。
+        /// 命名テンプレート内の {prefix} 変数として使用される。
         /// </summary>
         [JsonPropertyName("saveFilePrefix")]
         public string SaveFilePrefix { get; set; } = "kouhou";
+
+        /// <summary>
+        /// 音声保存ファイル名の命名テンプレート（デフォルト: "{prefix}_{datetime}"）。
+        /// 変数: {prefix} {date}=yyyyMMdd {time}=HHmmss {datetime}=yyyyMMdd_HHmmss {title}=原稿先頭行
+        /// </summary>
+        [JsonPropertyName("fileNameTemplate")]
+        public string FileNameTemplate { get; set; } = "{prefix}_{datetime}";
 
         /// <summary>自動プレビュー更新（ChkAutoPreview）が有効かどうか（デフォルト: false）</summary>
         [JsonPropertyName("autoPreviewEnabled")]

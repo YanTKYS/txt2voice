@@ -31,7 +31,8 @@ namespace TxtToVoice.Services
             bool autoPreviewEnabled = false,
             bool annotatedPreviewMode = true,
             int ssmlPauseStrength = 1,
-            string saveFilePrefix = "kouhou")
+            string saveFilePrefix = "kouhou",
+            string fileNameTemplate = "{prefix}_{datetime}")
         {
             bool persistText   = isExit && saveLastInputText && !clearSensitiveDataOnExit;
             bool persistRecent = isExit
@@ -60,7 +61,9 @@ namespace TxtToVoice.Services
                 AnnotatedPreviewMode     = annotatedPreviewMode,
                 SsmlPauseStrength        = ssmlPauseStrength,
                 SaveFilePrefix           = string.IsNullOrWhiteSpace(saveFilePrefix)
-                                           ? "kouhou" : saveFilePrefix.Trim()
+                                           ? "kouhou" : saveFilePrefix.Trim(),
+                FileNameTemplate         = string.IsNullOrWhiteSpace(fileNameTemplate)
+                                           ? "{prefix}_{datetime}" : fileNameTemplate.Trim()
             };
         }
     }

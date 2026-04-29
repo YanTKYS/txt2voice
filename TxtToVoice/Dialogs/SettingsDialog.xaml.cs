@@ -1,5 +1,6 @@
 using System;
 using System.Windows;
+using System.Windows.Controls;
 using TxtToVoice.Services;
 
 namespace TxtToVoice.Dialogs
@@ -27,13 +28,17 @@ namespace TxtToVoice.Dialogs
         /// <summary>監査ログ保持月数（0 = 無制限、OK 押下後に確定）</summary>
         public int AuditRetentionMonths { get; private set; } = 13;
 
-        /// <summary>音声保存ファイル名プレフィックス（OK 押下後に確定）</summary>
+        /// <summary>音声保存ファイル名プレフィックス（{prefix} 変数の値、OK 押下後に確定）</summary>
         public string SaveFilePrefix { get; private set; } = "kouhou";
+
+        /// <summary>ファイル名命名テンプレート（OK 押下後に確定）</summary>
+        public string FileNameTemplate { get; private set; } = "{prefix}_{datetime}";
 
         public SettingsDialog(bool saveLastInputText, bool saveRecentFiles,
             bool clearSensitiveDataOnExit, bool deleteLogOnExit,
             string speechEngineType, int auditRetentionMonths = 13,
-            string saveFilePrefix = "kouhou")
+            string saveFilePrefix = "kouhou",
+            string fileNameTemplate = "{prefix}_{datetime}")
         {
             InitializeComponent();
             ChkSaveLastInputText.IsChecked        = saveLastInputText;
@@ -45,15 +50,30 @@ namespace TxtToVoice.Dialogs
             RbSystemSpeech.IsChecked = speechEngineType != SpeechEngineFactory.WinRt
                                     && speechEngineType != SpeechEngineFactory.OpenJTalk;
 
-            // 保持期間 ComboBox の初期選択
-            foreach (System.Windows.Controls.ComboBoxItem item in CmbAuditRetention.Items)
+            foreach (ComboBoxItem item in CmbAuditRetention.Items)
             {
                 if (Convert.ToInt32(item.Tag) == auditRetentionMonths)
                 { CmbAuditRetention.SelectedItem = item; break; }
             }
             if (CmbAuditRetention.SelectedItem == null)
-                CmbAuditRetention.SelectedIndex = 3; // 既定: 13か月
-            TxtSaveFilePrefix.Text = saveFilePrefix;
+                CmbAuditRetention.SelectedIndex = 3;
+
+            TxtSaveFilePrefix.Text    = saveFilePrefix;
+            TxtFileNameTemplate.Text  = fileNameTemplate;
+            UpdateFileNamePreview();
+        }
+
+        private void TxtSaveFilePrefix_TextChanged(object sender, TextChangedEventArgs e)
+            => UpdateFileNamePreview();
+
+        private void TxtFileNameTemplate_TextChanged(object sender, TextChangedEventArgs e)
+            => UpdateFileNamePreview();
+
+        private void UpdateFileNamePreview()
+        {
+            string prefix   = string.IsNullOrWhiteSpace(TxtSaveFilePrefix.Text)   ? "kouhou"            : TxtSaveFilePrefix.Text.Trim();
+            string template = string.IsNullOrWhiteSpace(TxtFileNameTemplate.Text) ? "{prefix}_{datetime}" : TxtFileNameTemplate.Text.Trim();
+            TxtFileNamePreview.Text = FileNameBuilder.Preview(template, prefix) + ".mp3";
         }
 
         private void BtnOk_Click(object sender, RoutedEventArgs e)
@@ -65,10 +85,12 @@ namespace TxtToVoice.Dialogs
             SpeechEngineType         = RbWinRt.IsChecked    == true ? SpeechEngineFactory.WinRt
                                      : RbOpenJTalk.IsChecked == true ? SpeechEngineFactory.OpenJTalk
                                      : SpeechEngineFactory.SystemSpeech;
-            AuditRetentionMonths = CmbAuditRetention.SelectedItem is System.Windows.Controls.ComboBoxItem ci
+            AuditRetentionMonths = CmbAuditRetention.SelectedItem is ComboBoxItem ci
                                  ? Convert.ToInt32(ci.Tag) : 13;
-            SaveFilePrefix = string.IsNullOrWhiteSpace(TxtSaveFilePrefix.Text)
-                           ? "kouhou" : TxtSaveFilePrefix.Text.Trim();
+            SaveFilePrefix    = string.IsNullOrWhiteSpace(TxtSaveFilePrefix.Text)
+                              ? "kouhou" : TxtSaveFilePrefix.Text.Trim();
+            FileNameTemplate  = string.IsNullOrWhiteSpace(TxtFileNameTemplate.Text)
+                              ? "{prefix}_{datetime}" : TxtFileNameTemplate.Text.Trim();
             DialogResult = true;
         }
 
