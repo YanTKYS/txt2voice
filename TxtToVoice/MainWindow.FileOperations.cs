@@ -307,7 +307,7 @@ namespace TxtToVoice
             if (result == MessageBoxResult.Yes)
             {
                 TxtInput.Clear();
-                TxtPreview.Clear();
+                TxtPreview.Document.Blocks.Clear();
                 SetStatus("テキストをクリアしました。");
             }
         }
