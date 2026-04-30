@@ -10,7 +10,7 @@
     <AssemblyName>TxtToVoice</AssemblyName>
     <Company>声の広報 制作支援</Company>
     <Product>テキスト読み上げツール</Product>
-    <Version>0.8.4</Version>
+    <Version>0.8.5</Version>
     <ApplicationIcon></ApplicationIcon>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <Optimize>true</Optimize>

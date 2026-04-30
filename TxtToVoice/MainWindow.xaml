@@ -640,6 +640,8 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="6"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="6"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <!-- 再生プロファイル (#103) -->
@@ -781,6 +783,13 @@
                                     IsEnabled="False"
                                     ToolTip="読み上げを停止します (F8)"
                                     FontSize="13" Padding="14,6" Height="34"/>
+                            <Separator Width="2" Height="24" Background="#CCC"
+                                       Margin="4,5,4,5" VerticalAlignment="Center"/>
+                            <Button x:Name="BtnAddToQueue"
+                                    Content="＋ キュー"
+                                    Click="BtnAddToQueue_Click"
+                                    ToolTip="現在のテキスト（選択中は選択範囲）を読み上げキューに追加します"
+                                    FontSize="12" Padding="10,6" Height="34"/>
                             <Button x:Name="BtnSaveWav"
                                     Content="音声保存"
                                     Style="{StaticResource BtnPrimary}"
@@ -864,6 +873,55 @@
                                 <LineBreak/>
                                 <Run FontStyle="Italic">テキストを選択してF5を押すと選択範囲のみ読み上げます</Run>
                             </TextBlock>
+                        </Border>
+
+                        <!-- 読み上げキュー (#126) -->
+                        <Border Grid.Row="16"
+                                x:Name="BrdQueue"
+                                Visibility="Collapsed"
+                                Background="#EEF3F8"
+                                BorderBrush="#B0C8E0"
+                                BorderThickness="1"
+                                CornerRadius="3">
+                            <DockPanel>
+                                <DockPanel DockPanel.Dock="Top"
+                                           Background="#D0E4F4"
+                                           LastChildFill="True">
+                                    <Button DockPanel.Dock="Right"
+                                            x:Name="BtnClearQueue"
+                                            Content="クリア"
+                                            FontSize="10" Padding="5,2" Height="22" Margin="4,3"
+                                            Click="BtnClearQueue_Click"
+                                            ToolTip="キューをすべてクリア"/>
+                                    <Button DockPanel.Dock="Right"
+                                            x:Name="BtnStopQueue"
+                                            Content="⏹ 停止"
+                                            FontSize="10" Padding="5,2" Height="22" Margin="0,3,4,3"
+                                            Visibility="Collapsed"
+                                            Click="BtnStopQueue_Click"
+                                            ToolTip="キュー再生を停止"/>
+                                    <Button DockPanel.Dock="Right"
+                                            x:Name="BtnPlayQueue"
+                                            Content="▶ 順次再生"
+                                            FontSize="10" Padding="5,2" Height="22" Margin="0,3,4,3"
+                                            IsEnabled="False"
+                                            Click="BtnPlayQueue_Click"
+                                            ToolTip="キュー内のアイテムを順番に読み上げます"/>
+                                    <TextBlock x:Name="TxtQueueHeader"
+                                               Text="読み上げキュー"
+                                               FontSize="11" FontWeight="Bold"
+                                               Foreground="#1B3A5A"
+                                               VerticalAlignment="Center"
+                                               Margin="6,0"/>
+                                </DockPanel>
+                                <ListBox x:Name="LstQueue"
+                                         MaxHeight="72"
+                                         FontSize="11"
+                                         BorderThickness="0"
+                                         Background="Transparent"
+                                         SelectionMode="Single"
+                                         Padding="2,2"/>
+                            </DockPanel>
                         </Border>
                     </Grid>
                 </Grid>

@@ -124,6 +124,7 @@ namespace TxtToVoice
 
         private void StopSpeech()
         {
+            if (_queuePlaying) _queueCts?.Cancel();
             _speechService.Stop();
         }
 
@@ -210,23 +211,25 @@ namespace TxtToVoice
         {
             if (!_speechService.IsAvailable) return;
 
-            BtnPlay.IsEnabled    = !_playback.IsSpeaking;
+            BtnPlay.IsEnabled    = !_playback.IsSpeaking && !_queuePlaying;
             BtnPause.IsEnabled   =  _playback.IsSpeaking && !_playback.IsPaused;
             BtnResume.IsEnabled  =  _playback.IsSpeaking &&  _playback.IsPaused;
-            BtnStop.IsEnabled    =  _playback.IsSpeaking;
-            BtnSaveWav.IsEnabled = !_playback.IsSpeaking;
+            BtnStop.IsEnabled    =  _playback.IsSpeaking || _queuePlaying;
+            BtnSaveWav.IsEnabled = !_playback.IsSpeaking && !_queuePlaying;
         }
 
         private void DisableSpeechControls()
         {
-            BtnPlay.IsEnabled    = false;
-            BtnPause.IsEnabled   = false;
-            BtnResume.IsEnabled  = false;
-            BtnStop.IsEnabled    = false;
-            BtnSaveWav.IsEnabled = false;
-            CmbVoice.IsEnabled   = false;
-            SldRate.IsEnabled    = false;
-            SldVolume.IsEnabled  = false;
+            BtnPlay.IsEnabled       = false;
+            BtnPause.IsEnabled      = false;
+            BtnResume.IsEnabled     = false;
+            BtnStop.IsEnabled       = false;
+            BtnSaveWav.IsEnabled    = false;
+            BtnAddToQueue.IsEnabled = false;
+            BtnPlayQueue.IsEnabled  = false;
+            CmbVoice.IsEnabled      = false;
+            SldRate.IsEnabled       = false;
+            SldVolume.IsEnabled     = false;
         }
 
         // ----------------------------------------------------------------
