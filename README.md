@@ -33,9 +33,29 @@
 | 項目 | 内容 |
 |------|------|
 | OS | Windows 10 / 11 |
-| ランタイム | .NET 8 Desktop Runtime（スタンドアロン版は不要） |
+| ランタイム | 不要（自己完結型 EXE — .NET ランタイムを同梱） |
 | 音声合成 | Windows 標準音声エンジン（SAPI / WinRT OneCore、追加インストール不要）または OpenJTalk（要セットアップ） |
 | インターネット | 不要（完全オフライン動作） |
+
+---
+
+## インストール方法
+
+1. [Releases](https://github.com/YanTKYS/txt2voice/releases) から最新の `TxtToVoice-vX.X.X-win-x64.zip` をダウンロード
+2. ZIP を任意のフォルダに展開（例: `C:\Tools\TxtToVoice\`）
+3. `TxtToVoice.exe` をダブルクリックして起動
+
+> .NET ランタイムのインストールは不要です（EXE にランタイムを同梱済み）。
+
+### OpenJTalk エンジンを使う場合（初回のみ）
+
+```powershell
+# TxtToVoice.exe と同じフォルダで実行
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\setup_openjtalk.ps1
+```
+
+セットアップ後、設定ダイアログで「OpenJTalk」を選択して再起動してください。
 
 ---
 
@@ -161,21 +181,69 @@ dotnet publish -c Release -r win-x64 --self-contained true ^
    - **MP3 / WAV / MP4（AAC）** から保存形式を選択できます
    - 辞書補正済みテキストが保存されます。SSML モードがオンの場合はポーズも反映されます
    - 保存中はプログレスダイアログが表示され、**「キャンセル」ボタン**で中断できます
+   - **保存プリセット**: よく使う保存設定（ファイル名テンプレート・形式・SSML 強度）をプリセット登録して即実行できます
+
+6. **テンプレートを使う**
+   - Ctrl+T またはメニュー「ファイル → テンプレート」でテンプレート管理ダイアログを開きます
+   - タイトルと内容を登録しておくと、原稿に即座に挿入できます
+   - `{今日}` `{now}` などの予約変数を使うと挿入時に現在日時が自動入力されます
+   - `{変数名}` のプレースホルダを使うと挿入ダイアログで任意の値に置換できます
+   - よく使うテンプレートは ★ アイコンでピン留めして一覧の先頭に固定できます
+
+7. **段落・セクションで読む範囲を指定する**
+   - 原稿入力エリアの **◀ 段落 ▶** ボタンで行単位に移動し、F5 でその段落だけ読み上げます
+   - 「■第1章」「◆はじめに」などの見出し行は**セクションナビ**のドロップダウンで一覧表示され、クリックでジャンプ・再生できます
+
+8. **読み上げキューを使う**
+   - 「＋ キュー」ボタンで現在のテキストをキューに追加します（同じテキストの重複は自動スキップ）
+   - 「▶ 順次再生」でキュー内のアイテムを順番に読み上げます
+   - キューの並び替えは ↑↓ ボタン、削除は「削除」ボタンまたは Delete キー（複数選択可）
+   - 設定で「読み上げキューを再起動後も復元する」をオンにすると、次回起動時にキューが復元されます
+
+9. **読みルールを管理する**
+   - Ctrl+L または「辞書」メニューから読みルール編集ダイアログを開きます
+   - 正規表現ベースの変換ルール（例: `(\d+)月` → `$1がつ`）を登録・順序変更できます
+   - ルールは `Data\text_rules.json` に保存され、テキスト変換時に辞書適用の前に実行されます
 
 ### ショートカットキー
+
+#### 全体
 
 | キー | 操作 |
 |------|------|
 | Ctrl+O | テキストファイルを開く |
 | Ctrl+P | 辞書を適用してプレビュー更新 |
 | Ctrl+S | 音声ファイルとして保存（MP3 / WAV / MP4） |
+| Ctrl+T | テンプレート挿入ダイアログを開く |
+| Ctrl+L | 読みルール編集ダイアログを開く |
 | F5 | 読み上げ開始（選択範囲があれば選択範囲のみ） |
 | F6 | 一時停止 |
 | F7 | 再開 |
 | F8 | 停止 |
-| Ins（辞書一覧） | エントリ追加 |
-| F2（辞書一覧）  | 選択エントリ編集 |
-| Del（辞書一覧） | 選択エントリ削除 |
+
+#### 段落・セクション・プレビューナビ
+
+| キー | 操作 |
+|------|------|
+| Alt+↑ / Alt+↓ | 前の段落 / 次の段落へジャンプ |
+| Alt+Shift+↑ / Alt+Shift+↓ | 前のセクション / 次のセクションへジャンプ |
+| Alt+← / Alt+→ | プレビューの前の変換箇所 / 次の変換箇所へジャンプ |
+
+#### 辞書一覧
+
+| キー | 操作 |
+|------|------|
+| Ins | エントリ追加 |
+| F2 | 選択エントリ編集 |
+| Del | 選択エントリ削除（複数選択可） |
+| Ctrl+Shift+↑ | 選択エントリを上に移動 |
+| Ctrl+Shift+↓ | 選択エントリを下に移動 |
+
+#### 読み上げキュー
+
+| キー | 操作 |
+|------|------|
+| Del（キュー選択中） | 選択アイテムを削除（複数選択可） |
 
 ---
 
@@ -222,31 +290,26 @@ RFC 4180 に準じた複数行セル（引用符内の改行）にも対応し�
 
 ### 通常モード
 
-| ファイル | パス |
-|---------|------|
-| 辞書ファイル | `%LOCALAPPDATA%\TxtToVoice\dictionary.json` |
-| 設定ファイル | `%LOCALAPPDATA%\TxtToVoice\settings.json` |
-| ログファイル | `%LOCALAPPDATA%\TxtToVoice\logs\app_YYYYMMDD.log` |
+| ファイル | パス | 説明 |
+|---------|------|------|
+| 辞書 | `%LOCALAPPDATA%\TxtToVoice\dictionary.json` | |
+| 設定 | `%LOCALAPPDATA%\TxtToVoice\settings.json` | |
+| テンプレート | `%LOCALAPPDATA%\TxtToVoice\templates.json` | ピン留め・利用回数も保存 |
+| 再生プロファイル | `%LOCALAPPDATA%\TxtToVoice\profiles.json` | |
+| 保存プリセット | `%LOCALAPPDATA%\TxtToVoice\save_presets.json` | |
+| 読み上げキュー | `%LOCALAPPDATA%\TxtToVoice\queue.json` | 永続化 ON 時のみ |
+| 監査ログ | `%LOCALAPPDATA%\TxtToVoice\audit_YYYYMM.csv` | 監査機能 ON 時のみ |
+| アプリログ | `%LOCALAPPDATA%\TxtToVoice\logs\app_YYYYMMDD.log` | |
+| テキスト変換ルール | `<EXEフォルダ>\Data\text_rules.json` | アプリ同梱・ユーザー編集可 |
 
 `%LOCALAPPDATA%` は通常 `C:\Users\<ユーザー名>\AppData\Local` です。
 
 ### ポータブルモード
 
 EXE と同じフォルダに `portable.flag` ファイルを置くと**ポータブルモード**で起動します。
-辞書・設定・ログがすべて EXE フォルダ配下に保存されるため、USB メモリや
-共有フォルダからの持ち運びに便利です。
+上記のすべてのファイルが `%LOCALAPPDATA%` ではなく EXE フォルダ配下に保存されます。
 
-| ファイル | パス |
-|---------|------|
-| 辞書ファイル | `<EXEフォルダ>\dictionary.json` |
-| 設定ファイル | `<EXEフォルダ>\settings.json` |
-| ログファイル | `<EXEフォルダ>\logs\app_YYYYMMDD.log` |
-
-> EXE フォルダへの書き込みができない場合（読み取り専用フォルダ等）は、
-> 自動的に通常モードへ切り替わり、起動時に通知ダイアログが表示されます。
-
-設定ファイルには速度・音量・選択音声・SSML モード・ハイライト表示・
-前回テキスト・最近使ったファイル・機微データポリシーが保存されます。
+> EXE フォルダへの書き込みができない場合は自動的に通常モードへ切り替わり、起動時に通知ダイアログが表示されます。
 
 ---
 
@@ -312,59 +375,71 @@ EXE フォルダへの書き込みができないため、保存先が `%LOCALAP
 
 ```
 TxtToVoice.Core/                        OS 非依存の純ロジック層（net8.0）
-├── TxtToVoice.Core.csproj
 ├── Models/
 │   ├── AppSettings.cs                  アプリ設定モデル
-│   └── DictionaryEntry.cs              辞書エントリのデータクラス
+│   ├── DictionaryEntry.cs              辞書エントリ
+│   ├── PlaybackProfile.cs              再生プロファイル
+│   ├── QueueEntry.cs                   読み上げキュー・履歴エントリ
+│   ├── SavePreset.cs                   保存プリセット
+│   ├── Template.cs                     原稿テンプレート（ピン留め対応）
+│   └── TextRule.cs                     テキスト変換ルール
 └── Services/
-    ├── AppSettingsBuilder.cs           設定値の構築（UI → モデル変換）
+    ├── AhoCorasick.cs                  辞書照合アルゴリズム（O(n+m)）
+    ├── AppSettingsBuilder.cs           設定値の構築
     ├── AppSettingsService.cs           設定 JSON 読み書き
+    ├── AuditLogger.cs                  監査 CSV ログ出力（月次ローテーション）
+    ├── CsvImportReport.cs              CSV インポート結果レポート
     ├── CsvService.cs                   CSV インポート / エクスポート
-    ├── DictionaryService.cs            辞書管理・テキスト置換ロジック
-    ├── JsonPersistenceService.cs       辞書 JSON 読み書き
-    ├── Logger.cs                       ファイルログ出力（INFO 抑制・終了時削除対応）
-    ├── PathConfig.cs                   データ保存先パス管理（通常/ポータブルモード切替）
-    ├── SpeechEngineTypes.cs            音声エンジン種別定数・検証
+    ├── DictionaryService.cs            辞書管理・テキスト置換（Aho-Corasick）
+    ├── FileNameBuilder.cs              ファイル名命名テンプレート展開
+    ├── JsonPersistenceService.cs       JSON 汎用読み書き
+    ├── Logger.cs                       ファイルログ（INFO 抑制・終了時削除対応）
+    ├── OperationalPackService.cs       運用パック ZIP エクスポート/インポート
+    ├── PathConfig.cs                   保存先パス管理（通常/ポータブルモード）
+    ├── ProfileService.cs               再生プロファイル管理
+    ├── QueuePersistenceService.cs      読み上げキュー永続化
+    ├── SavePresetService.cs            保存プリセット管理
+    ├── SpeechEngineTypes.cs            音声エンジン種別定数
     ├── SpeechPositionMap.cs            読み上げ位置マッピング
-    └── SsmlBuilder.cs                  テキスト → SSML 変換（ポーズ自動挿入）
+    ├── SsmlBuilder.cs                  テキスト → SSML 変換
+    ├── TemplateService.cs              テンプレート管理
+    ├── TextPreprocessor.cs             テキスト前処理（数字・記号の読み変換）
+    ├── TextRuleLoader.cs               text_rules.json 読み込み・Regex タイムアウト
+    └── TtvErrorCode.cs                 エラーコード定数
 
 TxtToVoice/                             WPF アプリ本体（net8.0-windows10.0.19041.0）
-├── TxtToVoice.csproj                   ← TxtToVoice.Core を参照
-├── App.xaml / App.xaml.cs             アプリケーションエントリポイント
-├── MainWindow.xaml                     メイン画面レイアウト（WPF XAML）
+├── App.xaml / App.xaml.cs
+├── PlaybackState.cs                    再生状態 sealed record（Idle/Active/Paused）
+├── MainWindow.xaml                     メイン画面レイアウト
 ├── MainWindow.xaml.cs                  フィールド・初期化・共通ユーティリティ
-├── MainWindow.FileOperations.cs        ファイル開く・D&D・テキスト操作
-├── MainWindow.PlaybackOperations.cs    読み上げ・音声保存・パラメータ操作
 ├── MainWindow.DictionaryOperations.cs  辞書 CRUD・プレビュー・CSV 入出力
+├── MainWindow.EditingOperations.cs     段落/セクションナビ・テキスト編集
+├── MainWindow.FileOperations.cs        ファイル開く・D&D
+├── MainWindow.HistoryOperations.cs     読み上げ履歴（直近 20 件）
+├── MainWindow.PlaybackOperations.cs    読み上げ・音声保存・プロファイル
+├── MainWindow.QueueOperations.cs       読み上げキュー・順次再生・永続化
+├── MainWindow.SettingsOperations.cs    設定読み書き・エンジン切替
 ├── Dialogs/
-│   ├── DictionaryEntryDialog.xaml / .xaml.cs   辞書編集ダイアログ
-│   ├── SaveProgressDialog.xaml / .xaml.cs      音声保存進捗ダイアログ（キャンセル対応）
-│   └── SettingsDialog.xaml / .xaml.cs          機微データ保存ポリシーダイアログ
+│   ├── BatchSaveResultDialog           一括保存結果ダイアログ
+│   ├── DictionaryEntryDialog           辞書編集ダイアログ
+│   ├── InputDialog                     汎用テキスト入力ダイアログ
+│   ├── PlaceholderDialog               テンプレートプレースホルダ置換
+│   ├── SavePresetDialog                保存プリセット登録
+│   ├── SaveProgressDialog              音声保存進捗（キャンセル対応）
+│   ├── SettingsDialog                  設定ダイアログ（基本/詳細タブ）
+│   ├── TemplateEntryDialog             テンプレート編集
+│   ├── TemplateManagerDialog           テンプレート管理（ピン留め・ソート）
+│   ├── TextRuleDialog                  読みルール一覧・上下移動・無効診断
+│   └── TextRuleEntryDialog             読みルール編集
 ├── Services/
-│   ├── ISpeechEngine.cs                音声エンジン抽象インターフェース
-│   ├── SystemSpeechEngine.cs           SAPI（System.Speech）エンジン実装
-│   ├── WinRtSpeechEngine.cs            WinRT（OneCore）エンジン実装
-│   ├── SpeechEngineFactory.cs          エンジン種別定数・生成・ラベル書式
-│   └── SpeechService.cs               音声合成ラッパー（WAV/MP3/MP4 保存・キャンセル対応）
+│   ├── ISpeechEngine.cs
+│   ├── NativeJTalk.cs                  OpenJTalk P/Invoke ラッパー
+│   ├── OpenJTalkEngine.cs
+│   ├── SpeechEngineFactory.cs
+│   ├── SpeechService.cs                音声合成ラッパー（WAV/MP3/MP4・キャンセル）
+│   ├── SystemSpeechEngine.cs           SAPI エンジン
+│   └── WinRtSpeechEngine.cs            WinRT OneCore エンジン
 └── Data/
-    └── sample_dictionary.json          サンプル辞書（自治体業務向け）
-
-TxtToVoice.Core.Tests/                  純ロジックテスト（net8.0・OS 非依存・全 PR 必須）
-└── Services/
-    ├── DictionaryServiceTests.cs
-    ├── DictionaryServiceCacheTests.cs
-    ├── DictionaryServiceMergeTests.cs
-    ├── DictionaryServicePerformanceTests.cs    [Trait("Category","Performance")] で CI 除外可
-    ├── SsmlBuilderTests.cs
-    ├── CsvServiceTests.cs
-    ├── AppSettingsServiceTests.cs
-    ├── BuildAppSettingsTests.cs
-    ├── LoggerAnonymizeTests.cs
-    └── PathConfigTests.cs
-
-TxtToVoice.Tests/                       Windows 依存テスト（net8.0-windows・音声エンジン系）
-└── Services/
-    ├── SpeechEngineFactoryTests.cs
-    ├── SpeechProgressTests.cs          [Trait("Category","RequiresEngine")] で CI 除外可
-    └── SpeechServiceCancelTests.cs
+    ├── sample_dictionary.json
+    └── text_rules.json                 テキスト変換ルール（ユーザー編集可）
 ```
