@@ -16,5 +16,8 @@ namespace TxtToVoice.Models
 
         [JsonPropertyName("usageCount")]
         public int UsageCount { get; init; }
+
+        [JsonPropertyName("isPinned")]
+        public bool IsPinned { get; init; }
     }
 }

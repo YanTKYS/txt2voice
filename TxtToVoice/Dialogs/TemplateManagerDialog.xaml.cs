@@ -66,6 +66,8 @@ namespace TxtToVoice.Dialogs
         {
             var view = CollectionViewSource.GetDefaultView(_viewModels);
             view.SortDescriptions.Clear();
+            // ピン留め項目を常に先頭グループに固定
+            view.SortDescriptions.Add(new SortDescription(nameof(TemplateViewModel.IsPinnedSortKey), ListSortDirection.Descending));
             switch (CmbSortOrder.SelectedIndex)
             {
                 case 0: // 最近使った順（未使用は末尾）
@@ -81,6 +83,15 @@ namespace TxtToVoice.Dialogs
                     break;
             }
             view.Refresh();
+        }
+
+        private void BtnPinCell_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button btn) return;
+            if (btn.DataContext is not TemplateViewModel vm) return;
+            vm.TogglePin();
+            AutoSave();
+            CollectionViewSource.GetDefaultView(_viewModels).Refresh();
         }
 
         // ── 選択変更 ──────────────────────────────────────────
@@ -189,6 +200,7 @@ namespace TxtToVoice.Dialogs
         private string _content;
         private DateTimeOffset? _lastUsedAt;
         private int _usageCount;
+        private bool _isPinned;
 
         public string Title
         {
@@ -220,6 +232,23 @@ namespace TxtToVoice.Dialogs
             private set { _usageCount = value; OnPropertyChanged(nameof(UsageCount)); }
         }
 
+        public bool IsPinned
+        {
+            get => _isPinned;
+            set
+            {
+                _isPinned = value;
+                OnPropertyChanged(nameof(IsPinned));
+                OnPropertyChanged(nameof(PinIcon));
+                OnPropertyChanged(nameof(IsPinnedSortKey));
+            }
+        }
+
+        public string PinIcon       => _isPinned ? "★" : "☆";
+        public int    IsPinnedSortKey => _isPinned ? 1 : 0;
+
+        public void TogglePin() => IsPinned = !_isPinned;
+
         // ソート用キー: null（未使用）は DateTimeOffset.MinValue 扱いで末尾に
         public DateTimeOffset LastUsedAtSortKey => _lastUsedAt ?? DateTimeOffset.MinValue;
 
@@ -240,6 +269,7 @@ namespace TxtToVoice.Dialogs
             _content    = t.Content;
             _lastUsedAt = t.LastUsedAt;
             _usageCount = t.UsageCount;
+            _isPinned   = t.IsPinned;
         }
 
         public void RecordUsage()
@@ -254,6 +284,7 @@ namespace TxtToVoice.Dialogs
             Content    = _content,
             LastUsedAt = _lastUsedAt,
             UsageCount = _usageCount,
+            IsPinned   = _isPinned,
         };
     }
 }

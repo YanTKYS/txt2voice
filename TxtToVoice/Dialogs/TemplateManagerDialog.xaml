@@ -80,7 +80,32 @@
                   BorderBrush="#CCC"
                   SelectionChanged="TemplateGrid_SelectionChanged"
                   MouseDoubleClick="TemplateGrid_MouseDoubleClick">
+            <!-- ピン留め行は薄い黄色背景で強調 (#131) -->
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsPinned}" Value="True">
+                            <Setter Property="Background" Value="#FFFDE7"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.RowStyle>
             <DataGrid.Columns>
+                <!-- ★ ピン留めトグルボタン (#131) -->
+                <DataGridTemplateColumn Header="★" Width="36" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="{Binding PinIcon}"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="14"
+                                    Padding="2,0"
+                                    Cursor="Hand"
+                                    Click="BtnPinCell_Click"
+                                    ToolTip="ピン留めをトグル（ピン留め項目は常に先頭に表示されます）"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTextColumn Header="タイトル"
                                     Binding="{Binding Title}"
                                     IsReadOnly="True"

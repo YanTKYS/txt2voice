@@ -276,14 +276,16 @@ v0.7.8 までで UI/UX の主要改善（再生プロファイル / 段落・セ
 
 **実装難度**: 低（QueuePersistenceService と同パターン）
 
-#### #131 テンプレートお気に入り固定（ピン留め）
+#### ✅ #131 テンプレートお気に入り固定（ピン留め）【v0.8.9 完了】
 
 **課題**: よく使うテンプレートが利用頻度でソートされても、毎回検索しないと辿り着けない。
 
-**提案**:
-- `Template` モデルに `IsPinned: bool` を追加
-- テンプレート一覧でピン留め項目を先頭グループに表示（区切り線で分離）
-- 右クリック or 星アイコンでピン留めトグル
+**実装**:
+- `Template` モデルに `IsPinned: bool` を追加（`[JsonPropertyName("isPinned")]`、既存データは `false` 扱いで後方互換）
+- `TemplateViewModel` に `IsPinned`、`PinIcon`（★/☆）、`IsPinnedSortKey`（1/0）、`TogglePin()` を追加
+- `ApplySort()` の先頭に `IsPinnedSortKey` 降順を追加（どのソード順でもピン留め先頭固定）
+- DataGrid の ★ 列 (`DataGridTemplateColumn`) にクリッカブルな Button を配置、`BtnPinCell_Click` でトグル＋保存＋ビュー更新
+- ピン留め行は薄い黄色背景（`#FFFDE7`）で視覚強調
 
 **実装難度**: 低〜中（既存テンプレートスキーマの拡張）
 
