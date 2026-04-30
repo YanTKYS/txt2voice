@@ -236,22 +236,29 @@ namespace TxtToVoice.Services
         // 再生操作
         // ----------------------------------------------------------------
 
-        public void SpeakAsync(string text)
+        public Task SpeakAsync(string text, CancellationToken ct = default)
         {
-            if (!IsAvailable) { SpeakError?.Invoke(this, "音声エンジンが利用できません。\n" + InitializationError); return; }
-            if (string.IsNullOrWhiteSpace(text)) { SpeakError?.Invoke(this, "読み上げるテキストがありません。"); return; }
-
+            if (!IsAvailable)
+            {
+                var msg = "音声エンジンが利用できません。\n" + InitializationError;
+                SpeakError?.Invoke(this, msg);
+                return Task.FromException(new InvalidOperationException(msg));
+            }
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                var msg = "読み上げるテキストがありません。";
+                SpeakError?.Invoke(this, msg);
+                return Task.FromException(new InvalidOperationException(msg));
+            }
             CancelCurrent();
-            _cts = new CancellationTokenSource();
+            _cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             var cts = _cts;
-            Task.Run(() => SpeakCore(TextPreprocessor.Apply(text, _textRules), cts.Token));
+            return Task.Run(() => SpeakCore(TextPreprocessor.Apply(text, _textRules), cts.Token));
         }
 
-        public void SpeakSsmlAsync(string ssml)
-        {
+        public Task SpeakSsmlAsync(string ssml, CancellationToken ct = default)
             // OpenJTalk は SSML 非対応 — タグを除去してからテキスト前処理を適用して読む
-            SpeakAsync(StripSsmlTags(ssml));
-        }
+            => SpeakAsync(StripSsmlTags(ssml), ct);
 
         private void SpeakCore(string text, CancellationToken ct)
         {
@@ -262,11 +269,8 @@ namespace TxtToVoice.Services
                 lock (_synthLock)
                     ok = NativeJTalk.SpeakToFile(_handle, text, tmpWav);
 
-                if (ct.IsCancellationRequested || !ok)
-                {
-                    if (!ok) SpeakError?.Invoke(this, $"[{TtvErrorCode.OjtSynthFailed}] OpenJTalk WAV 合成に失敗しました。");
-                    return;
-                }
+                if (ct.IsCancellationRequested) return;
+                if (!ok) throw new InvalidOperationException($"[{TtvErrorCode.OjtSynthFailed}] OpenJTalk WAV 合成に失敗しました。");
 
                 SpeakStarted?.Invoke(this, EventArgs.Empty);
                 // WaveFileReader でストリーミング再生（ReadAllBytes によるメモリピーク回避）
@@ -278,6 +282,7 @@ namespace TxtToVoice.Services
             {
                 Logger.Error($"OpenJTalkEngine 読み上げエラー: {ex.Message}");
                 SpeakError?.Invoke(this, $"読み上げ中にエラーが発生しました。\n{ex.Message}");
+                throw;
             }
             finally
             {

@@ -15,6 +15,7 @@ namespace TxtToVoice.Services
     public class SystemSpeechEngine : ISpeechEngine
     {
         private SpeechSynthesizer? _synth;
+        private TaskCompletionSource<bool>? _speakTcs;
         private bool _disposed;
 
         public event EventHandler? SpeakStarted;
@@ -29,7 +30,14 @@ namespace TxtToVoice.Services
                 _synth = new SpeechSynthesizer();
                 _synth.SetOutputToDefaultAudioDevice();
                 _synth.SpeakStarted   += (s, e) => SpeakStarted?.Invoke(this, EventArgs.Empty);
-                _synth.SpeakCompleted += (s, e) => SpeakCompleted?.Invoke(this, EventArgs.Empty);
+                _synth.SpeakCompleted += (s, e) =>
+                {
+                    SpeakCompleted?.Invoke(this, EventArgs.Empty);
+                    if (e.Error != null)
+                        _speakTcs?.TrySetException(e.Error);
+                    else
+                        _speakTcs?.TrySetResult(true);
+                };
                 _synth.SpeakProgress  += (s, e) =>
                     SpeakProgress?.Invoke(this, new SpeakProgressInfo(e.CharacterPosition, e.CharacterCount));
                 IsAvailable = true;
@@ -92,10 +100,23 @@ namespace TxtToVoice.Services
         // 再生操作
         // ----------------------------------------------------------------
 
-        public void SpeakAsync(string text)
+        public Task SpeakAsync(string text, CancellationToken ct = default)
         {
-            if (_synth == null) { SpeakError?.Invoke(this, "音声エンジンが利用できません。\n" + InitializationError); return; }
-            if (string.IsNullOrWhiteSpace(text)) { SpeakError?.Invoke(this, "読み上げるテキストがありません。"); return; }
+            if (_synth == null)
+            {
+                var msg = "音声エンジンが利用できません。\n" + InitializationError;
+                SpeakError?.Invoke(this, msg);
+                return Task.FromException(new InvalidOperationException(msg));
+            }
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                var msg = "読み上げるテキストがありません。";
+                SpeakError?.Invoke(this, msg);
+                return Task.FromException(new InvalidOperationException(msg));
+            }
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _speakTcs = tcs;
+            ct.Register(() => _synth?.SpeakAsyncCancelAll());
             try
             {
                 _synth.SpeakAsyncCancelAll();
@@ -107,13 +128,28 @@ namespace TxtToVoice.Services
             {
                 Logger.Error($"読み上げエラー: {ex.Message}");
                 SpeakError?.Invoke(this, $"読み上げ中にエラーが発生しました。\n{ex.Message}");
+                tcs.TrySetException(ex);
             }
+            return tcs.Task;
         }
 
-        public void SpeakSsmlAsync(string ssml)
+        public Task SpeakSsmlAsync(string ssml, CancellationToken ct = default)
         {
-            if (_synth == null) { SpeakError?.Invoke(this, "音声エンジンが利用できません。\n" + InitializationError); return; }
-            if (string.IsNullOrWhiteSpace(ssml)) { SpeakError?.Invoke(this, "読み上げるテキストがありません。"); return; }
+            if (_synth == null)
+            {
+                var msg = "音声エンジンが利用できません。\n" + InitializationError;
+                SpeakError?.Invoke(this, msg);
+                return Task.FromException(new InvalidOperationException(msg));
+            }
+            if (string.IsNullOrWhiteSpace(ssml))
+            {
+                var msg = "読み上げるテキストがありません。";
+                SpeakError?.Invoke(this, msg);
+                return Task.FromException(new InvalidOperationException(msg));
+            }
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _speakTcs = tcs;
+            ct.Register(() => _synth?.SpeakAsyncCancelAll());
             try
             {
                 _synth.SpeakAsyncCancelAll();
@@ -125,7 +161,9 @@ namespace TxtToVoice.Services
             {
                 Logger.Error($"SSML読み上げエラー: {ex.Message}");
                 SpeakError?.Invoke(this, $"読み上げ中にエラーが発生しました。\n{ex.Message}");
+                tcs.TrySetException(ex);
             }
+            return tcs.Task;
         }
 
         public void Pause()

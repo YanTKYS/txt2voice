@@ -12,7 +12,7 @@
 
 ---
 
-### TD-1 SpeechService / ISpeechEngine の再生 API を awaitable 化【採用・高優先】
+### ✅ TD-1 SpeechService / ISpeechEngine の再生 API を awaitable 化【v0.8.4 完了】
 
 **指摘内容**: `SpeakAsync` / `SpeakSsmlAsync` が `void` で fire-and-forget。完了制御・エラー伝播・将来の読み上げキュー実装を難しくしている。
 

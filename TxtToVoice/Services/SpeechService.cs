@@ -87,8 +87,8 @@ namespace TxtToVoice.Services
         // 再生操作
         // ----------------------------------------------------------------
 
-        public void SpeakAsync(string text)    => _engine.SpeakAsync(text);
-        public void SpeakSsmlAsync(string ssml) => _engine.SpeakSsmlAsync(ssml);
+        public Task SpeakAsync(string text, CancellationToken ct = default)    => _engine.SpeakAsync(text, ct);
+        public Task SpeakSsmlAsync(string ssml, CancellationToken ct = default) => _engine.SpeakSsmlAsync(ssml, ct);
         public void Pause()                     => _engine.Pause();
         public void Resume()                    => _engine.Resume();
         public void Stop()                      => _engine.Stop();

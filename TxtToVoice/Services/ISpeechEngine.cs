@@ -54,11 +54,11 @@ namespace TxtToVoice.Services
         /// <summary>音量を設定する（0〜100）。</summary>
         void SetVolume(int volume);
 
-        /// <summary>テキストを非同期で読み上げる。</summary>
-        void SpeakAsync(string text);
+        /// <summary>テキストを非同期で読み上げる。返却する Task は読み上げ完了（停止含む）で完了し、エラー時はフォルトする。</summary>
+        Task SpeakAsync(string text, CancellationToken ct = default);
 
-        /// <summary>SSML を非同期で読み上げる。</summary>
-        void SpeakSsmlAsync(string ssml);
+        /// <summary>SSML を非同期で読み上げる。返却する Task は読み上げ完了（停止含む）で完了し、エラー時はフォルトする。</summary>
+        Task SpeakSsmlAsync(string ssml, CancellationToken ct = default);
 
         /// <summary>読み上げを一時停止する。</summary>
         void Pause();

@@ -123,26 +123,49 @@ namespace TxtToVoice.Services
         // 再生操作
         // ----------------------------------------------------------------
 
-        public void SpeakAsync(string text)
+        public Task SpeakAsync(string text, CancellationToken ct = default)
         {
-            if (!IsAvailable) { SpeakError?.Invoke(this, "音声エンジンが利用できません。\n" + InitializationError); return; }
-            if (string.IsNullOrWhiteSpace(text)) { SpeakError?.Invoke(this, "読み上げるテキストがありません。"); return; }
+            if (!IsAvailable)
+            {
+                var msg = "音声エンジンが利用できません。\n" + InitializationError;
+                SpeakError?.Invoke(this, msg);
+                return Task.FromException(new InvalidOperationException(msg));
+            }
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                var msg = "読み上げるテキストがありません。";
+                SpeakError?.Invoke(this, msg);
+                return Task.FromException(new InvalidOperationException(msg));
+            }
             _speakCts?.Cancel();
-            _speakCts = new CancellationTokenSource();
-            _ = SpeakInternalAsync(text, false, _speakCts.Token);
+            var linked = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            _speakCts = linked;
+            return SpeakInternalAsync(text, false, linked.Token);
         }
 
-        public void SpeakSsmlAsync(string ssml)
+        public Task SpeakSsmlAsync(string ssml, CancellationToken ct = default)
         {
-            if (!IsAvailable) { SpeakError?.Invoke(this, "音声エンジンが利用できません。\n" + InitializationError); return; }
-            if (string.IsNullOrWhiteSpace(ssml)) { SpeakError?.Invoke(this, "読み上げるテキストがありません。"); return; }
+            if (!IsAvailable)
+            {
+                var msg = "音声エンジンが利用できません。\n" + InitializationError;
+                SpeakError?.Invoke(this, msg);
+                return Task.FromException(new InvalidOperationException(msg));
+            }
+            if (string.IsNullOrWhiteSpace(ssml))
+            {
+                var msg = "読み上げるテキストがありません。";
+                SpeakError?.Invoke(this, msg);
+                return Task.FromException(new InvalidOperationException(msg));
+            }
             _speakCts?.Cancel();
-            _speakCts = new CancellationTokenSource();
-            _ = SpeakInternalAsync(ssml, true, _speakCts.Token);
+            var linked = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            _speakCts = linked;
+            return SpeakInternalAsync(ssml, true, linked.Token);
         }
 
         private async Task SpeakInternalAsync(string content, bool isSsml, CancellationToken ct)
         {
+            var mediaTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             try
             {
                 StopInternal(fireEvent: true);
@@ -167,11 +190,13 @@ namespace TxtToVoice.Services
                 {
                     _isSpeaking = false;
                     SpeakCompleted?.Invoke(this, EventArgs.Empty);
+                    mediaTcs.TrySetResult(true);
                 };
                 _player.MediaFailed += (s, e) =>
                 {
                     _isSpeaking = false;
                     SpeakError?.Invoke(this, e.ErrorMessage);
+                    mediaTcs.TrySetException(new InvalidOperationException(e.ErrorMessage));
                 };
                 _player.PlaybackSession.PlaybackStateChanged += (s, e) =>
                 {
@@ -191,6 +216,14 @@ namespace TxtToVoice.Services
                 _player.Play();
 
                 Logger.Info($"WinRT 読み上げ開始: {content.Length}文字");
+
+                using var reg = ct.Register(() =>
+                {
+                    StopInternal(fireEvent: true);
+                    mediaTcs.TrySetCanceled(ct);
+                });
+
+                await mediaTcs.Task;
             }
             catch (OperationCanceledException)
             {
@@ -200,6 +233,7 @@ namespace TxtToVoice.Services
             {
                 Logger.Error($"WinRT 読み上げエラー: {ex.Message}");
                 SpeakError?.Invoke(this, $"読み上げ中にエラーが発生しました。\n{ex.Message}");
+                throw;
             }
         }
 

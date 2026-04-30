@@ -82,10 +82,8 @@ namespace TxtToVoice
 
             DgDictionary.ItemsSource = _entries;
 
-            _speechService.SpeakStarted   += OnSpeakStarted;
-            _speechService.SpeakCompleted += OnSpeakCompleted;
-            _speechService.SpeakProgress  += OnSpeakProgress;
-            _speechService.SpeakError     += OnSpeakError;
+            _speechService.SpeakStarted  += OnSpeakStarted;
+            _speechService.SpeakProgress += OnSpeakProgress;
 
             InitializeVoiceCombo();
             LoadSettings();                               // スライダー値・音声を復元（InitializeVoiceCombo の後）

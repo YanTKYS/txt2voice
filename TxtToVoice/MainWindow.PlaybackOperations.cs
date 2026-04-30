@@ -42,7 +42,7 @@ namespace TxtToVoice
         private void BtnResume_Click(object sender, RoutedEventArgs e) => ResumeSpeech();
         private void BtnStop_Click(object sender, RoutedEventArgs e)   => StopSpeech();
 
-        private void StartSpeech()
+        private async void StartSpeech()
         {
             bool hasSelection = TxtInput.SelectionLength > 0;
             string rawText = hasSelection ? TxtInput.SelectedText : TxtInput.Text;
@@ -64,15 +64,39 @@ namespace TxtToVoice
             PbSpeechProgress.Value             = 0;
             TxtSpeechRemaining.Text            = useSsml ? "読み上げ中..." : "";
 
-            if (useSsml)
+            try
             {
-                _positionMap = null; // SSML モード時はハイライト無効
-                _speechService.SpeakSsmlAsync(SsmlBuilder.Build(speechText, CmbSsmlStrength.SelectedIndex));
+                if (useSsml)
+                {
+                    _positionMap = null; // SSML モード時はハイライト無効
+                    await _speechService.SpeakSsmlAsync(SsmlBuilder.Build(speechText, CmbSsmlStrength.SelectedIndex));
+                }
+                else
+                {
+                    _positionMap = map;
+                    await _speechService.SpeakAsync(speechText);
+                }
+                _playback    = PlaybackState.Idle;
+                _positionMap = null;
+                UpdatePlaybackButtons();
+                ClearReadingHighlight();
+                ResetSpeechProgress();
+                SetStatus("読み上げ完了。");
             }
-            else
+            catch (Exception ex)
             {
-                _positionMap = map;
-                _speechService.SpeakAsync(speechText);
+                _playback    = PlaybackState.Idle;
+                _positionMap = null;
+                UpdatePlaybackButtons();
+                ClearReadingHighlight();
+                ResetSpeechProgress();
+                Logger.Error($"読み上げエラー: {ex.Message}");
+                MessageBox.Show(
+                    $"読み上げ中にエラーが発生しました。\n\n{ex.Message}",
+                    "読み上げエラー",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+                SetStatus($"エラー: {ex.Message}");
             }
         }
 
@@ -101,7 +125,6 @@ namespace TxtToVoice
         private void StopSpeech()
         {
             _speechService.Stop();
-            // SpeakCompleted イベントで状態リセットが行われる
         }
 
         // ----------------------------------------------------------------
@@ -113,31 +136,6 @@ namespace TxtToVoice
             _playback = PlaybackState.Active;
             UpdatePlaybackButtons();
             SetStatus("読み上げ中...");
-        }
-
-        private void OnSpeakCompleted(object? sender, EventArgs e)
-        {
-            _playback    = PlaybackState.Idle;
-            _positionMap = null;
-            UpdatePlaybackButtons();
-            ClearReadingHighlight();
-            ResetSpeechProgress();
-            SetStatus("読み上げ完了。");
-        }
-
-        private void OnSpeakError(object? sender, string message)
-        {
-            _playback    = PlaybackState.Idle;
-            _positionMap = null;
-            UpdatePlaybackButtons();
-            ClearReadingHighlight();
-            ResetSpeechProgress();
-            MessageBox.Show(
-                $"読み上げ中にエラーが発生しました。\n\n{message}",
-                "読み上げエラー",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
-            SetStatus($"エラー: {message}");
         }
 
         /// <summary>
