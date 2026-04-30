@@ -222,7 +222,9 @@ namespace TxtToVoice
 
         private void BtnAddEntry_Click(object sender, RoutedEventArgs e)
         {
-            Action<string>? speakAction = _speechService.IsAvailable ? _speechService.SpeakAsync : null;
+            Action<string>? speakAction = _speechService.IsAvailable
+                ? text => _ = _speechService.SpeakAsync(text)
+                : null;
             var dlg = new DictionaryEntryDialog(speakAction: speakAction) { Owner = this };
             if (dlg.ShowDialog() == true && dlg.Result != null)
             {
@@ -293,7 +295,9 @@ namespace TxtToVoice
             if (idx < 0) return;
 
             var entry = _dictService.Entries[idx];
-            Action<string>? speakAction = _speechService.IsAvailable ? _speechService.SpeakAsync : null;
+            Action<string>? speakAction = _speechService.IsAvailable
+                ? text => _ = _speechService.SpeakAsync(text)
+                : null;
             var dlg   = new DictionaryEntryDialog(entry.Clone(), speakAction) { Owner = this };
             if (dlg.ShowDialog() == true && dlg.Result != null)
             {
