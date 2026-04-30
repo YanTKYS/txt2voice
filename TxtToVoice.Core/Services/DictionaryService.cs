@@ -209,6 +209,33 @@ namespace TxtToVoice.Services
         }
 
         /// <summary>
+        /// 辞書適用結果をセグメント列として返す。
+        /// 各要素は (テキスト, 置換済みかどうか) のタプル。
+        /// 置換済みセグメントのテキストは「【元表記→読み】」形式。
+        /// </summary>
+        public IReadOnlyList<(string Text, bool IsReplacement)> ApplyDictionaryWithAnnotationSegments(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return Array.Empty<(string, bool)>();
+
+            var replacements = FindReplacements(text);
+            var segments = new List<(string Text, bool IsReplacement)>(replacements.Count * 2 + 1);
+            int cursor = 0;
+
+            foreach (var (start, length, display, reading) in replacements)
+            {
+                if (start > cursor)
+                    segments.Add((text.Substring(cursor, start - cursor), false));
+                segments.Add(($"【{display}→{reading}】", true));
+                cursor = start + length;
+            }
+            if (cursor < text.Length)
+                segments.Add((text.Substring(cursor), false));
+
+            return segments;
+        }
+
+        /// <summary>
         /// サンプル辞書ファイルを読み込んで現在の辞書にマージする。
         /// </summary>
         public int LoadSampleDictionary(string samplePath)

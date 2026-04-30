@@ -249,14 +249,16 @@ v0.7.8 までで UI/UX の主要改善（再生プロファイル / 段落・セ
 - 設定ダイアログ「表示設定」に `ChkPersistQueue` チェックボックス追加
 - `AppSettings.PersistQueue` で永続化 ON/OFF を保存
 
-#### #129 プレビュー比較の差分ハイライト強化
+#### ✅ #129 プレビュー比較の変換箇所ハイライト【v0.8.7 完了】
 
 **課題**: プレビュー比較ペインで変換箇所が分かりにくい。変換前後のテキストが並んで表示されるが、どこが変わったか一目で見えない。
 
-**提案**:
-- 変換箇所を黄色背景でハイライト（プレビューペイン内の TextBlock に Run/Span を生成）
-- 「次の差分へ」「前の差分へ」ボタンを追加してナビゲーション
-- 差分件数ラベルを既存の変換件数表示に統合
+**実装**:
+- `TxtPreview` を `TextBox` から `RichTextBox` に変更
+- `DictionaryService.ApplyDictionaryWithAnnotationSegments()` を追加（置換済み/未変換をセグメントで返す）
+- 各置換スパン（`【元表記→読み】`）を黄色背景（`#FFEE55`）の `Run` として FlowDocument に生成
+- ◀▶ナビゲーションを `TextPointer` ベースに切替（`TxtPreview.Selection.Select(start, end)`）
+- クリーンモードはハイライトなし（従来通り）
 
 **実装難度**: 中（既存 FlowDocument ベースへの変更、または RichTextBox 導入）
 

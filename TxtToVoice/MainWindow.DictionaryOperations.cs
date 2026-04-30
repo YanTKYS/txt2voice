@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Media;
 using Microsoft.Win32;
 using TxtToVoice.Dialogs;
 using TxtToVoice.Models;
@@ -131,15 +132,19 @@ namespace TxtToVoice
         // プレビュー
         // ----------------------------------------------------------------
 
-        private List<(int Index, int Length)> _previewMatches = new();
+        private List<(TextPointer Start, TextPointer End)> _previewMatches = new();
         private int _previewMatchCurrentIndex = -1;
+
+        private static readonly SolidColorBrush s_replacementBrush =
+            new(Color.FromRgb(0xFF, 0xEE, 0x55));
 
         private void BtnApplyDictionary_Click(object sender, RoutedEventArgs e) => ApplyAndPreview();
 
         private void BtnCopyPreview_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrEmpty(TxtPreview.Text)) return;
-            Clipboard.SetText(TxtPreview.Text);
+            var text = new TextRange(TxtPreview.Document.ContentStart, TxtPreview.Document.ContentEnd).Text;
+            if (string.IsNullOrWhiteSpace(text)) return;
+            Clipboard.SetText(text.TrimEnd('\r', '\n'));
             SetStatus("プレビューをクリップボードにコピーしました。");
         }
 
@@ -152,9 +157,38 @@ namespace TxtToVoice
                 return;
             }
 
-            TxtPreview.Text = _annotatedPreview
-                ? _dictService.ApplyDictionaryWithAnnotation(input)
-                : _dictService.ApplyDictionary(input);
+            _previewMatches.Clear();
+            _previewMatchCurrentIndex = -1;
+
+            var doc  = new FlowDocument();
+            var para = new Paragraph { Margin = new Thickness(0) };
+            var highlightRuns = new List<Run>();
+
+            if (_annotatedPreview)
+            {
+                var segments = _dictService.ApplyDictionaryWithAnnotationSegments(input);
+                foreach (var (segText, isReplacement) in segments)
+                {
+                    var run = new Run(segText);
+                    if (isReplacement)
+                    {
+                        run.Background = s_replacementBrush;
+                        highlightRuns.Add(run);
+                    }
+                    para.Inlines.Add(run);
+                }
+            }
+            else
+            {
+                para.Inlines.Add(new Run(_dictService.ApplyDictionary(input)));
+            }
+
+            doc.Blocks.Add(para);
+            TxtPreview.Document = doc;
+
+            // TextPointer は Document に追加後に有効になる
+            foreach (var run in highlightRuns)
+                _previewMatches.Add((run.ContentStart, run.ContentEnd));
 
             // 比較モード: 左ペインを元テキストで同期 (#123)
             if (_compareMode) TxtCompareLeft.Text = input;
@@ -165,27 +199,21 @@ namespace TxtToVoice
 
         private void PreviewMode_Changed(object sender, RoutedEventArgs e)
         {
-            if (sender is System.Windows.Controls.RadioButton rb && rb.IsChecked != true) return;
+            if (sender is RadioButton rb && rb.IsChecked != true) return;
             _annotatedPreview = RbPreviewAnnotated.IsChecked == true;
             if (_dictService is null) return;
             if (!string.IsNullOrEmpty(TxtInput.Text))
                 ApplyAndPreview();
             else
+            {
+                _previewMatches.Clear();
+                _previewMatchCurrentIndex = -1;
                 UpdatePreviewMatchCount();
+            }
         }
 
         private void UpdatePreviewMatchCount()
         {
-            string text = TxtPreview.Text;
-            _previewMatches.Clear();
-            _previewMatchCurrentIndex = -1;
-
-            if (_annotatedPreview && !string.IsNullOrEmpty(text))
-            {
-                foreach (Match m in Regex.Matches(text, @"【[^】]*】"))
-                    _previewMatches.Add((m.Index, m.Length));
-            }
-
             int count = _previewMatches.Count;
             TxtPreviewMatchCount.Text = count == 0 ? "" : $"変換 {count} 件";
             BtnPreviewPrev.IsEnabled  = count > 0;
@@ -208,11 +236,9 @@ namespace TxtToVoice
 
         private void JumpToPreviewMatch(int idx)
         {
-            var (start, len) = _previewMatches[idx];
+            var (start, end) = _previewMatches[idx];
+            TxtPreview.Selection.Select(start, end);
             TxtPreview.Focus();
-            TxtPreview.Select(start, len);
-            int lineIdx = TxtPreview.GetLineIndexFromCharacterIndex(start);
-            if (lineIdx >= 0) TxtPreview.ScrollToLine(lineIdx);
             TxtPreviewMatchCount.Text = $"変換 {idx + 1} / {_previewMatches.Count} 件";
         }
 

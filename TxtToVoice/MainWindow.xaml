@@ -130,6 +130,20 @@
             <Setter Property="VerticalScrollBarVisibility"   Value="Auto"/>
         </Style>
 
+        <!-- プレビューペイン（変換ハイライト対応 RichTextBox 用）-->
+        <Style x:Key="PreviewRichBox" TargetType="RichTextBox">
+            <Setter Property="FontSize"               Value="13"/>
+            <Setter Property="FontFamily"             Value="Meiryo UI, Yu Gothic UI, MS UI Gothic"/>
+            <Setter Property="Padding"                Value="8"/>
+            <Setter Property="Background"             Value="#FDFDF0"/>
+            <Setter Property="BorderBrush"            Value="#C0C0C0"/>
+            <Setter Property="BorderThickness"        Value="1"/>
+            <Setter Property="IsReadOnly"             Value="True"/>
+            <Setter Property="VerticalScrollBarVisibility"   Value="Auto"/>
+            <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
+            <Setter Property="IsDocumentEnabled"      Value="True"/>
+        </Style>
+
     </Window.Resources>
 
     <Grid>
@@ -407,11 +421,17 @@
                                       Background="#BCC5D0"
                                       ShowsPreview="True"/>
 
-                        <!-- 辞書補正後プレビュー（通常モードでは全幅） -->
-                        <TextBox Grid.Column="2" x:Name="TxtPreview"
-                                 Style="{StaticResource PreviewBox}"
-                                 IsInactiveSelectionHighlightEnabled="True"
-                                 ToolTip="辞書適用後のテキストプレビュー。【元表記→読み】形式で変換箇所を確認できます。"/>
+                        <!-- 辞書補正後プレビュー（変換箇所を黄色ハイライト表示） -->
+                        <RichTextBox Grid.Column="2" x:Name="TxtPreview"
+                                     Style="{StaticResource PreviewRichBox}"
+                                     IsInactiveSelectionHighlightEnabled="True"
+                                     ToolTip="辞書適用後のテキストプレビュー。変換箇所は黄色でハイライト表示されます。">
+                            <RichTextBox.Resources>
+                                <Style TargetType="Paragraph">
+                                    <Setter Property="Margin" Value="0"/>
+                                </Style>
+                            </RichTextBox.Resources>
+                        </RichTextBox>
                     </Grid>
 
                     <Border Grid.Row="2" Background="#E4E8EE" Padding="8,4">
