@@ -55,6 +55,8 @@ namespace TxtToVoice
                 return;
             }
 
+            AddHistoryEntry(rawText);
+
             bool useSsml = ChkSsml.IsChecked == true;
             var (speechText, map) = _dictService.ApplyDictionaryForSpeech(rawText);
 

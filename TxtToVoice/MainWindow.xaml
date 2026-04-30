@@ -662,6 +662,10 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="6"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="6"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="6"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <!-- 再生プロファイル (#103) -->
@@ -895,8 +899,58 @@
                             </TextBlock>
                         </Border>
 
-                        <!-- 読み上げキュー (#126) -->
+                        <!-- 読み上げ履歴 (#130) -->
                         <Border Grid.Row="16"
+                                x:Name="BrdHistory"
+                                Visibility="Collapsed"
+                                Background="#F5F0EE"
+                                BorderBrush="#C8B0A0"
+                                BorderThickness="1"
+                                CornerRadius="3">
+                            <DockPanel>
+                                <DockPanel DockPanel.Dock="Top"
+                                           Background="#EAD8CC"
+                                           LastChildFill="True">
+                                    <Button DockPanel.Dock="Right"
+                                            x:Name="BtnClearHistory"
+                                            Content="クリア"
+                                            FontSize="10" Padding="5,2" Height="22" Margin="4,3"
+                                            Click="BtnClearHistory_Click"
+                                            ToolTip="履歴をすべてクリア"/>
+                                    <Button DockPanel.Dock="Right"
+                                            x:Name="BtnAddHistoryToQueue"
+                                            Content="＋ キュー"
+                                            FontSize="10" Padding="5,2" Height="22" Margin="0,3,4,3"
+                                            IsEnabled="False"
+                                            Click="BtnAddHistoryToQueue_Click"
+                                            ToolTip="選択した履歴をキューに追加"/>
+                                    <Button DockPanel.Dock="Right"
+                                            x:Name="BtnRestoreHistory"
+                                            Content="原稿へ"
+                                            FontSize="10" Padding="5,2" Height="22" Margin="0,3,4,3"
+                                            IsEnabled="False"
+                                            Click="BtnRestoreHistory_Click"
+                                            ToolTip="選択した履歴を原稿に復元"/>
+                                    <TextBlock x:Name="TxtHistoryHeader"
+                                               Text="読み上げ履歴"
+                                               FontSize="11" FontWeight="Bold"
+                                               Foreground="#5A3A1B"
+                                               VerticalAlignment="Center"
+                                               Margin="6,0"/>
+                                </DockPanel>
+                                <ListBox x:Name="LstHistory"
+                                         MaxHeight="72"
+                                         FontSize="11"
+                                         BorderThickness="0"
+                                         Background="Transparent"
+                                         SelectionMode="Single"
+                                         Padding="2,2"
+                                         SelectionChanged="LstHistory_SelectionChanged"/>
+                            </DockPanel>
+                        </Border>
+
+                        <!-- 読み上げキュー (#126) -->
+                        <Border Grid.Row="18"
                                 x:Name="BrdQueue"
                                 Visibility="Collapsed"
                                 Background="#EEF3F8"

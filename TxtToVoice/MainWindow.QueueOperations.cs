@@ -89,6 +89,7 @@ namespace TxtToVoice
                     LstQueue.SelectedIndex = i;
                     LstQueue.ScrollIntoView(LstQueue.SelectedItem);
                     SetStatus($"キュー再生中... ({i + 1}/{total}): {entry.Label}");
+                    AddHistoryEntry(entry.Text);
 
                     var (speechText, _) = _dictService.ApplyDictionaryForSpeech(entry.Text);
                     bool useSsml = ChkSsml.IsChecked == true;
