@@ -137,5 +137,13 @@ namespace TxtToVoice.Models
         /// <summary>入力エリアに行番号カラムを表示するかどうか（デフォルト: false）</summary>
         [JsonPropertyName("showLineNumbers")]
         public bool ShowLineNumbers { get; set; } = false;
+
+        // ----------------------------------------------------------------
+        // キュー設定
+        // ----------------------------------------------------------------
+
+        /// <summary>アプリ再起動後も読み上げキューを復元するかどうか（デフォルト: false）</summary>
+        [JsonPropertyName("persistQueue")]
+        public bool PersistQueue { get; set; } = false;
     }
 }

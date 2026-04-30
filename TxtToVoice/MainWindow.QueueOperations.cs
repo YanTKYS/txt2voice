@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using TxtToVoice.Models;
 using TxtToVoice.Services;
 
 namespace TxtToVoice
@@ -14,9 +15,10 @@ namespace TxtToVoice
         // フィールド（キュー専用）
         // ----------------------------------------------------------------
 
-        private readonly List<(string Label, string Text)> _speechQueue = new();
+        private readonly List<QueueEntry> _speechQueue = new();
         private CancellationTokenSource? _queueCts;
         private bool _queuePlaying;
+        private bool _persistQueue;
 
         // ----------------------------------------------------------------
         // キュー操作ボタン
@@ -30,8 +32,14 @@ namespace TxtToVoice
                 SetStatus("追加するテキストがありません。");
                 return;
             }
-            _speechQueue.Add((BuildQueueLabel(text), text));
+            _speechQueue.Add(new QueueEntry
+            {
+                Label     = BuildQueueLabel(text),
+                Text      = text,
+                CreatedAt = DateTimeOffset.Now
+            });
             RefreshQueuePanel();
+            SaveQueue();
             SetStatus($"キューに追加しました。（{_speechQueue.Count} 件）");
         }
 
@@ -40,6 +48,7 @@ namespace TxtToVoice
             _queueCts?.Cancel();
             _speechQueue.Clear();
             RefreshQueuePanel();
+            SaveQueue();
             SetStatus("キューをクリアしました。");
         }
 
@@ -76,12 +85,12 @@ namespace TxtToVoice
             {
                 for (int i = 0; i < _speechQueue.Count && !ct.IsCancellationRequested; i++)
                 {
-                    var (label, text) = _speechQueue[i];
+                    var entry = _speechQueue[i];
                     LstQueue.SelectedIndex = i;
                     LstQueue.ScrollIntoView(LstQueue.SelectedItem);
-                    SetStatus($"キュー再生中... ({i + 1}/{total}): {label}");
+                    SetStatus($"キュー再生中... ({i + 1}/{total}): {entry.Label}");
 
-                    var (speechText, _) = _dictService.ApplyDictionaryForSpeech(text);
+                    var (speechText, _) = _dictService.ApplyDictionaryForSpeech(entry.Text);
                     bool useSsml = ChkSsml.IsChecked == true;
                     string content = useSsml
                         ? SsmlBuilder.Build(speechText, CmbSsmlStrength.SelectedIndex)
@@ -128,19 +137,39 @@ namespace TxtToVoice
         }
 
         // ----------------------------------------------------------------
+        // 永続化
+        // ----------------------------------------------------------------
+
+        internal void LoadQueue()
+        {
+            if (!_persistQueue) return;
+            var loaded = QueuePersistenceService.Load(PathConfig.QueuePath);
+            _speechQueue.Clear();
+            _speechQueue.AddRange(loaded);
+            RefreshQueuePanel();
+        }
+
+        private void SaveQueue()
+        {
+            if (!_persistQueue) return;
+            try { QueuePersistenceService.Save(PathConfig.QueuePath, _speechQueue); }
+            catch (Exception ex) { Logger.Error($"キュー保存エラー: {ex.Message}"); }
+        }
+
+        // ----------------------------------------------------------------
         // ヘルパー
         // ----------------------------------------------------------------
 
         private void RefreshQueuePanel()
         {
             var labels = new List<string>(_speechQueue.Count);
-            foreach (var (label, _) in _speechQueue)
-                labels.Add(label);
+            foreach (var entry in _speechQueue)
+                labels.Add(entry.Label);
             LstQueue.ItemsSource = labels;
 
-            BrdQueue.Visibility        = _speechQueue.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-            TxtQueueHeader.Text        = $"読み上げキュー（{_speechQueue.Count} 件）";
-            BtnPlayQueue.IsEnabled     = _speechQueue.Count > 0;
+            BrdQueue.Visibility    = _speechQueue.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            TxtQueueHeader.Text    = $"読み上げキュー（{_speechQueue.Count} 件）";
+            BtnPlayQueue.IsEnabled = _speechQueue.Count > 0;
         }
 
         private static string BuildQueueLabel(string text)

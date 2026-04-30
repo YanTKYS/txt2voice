@@ -42,13 +42,17 @@ namespace TxtToVoice.Dialogs
         /// <summary>入力エリアに行番号を表示するかどうか（OK 押下後に確定）</summary>
         public bool ShowLineNumbers { get; private set; }
 
+        /// <summary>キューを永続化するかどうか（OK 押下後に確定）</summary>
+        public bool PersistQueue { get; private set; }
+
         public SettingsDialog(bool saveLastInputText, bool saveRecentFiles,
             bool clearSensitiveDataOnExit, bool deleteLogOnExit,
             string speechEngineType, int auditRetentionMonths = 13,
             string saveFilePrefix = "kouhou",
             string fileNameTemplate = "{prefix}_{datetime}",
             IEnumerable<string>? batchSaveFormats = null,
-            bool showLineNumbers = false)
+            bool showLineNumbers = false,
+            bool persistQueue = false)
         {
             InitializeComponent();
             ChkSaveLastInputText.IsChecked        = saveLastInputText;
@@ -78,6 +82,7 @@ namespace TxtToVoice.Dialogs
             ChkBatchMp4.IsChecked = formats.Contains("mp4");
 
             ChkShowLineNumbers.IsChecked = showLineNumbers;
+            ChkPersistQueue.IsChecked    = persistQueue;
         }
 
         private void TxtSaveFilePrefix_TextChanged(object sender, TextChangedEventArgs e)
@@ -113,6 +118,7 @@ namespace TxtToVoice.Dialogs
             if (ChkBatchWav.IsChecked == true) BatchSaveFormats.Add("wav");
             if (ChkBatchMp4.IsChecked == true) BatchSaveFormats.Add("mp4");
             ShowLineNumbers = ChkShowLineNumbers.IsChecked == true;
+            PersistQueue    = ChkPersistQueue.IsChecked    == true;
             DialogResult = true;
         }
 

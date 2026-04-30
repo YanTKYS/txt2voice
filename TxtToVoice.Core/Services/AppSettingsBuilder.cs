@@ -34,7 +34,8 @@ namespace TxtToVoice.Services
             string saveFilePrefix = "kouhou",
             string fileNameTemplate = "{prefix}_{datetime}",
             IEnumerable<string>? batchSaveFormats = null,
-            bool showLineNumbers = false)
+            bool showLineNumbers = false,
+            bool persistQueue = false)
         {
             bool persistText   = isExit && saveLastInputText && !clearSensitiveDataOnExit;
             bool persistRecent = isExit
@@ -68,7 +69,8 @@ namespace TxtToVoice.Services
                                            ? "{prefix}_{datetime}" : fileNameTemplate.Trim(),
                 BatchSaveFormats         = batchSaveFormats != null
                                            ? new List<string>(batchSaveFormats) : new List<string> { "mp3" },
-                ShowLineNumbers          = showLineNumbers
+                ShowLineNumbers          = showLineNumbers,
+                PersistQueue             = persistQueue
             };
         }
     }

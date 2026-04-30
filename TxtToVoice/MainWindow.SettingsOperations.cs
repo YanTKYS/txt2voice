@@ -55,6 +55,9 @@ namespace TxtToVoice
             RbPreviewClean.IsChecked     = !s.AnnotatedPreviewMode;
             // 表示設定
             ToggleLineNumbers(s.ShowLineNumbers);
+            // キュー永続化
+            _persistQueue = s.PersistQueue;
+            LoadQueue();
             // 監査モードを Logger に即時反映（INFO ログ抑制）
             Logger.SuppressInfo = _clearSensitiveDataOnExit;
             // 前回セッションのテキストを復元（ポリシーが許可している場合のみ）
@@ -108,7 +111,8 @@ namespace TxtToVoice
                 _saveFilePrefix,
                 _fileNameTemplate,
                 _batchSaveFormats,
-                _showLineNumbers);
+                _showLineNumbers,
+                _persistQueue);
 
         // ----------------------------------------------------------------
         // 設定ダイアログ
@@ -144,7 +148,7 @@ namespace TxtToVoice
                 _clearSensitiveDataOnExit, _deleteLogOnExit,
                 _speechEngineType, _auditRetentionMonths,
                 _saveFilePrefix, _fileNameTemplate, _batchSaveFormats,
-                _showLineNumbers)
+                _showLineNumbers, _persistQueue)
             {
                 Owner = this
             };
@@ -162,6 +166,8 @@ namespace TxtToVoice
             _fileNameTemplate         = dlg.FileNameTemplate;
             _batchSaveFormats         = dlg.BatchSaveFormats;
             ToggleLineNumbers(dlg.ShowLineNumbers);
+            _persistQueue = dlg.PersistQueue;
+            if (_persistQueue) SaveQueue();
 
             // 監査モードの変化を Logger にも即時反映する
             Logger.SuppressInfo = _clearSensitiveDataOnExit;
