@@ -949,7 +949,7 @@
                             </DockPanel>
                         </Border>
 
-                        <!-- 読み上げキュー (#126) -->
+                        <!-- 読み上げキュー (#126 / #132) -->
                         <Border Grid.Row="18"
                                 x:Name="BrdQueue"
                                 Visibility="Collapsed"
@@ -961,12 +961,34 @@
                                 <DockPanel DockPanel.Dock="Top"
                                            Background="#D0E4F4"
                                            LastChildFill="True">
+                                    <!-- 右端から順に宣言（DockPanel.Dock="Right" は後宣言ほど左寄り） -->
                                     <Button DockPanel.Dock="Right"
                                             x:Name="BtnClearQueue"
                                             Content="クリア"
                                             FontSize="10" Padding="5,2" Height="22" Margin="4,3"
                                             Click="BtnClearQueue_Click"
                                             ToolTip="キューをすべてクリア"/>
+                                    <Button DockPanel.Dock="Right"
+                                            x:Name="BtnQueueDelete"
+                                            Content="削除"
+                                            FontSize="10" Padding="5,2" Height="22" Margin="0,3,4,3"
+                                            IsEnabled="False"
+                                            Click="BtnQueueDelete_Click"
+                                            ToolTip="選択したアイテムをキューから削除（Del キー）"/>
+                                    <Button DockPanel.Dock="Right"
+                                            x:Name="BtnQueueMoveDown"
+                                            Content="↓"
+                                            FontSize="11" Width="22" Height="22" Margin="0,3,2,3"
+                                            IsEnabled="False"
+                                            Click="BtnQueueMoveDown_Click"
+                                            ToolTip="選択したアイテムを1つ下に移動"/>
+                                    <Button DockPanel.Dock="Right"
+                                            x:Name="BtnQueueMoveUp"
+                                            Content="↑"
+                                            FontSize="11" Width="22" Height="22" Margin="0,3,2,3"
+                                            IsEnabled="False"
+                                            Click="BtnQueueMoveUp_Click"
+                                            ToolTip="選択したアイテムを1つ上に移動"/>
                                     <Button DockPanel.Dock="Right"
                                             x:Name="BtnStopQueue"
                                             Content="⏹ 停止"
@@ -993,8 +1015,11 @@
                                          FontSize="11"
                                          BorderThickness="0"
                                          Background="Transparent"
-                                         SelectionMode="Single"
-                                         Padding="2,2"/>
+                                         SelectionMode="Extended"
+                                         DisplayMemberPath="Label"
+                                         Padding="2,2"
+                                         SelectionChanged="LstQueue_SelectionChanged"
+                                         KeyDown="LstQueue_KeyDown"/>
                             </DockPanel>
                         </Border>
                     </Grid>

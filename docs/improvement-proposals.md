@@ -289,7 +289,7 @@ v0.7.8 までで UI/UX の主要改善（再生プロファイル / 段落・セ
 
 **実装難度**: 低〜中（既存テンプレートスキーマの拡張）
 
-#### #132 キュー操作小改善
+#### ✅ #132 キュー操作小改善【v0.8.10 完了】
 
 **課題**: キューが多いと管理が煩雑（削除は1件ずつ、順序変更不可、重複追加される）。
 
@@ -299,6 +299,14 @@ v0.7.8 までで UI/UX の主要改善（再生プロファイル / 段落・セ
 - 同じテキストの重複追加時に警告または自動スキップオプション
 
 **実装難度**: 中（ListBox の選択モード変更・並び替えは ItemsControl + ObservableCollection）
+
+**実装内容**:
+- `LstQueue` の `SelectionMode` を `Extended` に変更、`DisplayMemberPath="Label"` で `_speechQueue` を直接バインド
+- `BtnQueueDelete`（削除）・`BtnQueueMoveUp`（↑）・`BtnQueueMoveDown`（↓）ボタンを追加
+- `LstQueue_SelectionChanged` で選択状態に応じてボタンを有効/無効化
+- `LstQueue_KeyDown` で Delete キーによる削除対応
+- `BtnAddToQueue_Click` に重複テキストチェック（`_speechQueue.Exists(e => e.Text == text)`）を追加
+- `RefreshQueuePanel()` で `ItemsSource` を再バインドし選択ボタンをリセット
 
 #### #127 辞書エントリのカテゴリ/タグ
 
