@@ -84,7 +84,8 @@ namespace TxtToVoice.Services
             catch
             {
                 // Move 失敗などで tmp が残った場合は削除して例外を伝播
-                try { File.Delete(tmp); } catch { /* 無視 */ }
+                try { File.Delete(tmp); }
+                catch (Exception delEx) { Logger.Warn($"一時ファイル削除失敗: {tmp} / {delEx.Message}"); }
                 throw;
             }
 

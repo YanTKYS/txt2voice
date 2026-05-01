@@ -111,7 +111,8 @@ namespace TxtToVoice.Services
             }
             catch (Exception ex)
             {
-                try { File.Delete(tmp); } catch { }
+                try { File.Delete(tmp); }
+                catch (Exception delEx) { Logger.Warn($"一時ファイル削除失敗: {tmp} / {delEx.Message}"); }
                 Logger.Warn($"設定の保存に失敗しました: {ex.Message}");
             }
         }

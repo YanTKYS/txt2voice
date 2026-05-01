@@ -376,6 +376,15 @@ namespace TxtToVoice.Services
                     }
                 }
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"[{TtvErrorCode.SaveFailed}] WinRT 音声ファイル保存失敗: {ex.Message}");
+                throw;
+            }
             finally
             {
                 if (!string.IsNullOrEmpty(tempWavPath))
