@@ -1,0 +1,16 @@
+# デフォルト: LF 統一
+* text=auto eol=lf
+
+# PowerShell スクリプト: CRLF で保持（BOM はファイル内容として維持）
+*.ps1  text eol=crlf
+
+# Windows バッチ: CRLF
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+# バイナリ
+*.ico  binary
+*.png  binary
+*.zip  binary
+*.dll  binary
+*.exe  binary
