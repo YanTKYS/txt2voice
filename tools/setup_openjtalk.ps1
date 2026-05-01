@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     テキスト読み上げツール — OpenJTalk エンジン セットアップスクリプト
