@@ -460,5 +460,779 @@
     "reading": "わくちん",
     "remarks": "医療用語",
     "priority": 70
+  },
+  {
+    "display": "広報とみぐすく",
+    "reading": "こうほうとみぐすく",
+    "remarks": "豊見城市の広報誌名",
+    "priority": 95
+  },
+  {
+    "display": "広報いとまん",
+    "reading": "こうほういとまん",
+    "remarks": "糸満市の広報誌名",
+    "priority": 95
+  },
+  {
+    "display": "広報なんじょう",
+    "reading": "こうほうなんじょう",
+    "remarks": "南城市の広報誌名",
+    "priority": 95
+  },
+  {
+    "display": "豊見城市",
+    "reading": "とみぐすくし",
+    "remarks": "沖縄県自治体名",
+    "priority": 95
+  },
+  {
+    "display": "糸満市",
+    "reading": "いとまんし",
+    "remarks": "沖縄県自治体名",
+    "priority": 95
+  },
+  {
+    "display": "南城市",
+    "reading": "なんじょうし",
+    "remarks": "沖縄県自治体名",
+    "priority": 95
+  },
+  {
+    "display": "沖縄県",
+    "reading": "おきなわけん",
+    "remarks": "都道府県名",
+    "priority": 90
+  },
+  {
+    "display": "沖縄本島",
+    "reading": "おきなわほんとう",
+    "remarks": "地理用語",
+    "priority": 85
+  },
+  {
+    "display": "那覇市",
+    "reading": "なはし",
+    "remarks": "沖縄県自治体名",
+    "priority": 90
+  },
+  {
+    "display": "浦添市",
+    "reading": "うらそえし",
+    "remarks": "沖縄県自治体名",
+    "priority": 90
+  },
+  {
+    "display": "宜野湾市",
+    "reading": "ぎのわんし",
+    "remarks": "沖縄県自治体名",
+    "priority": 90
+  },
+  {
+    "display": "うるま市",
+    "reading": "うるまし",
+    "remarks": "沖縄県自治体名",
+    "priority": 90
+  },
+  {
+    "display": "名護市",
+    "reading": "なごし",
+    "remarks": "沖縄県自治体名",
+    "priority": 90
+  },
+  {
+    "display": "石垣市",
+    "reading": "いしがきし",
+    "remarks": "沖縄県自治体名",
+    "priority": 90
+  },
+  {
+    "display": "宮古島市",
+    "reading": "みやこじまし",
+    "remarks": "沖縄県自治体名",
+    "priority": 90
+  },
+  {
+    "display": "八重瀬町",
+    "reading": "やえせちょう",
+    "remarks": "沖縄県自治体名",
+    "priority": 88
+  },
+  {
+    "display": "与那原町",
+    "reading": "よなばるちょう",
+    "remarks": "沖縄県自治体名",
+    "priority": 88
+  },
+  {
+    "display": "南風原町",
+    "reading": "はえばるちょう",
+    "remarks": "難読地名",
+    "priority": 95
+  },
+  {
+    "display": "西原町",
+    "reading": "にしはらちょう",
+    "remarks": "沖縄県自治体名",
+    "priority": 88
+  },
+  {
+    "display": "中城村",
+    "reading": "なかぐすくそん",
+    "remarks": "難読地名",
+    "priority": 95
+  },
+  {
+    "display": "北中城村",
+    "reading": "きたなかぐすくそん",
+    "remarks": "難読地名",
+    "priority": 95
+  },
+  {
+    "display": "読谷村",
+    "reading": "よみたんそん",
+    "remarks": "難読地名",
+    "priority": 95
+  },
+  {
+    "display": "嘉手納町",
+    "reading": "かでなちょう",
+    "remarks": "沖縄県自治体名",
+    "priority": 88
+  },
+  {
+    "display": "北谷町",
+    "reading": "ちゃたんちょう",
+    "remarks": "難読地名",
+    "priority": 95
+  },
+  {
+    "display": "宜野座村",
+    "reading": "ぎのざそん",
+    "remarks": "難読地名",
+    "priority": 92
+  },
+  {
+    "display": "金武町",
+    "reading": "きんちょう",
+    "remarks": "難読地名",
+    "priority": 95
+  },
+  {
+    "display": "今帰仁村",
+    "reading": "なきじんそん",
+    "remarks": "難読地名",
+    "priority": 95
+  },
+  {
+    "display": "本部町",
+    "reading": "もとぶちょう",
+    "remarks": "難読地名",
+    "priority": 95
+  },
+  {
+    "display": "恩納村",
+    "reading": "おんなそん",
+    "remarks": "沖縄県自治体名",
+    "priority": 92
+  },
+  {
+    "display": "国頭村",
+    "reading": "くにがみそん",
+    "remarks": "難読地名",
+    "priority": 95
+  },
+  {
+    "display": "大宜味村",
+    "reading": "おおぎみそん",
+    "remarks": "難読地名",
+    "priority": 95
+  },
+  {
+    "display": "東村",
+    "reading": "ひがしそん",
+    "remarks": "沖縄県自治体名",
+    "priority": 92
+  },
+  {
+    "display": "伊江村",
+    "reading": "いえそん",
+    "remarks": "難読地名",
+    "priority": 95
+  },
+  {
+    "display": "伊平屋村",
+    "reading": "いへやそん",
+    "remarks": "難読地名",
+    "priority": 95
+  },
+  {
+    "display": "伊是名村",
+    "reading": "いぜなそん",
+    "remarks": "難読地名",
+    "priority": 95
+  },
+  {
+    "display": "久米島町",
+    "reading": "くめじまちょう",
+    "remarks": "沖縄県自治体名",
+    "priority": 92
+  },
+  {
+    "display": "渡嘉敷村",
+    "reading": "とかしきそん",
+    "remarks": "難読地名",
+    "priority": 95
+  },
+  {
+    "display": "座間味村",
+    "reading": "ざまみそん",
+    "remarks": "難読地名",
+    "priority": 95
+  },
+  {
+    "display": "粟国村",
+    "reading": "あぐにそん",
+    "remarks": "難読地名",
+    "priority": 95
+  },
+  {
+    "display": "渡名喜村",
+    "reading": "となきそん",
+    "remarks": "難読地名",
+    "priority": 95
+  },
+  {
+    "display": "南大東村",
+    "reading": "みなみだいとうそん",
+    "remarks": "沖縄県自治体名",
+    "priority": 92
+  },
+  {
+    "display": "北大東村",
+    "reading": "きただいとうそん",
+    "remarks": "沖縄県自治体名",
+    "priority": 92
+  },
+  {
+    "display": "宮古島",
+    "reading": "みやこじま",
+    "remarks": "地理用語",
+    "priority": 88
+  },
+  {
+    "display": "石垣島",
+    "reading": "いしがきじま",
+    "remarks": "地理用語",
+    "priority": 88
+  },
+  {
+    "display": "竹富町",
+    "reading": "たけとみちょう",
+    "remarks": "沖縄県自治体名",
+    "priority": 90
+  },
+  {
+    "display": "与那国町",
+    "reading": "よなぐにちょう",
+    "remarks": "難読地名",
+    "priority": 95
+  },
+  {
+    "display": "ふるさと納税",
+    "reading": "ふるさとのうぜい",
+    "remarks": "広報誌頻出語",
+    "priority": 70
+  },
+  {
+    "display": "広報広聴",
+    "reading": "こうほうこうちょう",
+    "remarks": "行政用語",
+    "priority": 75
+  },
+  {
+    "display": "バックナンバー",
+    "reading": "ばっくなんばー",
+    "remarks": "広報誌頻出語",
+    "priority": 65
+  },
+  {
+    "display": "市公式インスタグラム",
+    "reading": "しこうしきいんすたぐらむ",
+    "remarks": "広報媒体名",
+    "priority": 70
+  },
+  {
+    "display": "比嘉",
+    "reading": "ひが",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 93
+  },
+  {
+    "display": "大城",
+    "reading": "おおしろ",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 93
+  },
+  {
+    "display": "金城",
+    "reading": "きんじょう",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 93
+  },
+  {
+    "display": "玉城",
+    "reading": "たまき",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 93
+  },
+  {
+    "display": "上原",
+    "reading": "うえはら",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 93
+  },
+  {
+    "display": "宮城",
+    "reading": "みやぎ",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 93
+  },
+  {
+    "display": "新垣",
+    "reading": "あらかき",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 93
+  },
+  {
+    "display": "平良",
+    "reading": "たいら",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 93
+  },
+  {
+    "display": "島袋",
+    "reading": "しまぶくろ",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 93
+  },
+  {
+    "display": "知念",
+    "reading": "ちねん",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 93
+  },
+  {
+    "display": "与那嶺",
+    "reading": "よなみね",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 93
+  },
+  {
+    "display": "與那覇",
+    "reading": "よなは",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 93
+  },
+  {
+    "display": "照屋",
+    "reading": "てるや",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 93
+  },
+  {
+    "display": "仲村",
+    "reading": "なかむら",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 93
+  },
+  {
+    "display": "仲宗根",
+    "reading": "なかそね",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 93
+  },
+  {
+    "display": "我那覇",
+    "reading": "がなは",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 93
+  },
+  {
+    "display": "喜屋武",
+    "reading": "きゃん",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 93
+  },
+  {
+    "display": "當間",
+    "reading": "とうま",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 93
+  },
+  {
+    "display": "當山",
+    "reading": "とうやま",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 93
+  },
+  {
+    "display": "饒平名",
+    "reading": "よへな",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 93
+  },
+  {
+    "display": "屋比久",
+    "reading": "やびく",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 93
+  },
+  {
+    "display": "謝花",
+    "reading": "じゃはな",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 93
+  },
+  {
+    "display": "真栄里",
+    "reading": "まえざと",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 93
+  },
+  {
+    "display": "運天",
+    "reading": "うんてん",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 93
+  },
+  {
+    "display": "豊崎",
+    "reading": "とよさき",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "翁長",
+    "reading": "おなが",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "真玉橋",
+    "reading": "まだんばし",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "根差部",
+    "reading": "ねさぶ",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "高嶺",
+    "reading": "たかみね",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "摩文仁",
+    "reading": "まぶに",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "米須",
+    "reading": "こめす",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "糸洲",
+    "reading": "いとす",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "阿波根",
+    "reading": "あはごん",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "具志頭",
+    "reading": "ぐしかみ",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "港川",
+    "reading": "みなとがわ",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "小禄",
+    "reading": "おろく",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "具志",
+    "reading": "ぐし",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "安次嶺",
+    "reading": "あしみね",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "宇栄原",
+    "reading": "うえばる",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "垣花",
+    "reading": "かきのはな",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "仲井真",
+    "reading": "なかいま",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "識名",
+    "reading": "しきな",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "与那原",
+    "reading": "よなばる",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "東風平",
+    "reading": "こちんだ",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "富盛",
+    "reading": "ともり",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "佐敷",
+    "reading": "さしき",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "知念久手堅",
+    "reading": "ちねんくでけん",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "玉城百名",
+    "reading": "たまぐすくひゃくな",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "玉城糸数",
+    "reading": "たまぐすくいとかず",
+    "remarks": "沖縄県南部の地名",
+    "priority": 95
+  },
+  {
+    "display": "広報誌",
+    "reading": "こうほうし",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "広報紙",
+    "reading": "こうほうし",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "市政だより",
+    "reading": "しせいだより",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "町政だより",
+    "reading": "ちょうせいだより",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "村政だより",
+    "reading": "そんせいだより",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "施政方針",
+    "reading": "しせいほうしん",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "所信表明",
+    "reading": "しょしんひょうめい",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "定例会",
+    "reading": "ていれいかい",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "臨時会",
+    "reading": "りんじかい",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "一般質問",
+    "reading": "いっぱんしつもん",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "代表質問",
+    "reading": "だいひょうしつもん",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "答弁",
+    "reading": "とうべん",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "議案",
+    "reading": "ぎあん",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "条例改正",
+    "reading": "じょうれいかいせい",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "意見公募",
+    "reading": "いけんこうぼ",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "パブリックコメント",
+    "reading": "ぱぶりっくこめんと",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "告示",
+    "reading": "こくじ",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "公示",
+    "reading": "こうじ",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "縦覧",
+    "reading": "じゅうらん",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "閲覧",
+    "reading": "えつらん",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "入札",
+    "reading": "にゅうさつ",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "指名競争入札",
+    "reading": "しめいきょうそうにゅうさつ",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "プロポーザル",
+    "reading": "ぷろぽーざる",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "会計年度任用職員",
+    "reading": "かいけいねんどにんようしょくいん",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "住民監査請求",
+    "reading": "じゅうみんかんさせいきゅう",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "個人番号カード",
+    "reading": "こじんばんごうかーど",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "戸籍謄本",
+    "reading": "こせきとうほん",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "戸籍抄本",
+    "reading": "こせきしょうほん",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "印鑑登録証明書",
+    "reading": "いんかんとうろくしょうめいしょ",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
+  },
+  {
+    "display": "納税証明書",
+    "reading": "のうぜいしょうめいしょ",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 85
   }
 ]
