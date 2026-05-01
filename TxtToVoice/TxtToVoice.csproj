@@ -41,6 +41,10 @@
     <Content Include="THIRD_PARTY_LICENSES.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!-- ユーザー向け操作手順書（Link で出力先ファイル名を日本語に変更） -->
+    <Content Include="..\docs\user-guide.md" Link="操作手順書.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

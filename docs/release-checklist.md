@@ -36,6 +36,7 @@
   - `Data/sample_dictionary.json`
   - `Data/text_rules.json`
   - `THIRD_PARTY_LICENSES.txt`
+  - `操作手順書.md`
   - `setup_openjtalk.ps1`
 - [ ] ZIP を展開して `TxtToVoice.exe` が起動することをローカルで確認すること
 - [ ] ヘルプ → バージョン情報 でバージョン番号が正しく表示されること
