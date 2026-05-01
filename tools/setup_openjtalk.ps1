@@ -53,7 +53,8 @@ $scriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { $PWD.Path }
 $dataDir   = Join-Path $scriptDir "Data\openjtalk"
 $dicDir    = Join-Path $dataDir "open_jtalk_dic_utf_8"
 $voiceDir  = Join-Path $dataDir "voice"
-$dllDest   = Join-Path $dataDir "jtalk.dll"
+# jtalk.dll は TxtToVoice.exe と同じディレクトリに配置する（DLL 検索パスの制約）
+$dllDest   = Join-Path $scriptDir "jtalk.dll"
 $tmpDir    = Join-Path $env:USERPROFILE "openjtalk-setup"
 
 $jtalkRepo = "https://github.com/rosmarinus/jtalkdll.git"

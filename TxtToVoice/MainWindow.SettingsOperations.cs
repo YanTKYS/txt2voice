@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using TxtToVoice.Dialogs;
@@ -181,21 +182,49 @@ namespace TxtToVoice
             if (!_saveRecentFiles)
                 _recentFiles.Clear();
 
-            // 再生停止中かつエンジン種別が変わった場合は即時切替
-            if (_speechEngineType != previousEngineType && _playback == PlaybackState.Idle)
-            {
-                _speechService.ReplaceEngine(SpeechEngineFactory.Create(_speechEngineType));
-                InitializeVoiceCombo();
-                _speechService.SetRate((int)SldRate.Value);
-                _speechService.SetVolume((int)SldVolume.Value);
-                Logger.Info($"エンジンを即時切替: {SpeechEngineFactory.GetLabel(_speechEngineType)}");
-            }
-
             // 保持期間変更を即時適用
             AuditLogger.PurgeOldLogs(_auditRetentionMonths);
 
             SaveCurrentSettings();
             UpdateRecentFilesMenu();
+
+            // エンジン種別が変わった場合の切替処理
+            if (_speechEngineType != previousEngineType)
+            {
+                if (_playback == PlaybackState.Idle)
+                {
+                    // アイドル中: 即時切替
+                    _speechService.ReplaceEngine(SpeechEngineFactory.Create(_speechEngineType));
+                    InitializeVoiceCombo();
+                    _speechService.SetRate((int)SldRate.Value);
+                    _speechService.SetVolume((int)SldVolume.Value);
+                    Logger.Info($"エンジンを即時切替: {SpeechEngineFactory.GetLabel(_speechEngineType)}");
+                }
+                else
+                {
+                    // 再生中: 設定は保存済み。再起動を促す
+                    Logger.Info($"エンジン変更を保存（再生中のため即時切替不可）: {SpeechEngineFactory.GetLabel(_speechEngineType)}");
+                    var ans = MessageBox.Show(
+                        "音声エンジンを変更しました。\n" +
+                        "変更を適用するにはアプリを再起動する必要があります。\n\n" +
+                        "今すぐ再起動しますか？",
+                        "再起動の確認",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Question,
+                        MessageBoxResult.Yes);
+                    if (ans == MessageBoxResult.Yes)
+                    {
+                        string? exePath = Environment.ProcessPath;
+                        if (!string.IsNullOrEmpty(exePath))
+                            Process.Start(new ProcessStartInfo(exePath) { UseShellExecute = true });
+                        Application.Current.Shutdown();
+                    }
+                    else
+                    {
+                        SetStatus($"音声エンジンを変更しました。次回起動時に反映されます。");
+                    }
+                }
+            }
         }
     }
 }

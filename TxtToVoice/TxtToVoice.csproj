@@ -10,8 +10,9 @@
     <AssemblyName>TxtToVoice</AssemblyName>
     <Company>声の広報 制作支援</Company>
     <Product>テキスト読み上げツール</Product>
-    <Version>0.9.3</Version>
-    <ApplicationIcon></ApplicationIcon>
+    <Version>0.9.4</Version>
+    <!-- app.ico は tools/create-icon.ps1 を実行して生成してからコミットする -->
+    <ApplicationIcon Condition="Exists('app.ico')">app.ico</ApplicationIcon>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <Optimize>true</Optimize>
   </PropertyGroup>
