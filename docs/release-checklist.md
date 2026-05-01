@@ -10,19 +10,56 @@
 
 - [ ] `dotnet build TxtToVoice.sln -c Release` が警告なしで成功する
 - [ ] `dotnet test TxtToVoice.Core.Tests/TxtToVoice.Core.Tests.csproj -c Release` が全件 Pass する
+- [ ] `dotnet test TxtToVoice.Tests/TxtToVoice.Tests.csproj -c Release --filter "Category!=RequiresEngine"` が全件 Pass する
 - [ ] `openjtalk-engine-test.yml` ワークフローの RequiresEngine テストが全件 Pass する
 
 ### バージョン・ドキュメント
 
-- [ ] `TxtToVoice/TxtToVoice.csproj` の `<Version>` が正しいこと
+- [ ] `TxtToVoice/TxtToVoice.csproj` の `<Version>` がリリースタグと一致している（例: タグ `v0.9.3` → `<Version>0.9.3</Version>`）
 - [ ] `release-notes/v{バージョン}.md` が存在すること
+- [ ] `CHANGELOG.md` に当該バージョンのエントリが追加されていること
 - [ ] `docs/backlog.md` のクローズ済みテーブルに当該バージョンの項目が移動されていること
-- [ ] `THIRD_PARTY_LICENSES.txt` に新規ライブラリのクレジットが追加されていること（追加がある場合）
 
-### 配布パッケージ
+### THIRD_PARTY_LICENSES.txt
 
-- [ ] `release.yml` ワークフローが成功し ZIP と `mei_normal.htsvoice` が Release asset としてアップロードされていること
+- [ ] 新たに追加した NuGet パッケージ（船積みされるもの）のライセンスが記載されていること
+- [ ] 各エントリに **著作権表示（Copyright 行）** と **ライセンス全文または全文参照** が含まれていること
+- [ ] CC BY 3.0 コンポーネント（HTS Voice "Mei"）のクレジット表示義務が満たされていること
+
+### 配布パッケージ内容確認
+
+- [ ] `release.yml` ワークフローが成功し、Release asset として以下が存在すること:
+  - `TxtToVoice-v{バージョン}-win-x64.zip`
+  - `mei_normal.htsvoice`
+- [ ] ZIP を展開して以下のファイルが **すべて** 含まれていること:
+  - `TxtToVoice.exe`
+  - `Data/sample_dictionary.json`
+  - `Data/text_rules.json`
+  - `THIRD_PARTY_LICENSES.txt`
+  - `setup_openjtalk.ps1`
 - [ ] ZIP を展開して `TxtToVoice.exe` が起動することをローカルで確認すること
+- [ ] ヘルプ → バージョン情報 でバージョン番号が正しく表示されること
+
+### setup_openjtalk.ps1 動作確認
+
+- [ ] スクリプトを EXE と同じフォルダに置き、`-VerifyOnly` で実行:
+  ```powershell
+  .\setup_openjtalk.ps1 -VerifyOnly
+  ```
+  - セットアップ済み環境で `exit 0` かつ全コンポーネント `[OK]` になること
+  - 未セットアップ環境で `exit 1` かつ不足コンポーネントが `[NG]` になること
+- [ ] フルセットアップ実行後、OpenJTalk で読み上げが成功すること
+  ```powershell
+  Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+  .\setup_openjtalk.ps1
+  ```
+
+### クリーン環境検証（新規インストール相当）
+
+- [ ] 配布 ZIP を **別のフォルダ** に展開し、初回起動する
+- [ ] 既存設定ファイルがない状態で起動エラーが出ないこと（デフォルト値で起動できること）
+- [ ] ヘルプ → ショートカットキー一覧 が正しく表示されること
+- [ ] ヘルプ → バージョン情報 で設定/辞書/テンプレート/ログのパスが表示されること
 
 ---
 
