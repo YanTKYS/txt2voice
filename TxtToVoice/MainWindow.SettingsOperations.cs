@@ -78,7 +78,12 @@ namespace TxtToVoice
 
         internal void SaveCurrentSettings()
         {
-            _settingsService.Save(BuildAppSettings(isExit: false));
+            try { _settingsService.Save(BuildAppSettings(isExit: false)); }
+            catch (Exception ex)
+            {
+                Logger.Error($"[{TtvErrorCode.IoSettingsSaveFailed}] 設定保存失敗: {ex.Message}");
+                SetStatus($"[{TtvErrorCode.IoSettingsSaveFailed}] 設定の保存に失敗しました。");
+            }
         }
 
         /// <summary>
