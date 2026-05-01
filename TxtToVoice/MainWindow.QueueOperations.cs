@@ -208,7 +208,7 @@ namespace TxtToVoice
         {
             if (!_persistQueue) return;
             try { QueuePersistenceService.Save(PathConfig.QueuePath, _speechQueue); }
-            catch (Exception ex) { Logger.Error($"キュー保存エラー: {ex.Message}"); }
+            catch (Exception ex) { Logger.Error($"[{TtvErrorCode.IoQueueSaveFailed}] キュー保存エラー: {ex.Message}"); }
         }
 
         // ----------------------------------------------------------------

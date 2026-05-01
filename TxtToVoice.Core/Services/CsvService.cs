@@ -136,7 +136,15 @@ namespace TxtToVoice.Services
                     $"{Escape(e.Display)},{Escape(e.Reading)},{Escape(e.Remarks)},{e.Priority}");
                 count++;
             }
-            File.WriteAllText(filePath, sb.ToString(), CsvEncoding);
+            try
+            {
+                File.WriteAllText(filePath, sb.ToString(), CsvEncoding);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"[{TtvErrorCode.IoCsvExportFailed}] CSV エクスポート失敗: {filePath} / {ex.Message}");
+                throw;
+            }
             Logger.Info($"CSV エクスポート: {count}件 → {filePath}");
         }
 

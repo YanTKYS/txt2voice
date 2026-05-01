@@ -45,6 +45,10 @@ namespace TxtToVoice.Services
         public const string IoSettingsSaveFailed = "TTV-E-IO-003";
         /// <summary>テンプレートの保存に失敗した</summary>
         public const string IoTemplateSaveFailed = "TTV-E-IO-004";
+        /// <summary>読み上げキューの保存に失敗した</summary>
+        public const string IoQueueSaveFailed    = "TTV-E-IO-005";
+        /// <summary>CSV エクスポートに失敗した</summary>
+        public const string IoCsvExportFailed    = "TTV-E-IO-006";
 
         // ---- 未ハンドル UI 例外 -----------------------------------------------
         /// <summary>DispatcherUnhandledException で捕捉された予期しない例外</summary>

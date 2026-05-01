@@ -30,11 +30,19 @@ namespace TxtToVoice.Services
 
         public static void Save(string filePath, IEnumerable<SavePreset> presets)
         {
-            var options = new JsonSerializerOptions { WriteIndented = true };
-            string json = JsonSerializer.Serialize(presets.ToList(), options);
-            string? _dir = Path.GetDirectoryName(filePath);
-            if (!string.IsNullOrEmpty(_dir)) Directory.CreateDirectory(_dir);
-            File.WriteAllText(filePath, json, Encoding.UTF8);
+            try
+            {
+                var options = new JsonSerializerOptions { WriteIndented = true };
+                string json = JsonSerializer.Serialize(presets.ToList(), options);
+                string? dir = Path.GetDirectoryName(filePath);
+                if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+                File.WriteAllText(filePath, json, Encoding.UTF8);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"[{TtvErrorCode.IoPresetSaveFailed}] 保存プリセット保存失敗: {ex.Message}");
+                throw;
+            }
         }
     }
 }

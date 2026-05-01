@@ -113,7 +113,8 @@ namespace TxtToVoice.Services
         {
             var options = new JsonSerializerOptions { WriteIndented = true };
             string json = JsonSerializer.Serialize(rules.ToList(), options);
-            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+            string? dir = Path.GetDirectoryName(filePath);
+            if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
             File.WriteAllText(filePath, json, Encoding.UTF8);
         }
     }

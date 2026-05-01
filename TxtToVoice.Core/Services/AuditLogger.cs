@@ -36,7 +36,8 @@ namespace TxtToVoice.Services
             try
             {
                 string logPath = TestOverridePath ?? PathConfig.AuditLogPath;
-                Directory.CreateDirectory(Path.GetDirectoryName(logPath)!);
+                string? dir = Path.GetDirectoryName(logPath);
+                if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
 
                 string fileHash = success && !string.IsNullOrEmpty(outputPath)
                     ? HashPath8(outputPath)
