@@ -185,8 +185,9 @@ namespace TxtToVoice.Dialogs
             }
             catch (Exception ex)
             {
+                Logger.Error($"[{TtvErrorCode.IoTemplateSaveFailed}] テンプレート保存失敗: {ex.Message}");
                 MessageBox.Show(
-                    $"テンプレートの保存に失敗しました。\n\n{ex.Message}",
+                    $"[{TtvErrorCode.IoTemplateSaveFailed}] テンプレートの保存に失敗しました。\n\n{ex.Message}",
                     "保存エラー",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
@@ -256,7 +257,14 @@ namespace TxtToVoice.Dialogs
             ? _lastUsedAt.Value.LocalDateTime.ToString("M/d HH:mm")
             : "—";
 
-        public string Preview => _content.Length > 60 ? _content[..57] + "…" : _content;
+        public string Preview
+        {
+            get
+            {
+                var c = _content ?? string.Empty;
+                return c.Length > 60 ? c[..57] + "…" : c;
+            }
+        }
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -265,8 +273,8 @@ namespace TxtToVoice.Dialogs
 
         public TemplateViewModel(Template t)
         {
-            _title      = t.Title;
-            _content    = t.Content;
+            _title      = t.Title   ?? string.Empty;
+            _content    = t.Content ?? string.Empty;
             _lastUsedAt = t.LastUsedAt;
             _usageCount = t.UsageCount;
             _isPinned   = t.IsPinned;

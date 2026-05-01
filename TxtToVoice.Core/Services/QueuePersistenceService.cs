@@ -32,7 +32,8 @@ namespace TxtToVoice.Services
         {
             var options = new JsonSerializerOptions { WriteIndented = true };
             string json = JsonSerializer.Serialize(entries.ToList(), options);
-            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+            string? _dir = Path.GetDirectoryName(filePath);
+            if (!string.IsNullOrEmpty(_dir)) Directory.CreateDirectory(_dir);
             File.WriteAllText(filePath, json, Encoding.UTF8);
         }
     }

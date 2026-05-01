@@ -293,7 +293,11 @@ namespace TxtToVoice
             _speechService.Stop();
             _speechService.Dispose();
 
-            _settingsService.Save(settings);
+            try { _settingsService.Save(settings); }
+            catch (Exception ex)
+            {
+                Logger.Error($"[{TtvErrorCode.IoSettingsSaveFailed}] 設定保存失敗: {ex.Message}");
+            }
 
             Logger.Info("アプリケーション終了");
 

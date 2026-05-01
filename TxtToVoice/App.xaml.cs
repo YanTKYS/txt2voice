@@ -36,13 +36,13 @@ namespace TxtToVoice
                 // TargetInvocationException は InnerException に本当の原因が入っている
                 var actual = ex.Exception.InnerException ?? ex.Exception;
                 Logger.Error(
-                    $"未処理例外: [{actual.GetType().Name}] {actual.Message}\n" +
+                    $"[{TtvErrorCode.UiUnhandled}] 未処理例外: [{actual.GetType().Name}] {actual.Message}\n" +
                     $"StackTrace: {actual.StackTrace}");
 
                 string logPath = PathConfig.LogDirectory;
 
                 MessageBox.Show(
-                    $"予期しないエラーが発生しました。\n\n" +
+                    $"[{TtvErrorCode.UiUnhandled}] 予期しないエラーが発生しました。\n\n" +
                     $"種別: {actual.GetType().Name}\n" +
                     $"内容: {actual.Message}\n\n" +
                     $"詳細はログファイルを確認してください。\n{logPath}",

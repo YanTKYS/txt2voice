@@ -35,5 +35,19 @@ namespace TxtToVoice.Services
         // ---- 音声ファイル保存 -------------------------------------------------
         /// <summary>音声ファイルの保存に失敗した</summary>
         public const string SaveFailed      = "TTV-E-SAVE-001";
+
+        // ---- ファイル I/O（設定・プロファイル・テンプレート等） ---------------
+        /// <summary>再生プロファイルの保存に失敗した</summary>
+        public const string IoProfileSaveFailed  = "TTV-E-IO-001";
+        /// <summary>保存プリセットの保存に失敗した</summary>
+        public const string IoPresetSaveFailed   = "TTV-E-IO-002";
+        /// <summary>アプリ設定の保存に失敗した</summary>
+        public const string IoSettingsSaveFailed = "TTV-E-IO-003";
+        /// <summary>テンプレートの保存に失敗した</summary>
+        public const string IoTemplateSaveFailed = "TTV-E-IO-004";
+
+        // ---- 未ハンドル UI 例外 -----------------------------------------------
+        /// <summary>DispatcherUnhandledException で捕捉された予期しない例外</summary>
+        public const string UiUnhandled = "TTV-E-UI-001";
     }
 }

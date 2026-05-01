@@ -152,10 +152,10 @@ namespace TxtToVoice
             var (origStart, origLen) = _positionMap.MapToOriginal(e.CharacterPosition);
             if (origStart < 0) return;
 
-            int absStart = origStart + _speechOriginOffset;
-            int len      = Math.Min(Math.Max(origLen, 1), TxtInput.Text.Length - absStart);
-            int absEnd   = absStart + len;
             int total    = TxtInput.Text.Length;
+            int absStart = Math.Clamp(origStart + _speechOriginOffset, 0, total);
+            int len      = Math.Min(Math.Max(origLen, 1), total - absStart);
+            int absEnd   = absStart + len;
 
             // UI 更新は毎回（SetStatus は使わず直接書いてログを抑制）
             TxtStatus.Text = $"読み上げ中... ({absEnd} / {total} 文字)";
@@ -389,7 +389,12 @@ namespace TxtToVoice
             else
                 _profiles.Add(newProfile);
 
-            ProfileService.Save(PathConfig.ProfilesPath, _profiles);
+            try { ProfileService.Save(PathConfig.ProfilesPath, _profiles); }
+            catch (Exception ex)
+            {
+                Logger.Error($"[{TtvErrorCode.IoProfileSaveFailed}] プロファイル保存失敗: {ex.Message}");
+                SetStatus($"[{TtvErrorCode.IoProfileSaveFailed}] プロファイルの保存に失敗しました。");
+            }
 
             _suppressProfileSelection = true;
             CmbProfile.ItemsSource = null;
@@ -409,7 +414,12 @@ namespace TxtToVoice
                 return;
 
             _profiles.Remove(profile);
-            ProfileService.Save(PathConfig.ProfilesPath, _profiles);
+            try { ProfileService.Save(PathConfig.ProfilesPath, _profiles); }
+            catch (Exception ex)
+            {
+                Logger.Error($"[{TtvErrorCode.IoProfileSaveFailed}] プロファイル保存失敗: {ex.Message}");
+                SetStatus($"[{TtvErrorCode.IoProfileSaveFailed}] プロファイルの保存に失敗しました。");
+            }
 
             _suppressProfileSelection = true;
             CmbProfile.ItemsSource = null;
@@ -672,7 +682,12 @@ namespace TxtToVoice
                 _savePresets.Add(preset);
             }
 
-            SavePresetService.Save(PathConfig.SavePresetsPath, _savePresets);
+            try { SavePresetService.Save(PathConfig.SavePresetsPath, _savePresets); }
+            catch (Exception ex)
+            {
+                Logger.Error($"[{TtvErrorCode.IoPresetSaveFailed}] 保存プリセット保存失敗: {ex.Message}");
+                SetStatus($"[{TtvErrorCode.IoPresetSaveFailed}] プリセットの保存に失敗しました。");
+            }
             CmbSavePreset.ItemsSource = null;
             CmbSavePreset.ItemsSource = _savePresets;
             CmbSavePreset.SelectedItem = _savePresets.Find(p => p.Name == preset.Name);
@@ -688,7 +703,12 @@ namespace TxtToVoice
                 return;
 
             _savePresets.Remove(preset);
-            SavePresetService.Save(PathConfig.SavePresetsPath, _savePresets);
+            try { SavePresetService.Save(PathConfig.SavePresetsPath, _savePresets); }
+            catch (Exception ex)
+            {
+                Logger.Error($"[{TtvErrorCode.IoPresetSaveFailed}] 保存プリセット保存失敗: {ex.Message}");
+                SetStatus($"[{TtvErrorCode.IoPresetSaveFailed}] プリセットの保存に失敗しました。");
+            }
             CmbSavePreset.ItemsSource = null;
             CmbSavePreset.ItemsSource = _savePresets;
             CmbSavePreset.SelectedIndex = -1;
