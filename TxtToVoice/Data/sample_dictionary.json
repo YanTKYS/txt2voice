@@ -1234,5 +1234,179 @@
     "reading": "のうぜいしょうめいしょ",
     "remarks": "行政・広報誌頻出語",
     "priority": 85
+  },
+  {
+    "display": "自治公民館",
+    "reading": "じちこうみんかん",
+    "remarks": "行政・地域組織用語",
+    "priority": 82
+  },
+  {
+    "display": "区自治会",
+    "reading": "くじちかい",
+    "remarks": "行政・地域組織用語",
+    "priority": 82
+  },
+  {
+    "display": "行政連絡員",
+    "reading": "ぎょうせいれんらくいん",
+    "remarks": "行政・地域組織用語",
+    "priority": 82
+  },
+  {
+    "display": "民生委員児童委員",
+    "reading": "みんせいいいんじどういいん",
+    "remarks": "行政・福祉用語",
+    "priority": 85
+  },
+  {
+    "display": "要配慮者",
+    "reading": "ようはいりょしゃ",
+    "remarks": "防災・福祉用語",
+    "priority": 84
+  },
+  {
+    "display": "避難行動要支援者",
+    "reading": "ひなんこうどうようしえんしゃ",
+    "remarks": "防災・福祉用語",
+    "priority": 88
+  },
+  {
+    "display": "罹災証明書",
+    "reading": "りさいしょうめいしょ",
+    "remarks": "防災・証明書用語",
+    "priority": 88
+  },
+  {
+    "display": "被災証明書",
+    "reading": "ひさいしょうめいしょ",
+    "remarks": "防災・証明書用語",
+    "priority": 86
+  },
+  {
+    "display": "給付金",
+    "reading": "きゅうふきん",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 82
+  },
+  {
+    "display": "物価高騰対策",
+    "reading": "ぶっかこうとうたいさく",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 80
+  },
+  {
+    "display": "子育て世帯",
+    "reading": "こそだてせたい",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 80
+  },
+  {
+    "display": "非課税世帯",
+    "reading": "ひかぜいせたい",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 80
+  },
+  {
+    "display": "低所得世帯",
+    "reading": "ていしょとくせたい",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 80
+  },
+  {
+    "display": "学校給食費",
+    "reading": "がっこうきゅうしょくひ",
+    "remarks": "行政・教育用語",
+    "priority": 80
+  },
+  {
+    "display": "就学援助",
+    "reading": "しゅうがくえんじょ",
+    "remarks": "行政・教育用語",
+    "priority": 80
+  },
+  {
+    "display": "生活困窮者",
+    "reading": "せいかつこんきゅうしゃ",
+    "remarks": "行政・福祉用語",
+    "priority": 82
+  },
+  {
+    "display": "地域おこし協力隊",
+    "reading": "ちいきおこしきょうりょくたい",
+    "remarks": "行政・広報誌頻出語",
+    "priority": 82
+  },
+  {
+    "display": "基地負担軽減",
+    "reading": "きちふたんけいげん",
+    "remarks": "沖縄関連行政用語",
+    "priority": 83
+  },
+  {
+    "display": "返還跡地",
+    "reading": "へんかんあとち",
+    "remarks": "沖縄関連行政用語",
+    "priority": 83
+  },
+  {
+    "display": "跡地利用",
+    "reading": "あとちりよう",
+    "remarks": "沖縄関連行政用語",
+    "priority": 83
+  },
+  {
+    "display": "那覇軍港",
+    "reading": "なはぐんこう",
+    "remarks": "沖縄関連行政用語",
+    "priority": 84
+  },
+  {
+    "display": "普天間飛行場",
+    "reading": "ふてんまひこうじょう",
+    "remarks": "沖縄関連行政用語",
+    "priority": 86
+  },
+  {
+    "display": "嘉手納飛行場",
+    "reading": "かでなひこうじょう",
+    "remarks": "沖縄関連行政用語",
+    "priority": 86
+  },
+  {
+    "display": "赤嶺",
+    "reading": "あかみね",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 92
+  },
+  {
+    "display": "仲里",
+    "reading": "なかざと",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 92
+  },
+  {
+    "display": "親川",
+    "reading": "おやかわ",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 92
+  },
+  {
+    "display": "幸地",
+    "reading": "こうち",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 92
+  },
+  {
+    "display": "神里",
+    "reading": "かみざと",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 92
+  },
+  {
+    "display": "喜友名",
+    "reading": "きゆな",
+    "remarks": "沖縄県で多い苗字",
+    "priority": 92
   }
 ]
