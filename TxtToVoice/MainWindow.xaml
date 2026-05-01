@@ -238,12 +238,12 @@
                                     HorizontalAlignment="Right"
                                     DockPanel.Dock="Right">
                             <!-- 段落ナビゲーション (#106) -->
-                            <Button x:Name="BtnParaPrev" Content="◀"
+                            <Button x:Name="BtnParaPrev" Content="◀ 段落"
                                     Style="{StaticResource BtnPrimary}"
                                     IsEnabled="False"
                                     Click="BtnParaPrev_Click"
                                     Padding="8,4"
-                                    ToolTip="前の段落を選択します"/>
+                                    ToolTip="前の段落を選択します (Alt+↑)"/>
                             <TextBlock x:Name="TxtParaNav" Text=""
                                        FontSize="11" Foreground="#C8D8E8"
                                        VerticalAlignment="Center"
@@ -254,7 +254,7 @@
                                     IsEnabled="False"
                                     Click="BtnParaNext_Click"
                                     Padding="8,4" Margin="0,0,8,0"
-                                    ToolTip="次の段落を選択します。選択後 F5 で読み上げます。"/>
+                                    ToolTip="次の段落を選択します (Alt+↓)。選択後 F5 で読み上げます。"/>
                             <Button Content="ファイルを開く" Style="{StaticResource BtnPrimary}"
                                     Click="BtnOpenFile_Click"
                                     ToolTip="テキストファイルを読み込む (Ctrl+O)"

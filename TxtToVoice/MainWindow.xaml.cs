@@ -206,18 +206,19 @@ namespace TxtToVoice
                 "Ctrl+S  : 音声ファイルとして保存（WAV/MP3/MP4）\n" +
                 "Ctrl+T  : テンプレートを挿入\n" +
                 "Ctrl+L  : 読みルール編集ダイアログを開く\n\n" +
-                "Alt+↑/↓        : 段落ナビ（前/次）\n" +
-                "Alt+Shift+↑/↓  : セクションナビ（前/次）\n" +
-                "Alt+←/→        : プレビューナビ（前/次マッチ）\n\n" +
+                "Alt+↑/↓        : 段落ナビ（前/次の段落を選択）\n" +
+                "Alt+Shift+↑/↓  : セクションナビ（前/次の見出しへジャンプ）\n" +
+                "Alt+←/→        : プレビューナビ（前/次の変換箇所へ移動）\n\n" +
                 "F5      : 読み上げ開始（選択中は選択範囲のみ）\n" +
                 "F6      : 一時停止\n" +
                 "F7      : 再開\n" +
                 "F8      : 停止\n\n" +
                 "辞書一覧にフォーカスがある場合：\n" +
-                "Ins           : エントリ追加ダイアログ\n" +
-                "F2 / セルクリック : セルをインライン編集\n" +
+                "Ins                    : エントリ追加ダイアログ\n" +
+                "F2 / セルクリック        : セルをインライン編集\n" +
                 "ダブルクリック / 編集ボタン : ダイアログで編集\n" +
-                "Del           : 選択エントリ削除",
+                "Del                    : 選択エントリを削除（複数選択可）\n" +
+                "Ctrl+Shift+↑/↓         : 選択エントリを上/下に移動",
                 "ショートカットキー一覧",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
@@ -228,9 +229,9 @@ namespace TxtToVoice
             string version = Assembly.GetEntryAssembly()
                 ?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
                 ?.InformationalVersion ?? "不明";
-            string portableNote = PathConfig.IsPortable             ? "\n動作モード: ポータブルモード（EXEフォルダ内にデータ保存）"
-                                : PathConfig.PortableFallbackApplied ? "\n動作モード: 通常モード（ポータブル要求→書込不可→自動切替）"
-                                : string.Empty;
+            string modeLabel = PathConfig.IsPortable             ? "ポータブルモード（EXE フォルダ内にデータを保存）"
+                             : PathConfig.PortableFallbackApplied ? "通常モード（ポータブル要求 → 書込不可 → 自動切替）"
+                             : "通常モード（%LOCALAPPDATA%\\TxtToVoice\\）";
             string engineLabel = SpeechEngineFactory.GetLabel(_speechEngineType, prefixWindows: true);
             string creditNote  = _speechEngineType == SpeechEngineFactory.OpenJTalk
                 ? "\n\n[オープンソース使用許諾]\n" +
@@ -241,12 +242,15 @@ namespace TxtToVoice
                   "詳細: THIRD_PARTY_LICENSES.txt"
                 : string.Empty;
             MessageBox.Show(
-                $"声の広報 テキスト読み上げツール  v{version}\n\n" +
-                "自治体職員向けの読み上げ補助ツールです。\n" +
-                $"音声エンジン: {engineLabel}\n" +
-                portableNote + "\n\n" +
-                "辞書ファイル: " + PathConfig.DictionaryPath + "\n" +
-                "ログファイル: " + PathConfig.LogDirectory +
+                $"声の広報 テキスト読み上げツール  v{version}\n" +
+                "自治体職員向けの読み上げ補助ツールです。\n\n" +
+                $"音声エンジン : {engineLabel}\n" +
+                $"動作モード   : {modeLabel}\n\n" +
+                "[データ保存先]\n" +
+                $"  設定         : {PathConfig.SettingsPath}\n" +
+                $"  辞書         : {PathConfig.DictionaryPath}\n" +
+                $"  テンプレート : {PathConfig.TemplatesPath}\n" +
+                $"  ログ出力先   : {PathConfig.LogDirectory}" +
                 creditNote,
                 "バージョン情報",
                 MessageBoxButton.OK,
