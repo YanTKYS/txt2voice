@@ -364,8 +364,8 @@
                     <!-- 辞書一覧 -->
                     <RowDefinition Height="2.5*" MinHeight="120"/>
                     <RowDefinition Height="5"/>
-                    <!-- 再生操作 -->
-                    <RowDefinition Height="1.8*" MinHeight="160"/>
+                    <!-- 再生操作: Auto で GridSplitter による圧縮を防ぐ -->
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <!-- == プレビュー == -->
