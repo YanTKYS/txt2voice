@@ -6,6 +6,7 @@
         MinHeight="640" MinWidth="960"
         WindowStartupLocation="CenterScreen"
         Background="#F0F2F5"
+        FontFamily="Meiryo UI, Yu Gothic UI, MS UI Gothic"
         Closing="Window_Closing"
         AllowDrop="True"
         DragOver="Window_DragOver"
@@ -48,51 +49,210 @@
             </Setter>
         </Style>
 
-        <Style x:Key="BtnDanger" TargetType="Button" BasedOn="{StaticResource BtnPrimary}">
-            <Setter Property="Background" Value="#B03020"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#8B2318"/>
-                </Trigger>
-                <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Background" Value="#C89590"/>
-                </Trigger>
-            </Style.Triggers>
+        <Style x:Key="BtnDanger" TargetType="Button">
+            <Setter Property="Background"      Value="#B03020"/>
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding"         Value="12,5"/>
+            <Setter Property="Margin"          Value="3,2"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="Height"          Value="30"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="3"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#8B2318"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Background" Value="#C89590"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#6B1A10"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
-        <Style x:Key="BtnSuccess" TargetType="Button" BasedOn="{StaticResource BtnPrimary}">
-            <Setter Property="Background" Value="#2E7D32"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#1B5E20"/>
-                </Trigger>
-                <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Background" Value="#7AAB7C"/>
-                </Trigger>
-            </Style.Triggers>
+        <Style x:Key="BtnSuccess" TargetType="Button">
+            <Setter Property="Background"      Value="#2E7D32"/>
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding"         Value="12,5"/>
+            <Setter Property="Margin"          Value="3,2"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="Height"          Value="30"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="3"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#1B5E20"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Background" Value="#7AAB7C"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#145214"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
-        <Style x:Key="BtnWarn" TargetType="Button" BasedOn="{StaticResource BtnPrimary}">
-            <Setter Property="Background" Value="#E65100"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#BF360C"/>
-                </Trigger>
-                <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Background" Value="#D4A090"/>
-                </Trigger>
-            </Style.Triggers>
+        <Style x:Key="BtnWarn" TargetType="Button">
+            <Setter Property="Background"      Value="#E65100"/>
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding"         Value="12,5"/>
+            <Setter Property="Margin"          Value="3,2"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="Height"          Value="30"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="3"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#BF360C"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Background" Value="#D4A090"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#9B2800"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- アウトライン青ボタン（二次操作用） -->
+        <Style x:Key="BtnSecondary" TargetType="Button">
+            <Setter Property="Background"      Value="Transparent"/>
+            <Setter Property="Foreground"      Value="#2C5F8A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding"         Value="12,5"/>
+            <Setter Property="Margin"          Value="3,2"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="Height"          Value="30"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="#2C5F8A"
+                                BorderThickness="1"
+                                CornerRadius="3"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#E8F0F8"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#B8C8D8"/>
+                                <Setter Property="Foreground" Value="#8AAEC5"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#C8D8E8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- コンパクトボタン（履歴/キューパネル内等の 22px 高さボタン用） -->
+        <Style x:Key="BtnMini" TargetType="Button">
+            <Setter Property="Background"      Value="#F2F5F8"/>
+            <Setter Property="Foreground"      Value="#2A4A6A"/>
+            <Setter Property="BorderBrush"     Value="#B8C8D8"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding"         Value="5,2"/>
+            <Setter Property="Margin"          Value="2,2"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="FontSize"        Value="10"/>
+            <Setter Property="Height"          Value="22"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="2"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#D8E8F4"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="#8098B0"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#C8D8E8"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#B8D0E8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <!-- ===== パネルヘッダー ===== -->
         <Style x:Key="PanelHeader" TargetType="Border">
-            <Setter Property="Background" Value="#2C5F8A"/>
-            <Setter Property="Padding"    Value="10,6"/>
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#2E6395" Offset="0"/>
+                        <GradientStop Color="#1E4F7A" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Padding" Value="10,6"/>
         </Style>
 
         <Style x:Key="SubPanelHeader" TargetType="Border">
-            <Setter Property="Background" Value="#3E6F96"/>
-            <Setter Property="Padding"    Value="10,5"/>
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#4278A0" Offset="0"/>
+                        <GradientStop Color="#2E6390" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Padding" Value="10,5"/>
         </Style>
 
         <Style x:Key="PanelHeaderText" TargetType="TextBlock">
@@ -115,6 +275,12 @@
             <Setter Property="VerticalScrollBarVisibility"   Value="Auto"/>
             <Setter Property="HorizontalScrollBarVisibility" Value="Auto"/>
             <Setter Property="SpellCheck.IsEnabled"   Value="False"/>
+            <Style.Triggers>
+                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                    <Setter Property="BorderBrush"     Value="#2C5F8A"/>
+                    <Setter Property="BorderThickness" Value="1.5"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <Style x:Key="PreviewBox" TargetType="TextBox">
@@ -128,6 +294,12 @@
             <Setter Property="TextWrapping"           Value="Wrap"/>
             <Setter Property="IsReadOnly"             Value="True"/>
             <Setter Property="VerticalScrollBarVisibility"   Value="Auto"/>
+            <Style.Triggers>
+                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                    <Setter Property="BorderBrush"     Value="#2C5F8A"/>
+                    <Setter Property="BorderThickness" Value="1.5"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <!-- プレビューペイン（変換ハイライト対応 RichTextBox 用）-->
@@ -142,6 +314,12 @@
             <Setter Property="VerticalScrollBarVisibility"   Value="Auto"/>
             <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
             <Setter Property="IsDocumentEnabled"      Value="True"/>
+            <Style.Triggers>
+                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                    <Setter Property="BorderBrush"     Value="#2C5F8A"/>
+                    <Setter Property="BorderThickness" Value="1.5"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
     </Window.Resources>
@@ -322,7 +500,7 @@
                 </Grid>
 
                 <!-- フッター: 文字数 + 想定読み上げ時間 + 自動プレビュー + プレビュー更新ボタン -->
-                <Border Grid.Row="3" Background="#E4E8EE" Padding="8,5">
+                <Border Grid.Row="3" Background="#E4E8EE" BorderBrush="#C8CDD4" BorderThickness="0,1,0,0" Padding="8,5">
                     <DockPanel>
                         <TextBlock x:Name="TxtCharCount"
                                    Text="0 文字"
@@ -434,11 +612,12 @@
                         </RichTextBox>
                     </Grid>
 
-                    <Border Grid.Row="2" Background="#E4E8EE" Padding="8,4">
+                    <Border Grid.Row="2" Background="#E4E8EE" BorderBrush="#C8CDD4" BorderThickness="0,1,0,0" Padding="8,4">
                         <DockPanel>
                             <Button Content="コピー"
                                     DockPanel.Dock="Right"
                                     Click="BtnCopyPreview_Click"
+                                    Style="{StaticResource BtnSecondary}"
                                     FontSize="11" Padding="10,2"
                                     VerticalAlignment="Center"
                                     ToolTip="プレビューテキストをクリップボードにコピーします"/>
@@ -448,6 +627,7 @@
                                         VerticalAlignment="Center"
                                         Margin="0,0,6,0">
                                 <Button x:Name="BtnPreviewPrev" Content="◀"
+                                        Style="{StaticResource BtnMini}"
                                         Width="24" Height="20" FontSize="10" Padding="2,0"
                                         Margin="0,0,2,0"
                                         Click="BtnPreviewPrev_Click"
@@ -457,6 +637,7 @@
                                            FontSize="11" Foreground="#555"
                                            MinWidth="50" TextAlignment="Center"/>
                                 <Button x:Name="BtnPreviewNext" Content="▶"
+                                        Style="{StaticResource BtnMini}"
                                         Width="24" Height="20" FontSize="10" Padding="2,0"
                                         Margin="2,0,0,0"
                                         Click="BtnPreviewNext_Click"
@@ -561,6 +742,7 @@
                             <TextBlock Text="絞り込み:" VerticalAlignment="Center"
                                        FontSize="11" Foreground="#555" Margin="0,0,5,0"/>
                             <Button x:Name="BtnDictFilterClear" DockPanel.Dock="Right"
+                                    Style="{StaticResource BtnMini}"
                                     Content="×" Padding="5,1" Margin="4,0,0,0"
                                     FontSize="11" VerticalAlignment="Center"
                                     Click="BtnDictFilterClear_Click"
@@ -592,6 +774,31 @@
                               KeyDown="DgDictionary_KeyDown"
                               CellEditEnding="DgDictionary_CellEditEnding"
                               RowEditEnding="DgDictionary_RowEditEnding">
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#EDF4FB"/>
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="#C8DAEA"/>
+                                        <Setter Property="Foreground" Value="#1C2C3C"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
+                        <DataGrid.CellStyle>
+                            <Style TargetType="DataGridCell">
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="BorderBrush" Value="Transparent"/>
+                                        <Setter Property="Foreground" Value="#1C2C3C"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.CellStyle>
                         <DataGrid.ColumnHeaderStyle>
                             <Style TargetType="DataGridColumnHeader">
                                 <Setter Property="Background"  Value="#D8E4EF"/>
@@ -618,7 +825,7 @@
                         </DataGrid.Columns>
                     </DataGrid>
 
-                    <Border Grid.Row="3" Background="#E4E8EE" Padding="8,4">
+                    <Border Grid.Row="3" Background="#E4E8EE" BorderBrush="#C8CDD4" BorderThickness="0,1,0,0" Padding="8,4">
                         <TextBlock x:Name="TxtDictCount"
                                    Text="辞書: 0 件"
                                    FontSize="11" Foreground="#555"/>
@@ -674,12 +881,14 @@
                                        VerticalAlignment="Center"
                                        MinWidth="44" FontSize="12" Margin="0,0,4,0"/>
                             <Button x:Name="BtnProfileDelete" Content="削除"
+                                    Style="{StaticResource BtnMini}"
                                     DockPanel.Dock="Right"
                                     Width="44" Height="24" FontSize="11"
                                     Margin="4,0,0,0"
                                     Click="BtnProfileDelete_Click"
                                     ToolTip="選択中のプロファイルを削除"/>
                             <Button x:Name="BtnProfileSave" Content="保存"
+                                    Style="{StaticResource BtnMini}"
                                     DockPanel.Dock="Right"
                                     Width="44" Height="24" FontSize="11"
                                     Margin="4,0,0,0"
@@ -811,6 +1020,7 @@
                                        Margin="4,5,4,5" VerticalAlignment="Center"/>
                             <Button x:Name="BtnAddToQueue"
                                     Content="＋ キュー"
+                                    Style="{StaticResource BtnPrimary}"
                                     Click="BtnAddToQueue_Click"
                                     ToolTip="現在のテキスト（選択中は選択範囲）を読み上げキューに追加します"
                                     FontSize="12" Padding="10,6" Height="34"/>
@@ -836,12 +1046,14 @@
                                       ToolTip="保存プリセットを選択 → 「保存実行」で即時保存"/>
                             <Button x:Name="BtnPresetExec"
                                     Content="保存実行"
+                                    Style="{StaticResource BtnPrimary}"
                                     Height="34" IsEnabled="False"
                                     Click="BtnPresetExec_Click"
                                     ToolTip="選択したプリセット設定で保存を実行"
                                     FontSize="13" Padding="10,6"/>
                             <Button x:Name="BtnPresetRegister"
                                     Content="登録"
+                                    Style="{StaticResource BtnPrimary}"
                                     Height="34"
                                     Click="BtnPresetRegister_Click"
                                     ToolTip="現在の設定を新しいプリセットとして登録"
@@ -879,8 +1091,10 @@
 
                         <!-- ショートカットキー案内 -->
                         <Border Grid.Row="14"
-                                Background="#E8EEF4"
+                                Background="#EEF3F9"
                                 CornerRadius="3"
+                                BorderBrush="#4278A0"
+                                BorderThickness="3,0,0,0"
                                 Padding="8,5">
                             <TextBlock FontSize="11" Foreground="#555"
                                        TextWrapping="Wrap">
@@ -913,12 +1127,14 @@
                                            LastChildFill="True">
                                     <Button DockPanel.Dock="Right"
                                             x:Name="BtnClearHistory"
+                                            Style="{StaticResource BtnMini}"
                                             Content="クリア"
                                             FontSize="10" Padding="5,2" Height="22" Margin="4,3"
                                             Click="BtnClearHistory_Click"
                                             ToolTip="履歴をすべてクリア"/>
                                     <Button DockPanel.Dock="Right"
                                             x:Name="BtnAddHistoryToQueue"
+                                            Style="{StaticResource BtnMini}"
                                             Content="＋ キュー"
                                             FontSize="10" Padding="5,2" Height="22" Margin="0,3,4,3"
                                             IsEnabled="False"
@@ -926,6 +1142,7 @@
                                             ToolTip="選択した履歴をキューに追加"/>
                                     <Button DockPanel.Dock="Right"
                                             x:Name="BtnRestoreHistory"
+                                            Style="{StaticResource BtnMini}"
                                             Content="原稿へ"
                                             FontSize="10" Padding="5,2" Height="22" Margin="0,3,4,3"
                                             IsEnabled="False"
@@ -964,12 +1181,14 @@
                                     <!-- 右端から順に宣言（DockPanel.Dock="Right" は後宣言ほど左寄り） -->
                                     <Button DockPanel.Dock="Right"
                                             x:Name="BtnClearQueue"
+                                            Style="{StaticResource BtnMini}"
                                             Content="クリア"
                                             FontSize="10" Padding="5,2" Height="22" Margin="4,3"
                                             Click="BtnClearQueue_Click"
                                             ToolTip="キューをすべてクリア"/>
                                     <Button DockPanel.Dock="Right"
                                             x:Name="BtnQueueDelete"
+                                            Style="{StaticResource BtnMini}"
                                             Content="削除"
                                             FontSize="10" Padding="5,2" Height="22" Margin="0,3,4,3"
                                             IsEnabled="False"
@@ -977,6 +1196,7 @@
                                             ToolTip="選択したアイテムをキューから削除（Del キー）"/>
                                     <Button DockPanel.Dock="Right"
                                             x:Name="BtnQueueMoveDown"
+                                            Style="{StaticResource BtnMini}"
                                             Content="↓"
                                             FontSize="11" Width="22" Height="22" Margin="0,3,2,3"
                                             IsEnabled="False"
@@ -984,6 +1204,7 @@
                                             ToolTip="選択したアイテムを1つ下に移動"/>
                                     <Button DockPanel.Dock="Right"
                                             x:Name="BtnQueueMoveUp"
+                                            Style="{StaticResource BtnMini}"
                                             Content="↑"
                                             FontSize="11" Width="22" Height="22" Margin="0,3,2,3"
                                             IsEnabled="False"
@@ -991,6 +1212,7 @@
                                             ToolTip="選択したアイテムを1つ上に移動"/>
                                     <Button DockPanel.Dock="Right"
                                             x:Name="BtnStopQueue"
+                                            Style="{StaticResource BtnMini}"
                                             Content="⏹ 停止"
                                             FontSize="10" Padding="5,2" Height="22" Margin="0,3,4,3"
                                             Visibility="Collapsed"
@@ -998,6 +1220,7 @@
                                             ToolTip="キュー再生を停止"/>
                                     <Button DockPanel.Dock="Right"
                                             x:Name="BtnPlayQueue"
+                                            Style="{StaticResource BtnMini}"
                                             Content="▶ 順次再生"
                                             FontSize="10" Padding="5,2" Height="22" Margin="0,3,4,3"
                                             IsEnabled="False"
