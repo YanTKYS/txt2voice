@@ -269,7 +269,7 @@
             <Setter Property="Padding"                Value="8"/>
             <Setter Property="Background"             Value="White"/>
             <Setter Property="BorderBrush"            Value="#C0C0C0"/>
-            <Setter Property="BorderThickness"        Value="1"/>
+            <Setter Property="BorderThickness"        Value="1.5"/>
             <Setter Property="AcceptsReturn"          Value="True"/>
             <Setter Property="TextWrapping"           Value="Wrap"/>
             <Setter Property="VerticalScrollBarVisibility"   Value="Auto"/>
@@ -277,8 +277,7 @@
             <Setter Property="SpellCheck.IsEnabled"   Value="False"/>
             <Style.Triggers>
                 <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                    <Setter Property="BorderBrush"     Value="#2C5F8A"/>
-                    <Setter Property="BorderThickness" Value="1.5"/>
+                    <Setter Property="BorderBrush" Value="#2C5F8A"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -289,15 +288,14 @@
             <Setter Property="Padding"                Value="8"/>
             <Setter Property="Background"             Value="#FDFDF0"/>
             <Setter Property="BorderBrush"            Value="#C0C0C0"/>
-            <Setter Property="BorderThickness"        Value="1"/>
+            <Setter Property="BorderThickness"        Value="1.5"/>
             <Setter Property="AcceptsReturn"          Value="True"/>
             <Setter Property="TextWrapping"           Value="Wrap"/>
             <Setter Property="IsReadOnly"             Value="True"/>
             <Setter Property="VerticalScrollBarVisibility"   Value="Auto"/>
             <Style.Triggers>
                 <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                    <Setter Property="BorderBrush"     Value="#2C5F8A"/>
-                    <Setter Property="BorderThickness" Value="1.5"/>
+                    <Setter Property="BorderBrush" Value="#2C5F8A"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -309,15 +307,14 @@
             <Setter Property="Padding"                Value="8"/>
             <Setter Property="Background"             Value="#FDFDF0"/>
             <Setter Property="BorderBrush"            Value="#C0C0C0"/>
-            <Setter Property="BorderThickness"        Value="1"/>
+            <Setter Property="BorderThickness"        Value="1.5"/>
             <Setter Property="IsReadOnly"             Value="True"/>
             <Setter Property="VerticalScrollBarVisibility"   Value="Auto"/>
             <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
             <Setter Property="IsDocumentEnabled"      Value="True"/>
             <Style.Triggers>
                 <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                    <Setter Property="BorderBrush"     Value="#2C5F8A"/>
-                    <Setter Property="BorderThickness" Value="1.5"/>
+                    <Setter Property="BorderBrush" Value="#2C5F8A"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -795,6 +792,11 @@
                                         <Setter Property="Background" Value="Transparent"/>
                                         <Setter Property="BorderBrush" Value="Transparent"/>
                                         <Setter Property="Foreground" Value="#1C2C3C"/>
+                                    </Trigger>
+                                    <!-- キーボード操作時の現在セルを枠線で示す -->
+                                    <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                        <Setter Property="BorderBrush"     Value="#2C5F8A"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
                                     </Trigger>
                                 </Style.Triggers>
                             </Style>
