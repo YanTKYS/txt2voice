@@ -134,8 +134,12 @@ namespace TxtToVoice
                 catch { lineNum++; continue; }
 
                 double y = r.Y;
-                // ビューポート外（上下）はスキップ
-                if (y < -fontSize || y > canvasH) { lineNum++; continue; }
+                // ビューポート上端より前はスキップして続行
+                if (y < -fontSize) { lineNum++; continue; }
+                // ビューポート下端を過ぎたら、以降の行はすべて画面外なので走査を打ち切る
+                // （GetRectFromCharacterIndex は文書全体の行数に比例して重くなるため、
+                // 　長文で行番号表示 ON のままスクロール/編集すると体感遅延の原因になっていた）
+                if (y > canvasH) break;
 
                 var tb = new TextBlock
                 {

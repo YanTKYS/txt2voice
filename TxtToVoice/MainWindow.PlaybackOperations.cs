@@ -22,7 +22,6 @@ namespace TxtToVoice
 
         private SpeechPositionMap? _positionMap;
         private int _speechOriginOffset;
-        private int _speechTotalChars;
         private DateTime _lastProgressLog = DateTime.MinValue;
         private List<PlaybackProfile> _profiles = new();
         private bool _suppressProfileSelection = false;
@@ -60,7 +59,6 @@ namespace TxtToVoice
             bool useSsml = ChkSsml.IsChecked == true;
             var (speechText, map) = _dictService.ApplyDictionaryForSpeech(rawText);
 
-            _speechTotalChars = rawText.Length;
             BrdSpeechProgress.Visibility       = Visibility.Visible;
             PbSpeechProgress.IsIndeterminate   = useSsml;
             PbSpeechProgress.Value             = 0;
